@@ -18,7 +18,7 @@
 		{
 			"Name": "UnLive2DAsset",
 			"Type": "Runtime",
-			"LoadingPhase": "PreDefault"
+			"LoadingPhase": "PostConfigInit"
 		},
 		{
 			"Name": "UnLive2DAssetEditor",
