@@ -1,0 +1,3 @@
+[submodule "UnLive2DAsset/Source/UnLive2DAsset/Private/Framework"]
+	path = UnLive2DAsset/Source/UnLive2DAsset/Private/Framework
+	url = https://github.com/Monocluar/CubismNativeFramework.git
