@@ -1,6 +1,5 @@
 #include "ModelRenders.h"
 #include "Rendering/CubismRenderer.hpp"
-#include "CubismSepRender.h"
 #include "RHIDefinitions.h"
 #include "RHIStaticStates.h"
 
@@ -36,66 +35,6 @@ void FModelRenders::SetUpBlendMode(
         break;
     }
     }
-}
-
-void FModelRenders::FillVertexBuffer(
-    Csm::CubismModel* tp_Model, 
-    const Csm::csmInt32 drawableIndex, 
-    FVertexBufferRHIRef ScratchVertexBufferRHI, 
-    FCubismRenderState* tp_States, 
-    FRHICommandListImmediate& RHICmdList
-)
-{
-    const csmInt32 td_NumVertext = tp_Model->GetDrawableVertexCount(drawableIndex);
-    UE_LOG(LogUnLive2D, Verbose, TEXT("FillVertexBuffer: Vertext buffer info %d|%d >> (%u, %u)"), drawableIndex, td_NumVertext, ScratchVertexBufferRHI->GetSize(), ScratchVertexBufferRHI->GetUsage());
-    if (!tp_States) return;
-
-    if (tp_States->VertexCount.Find(drawableIndex) == nullptr) return;
-
-    //check(td_NumVertext == tp_States->VertexCount[drawableIndex]);
-    {
-
-        const csmFloat32* uvarray = reinterpret_cast<csmFloat32*>(const_cast<Live2D::Cubism::Core::csmVector2*>(tp_Model->GetDrawableVertexUvs(drawableIndex)));
-        const csmFloat32* varray = const_cast<csmFloat32*>(tp_Model->GetDrawableVertices(drawableIndex));
-
-        check(varray);
-        check(uvarray);
-
-        void* DrawableData = RHICmdList.LockVertexBuffer(ScratchVertexBufferRHI, 0, td_NumVertext * sizeof(FCubismVertex), RLM_WriteOnly);
-        FCubismVertex* RESTRICT DestSamples = (FCubismVertex*)DrawableData;
-
-        for (int32 td_VertexIndex = 0; td_VertexIndex < td_NumVertext; ++td_VertexIndex)
-        {
-            DestSamples[td_VertexIndex].Position.X = varray[td_VertexIndex * 2];
-            DestSamples[td_VertexIndex].Position.Y = varray[td_VertexIndex * 2 + 1];
-            DestSamples[td_VertexIndex].UV.X = uvarray[td_VertexIndex * 2];
-            DestSamples[td_VertexIndex].UV.Y = uvarray[td_VertexIndex * 2 + 1];
-        }
-
-        RHICmdList.UnlockVertexBuffer(ScratchVertexBufferRHI);
-    }
-}
-
-class UTexture2D* FModelRenders::GetTexture(
-    Csm::CubismModel* tp_Model,
-    const Csm::csmInt32 drawableIndex,
-    FCubismRenderState* tp_States
-)
-{
-    const csmInt32 td_TextrueNo = tp_Model->GetDrawableTextureIndices(drawableIndex);
-    TWeakObjectPtr<UTexture2D> tp_Texture = nullptr;
-    if (tp_States->Textures.IsValidIndex(td_TextrueNo))
-    {
-        tp_Texture = tp_States->Textures[td_TextrueNo];
-    }
-
-    if (!tp_Texture.IsValid())
-    {
-        UE_LOG(LogUnLive2D, Warning, TEXT("DrawSeparateToRenderTarget_RenderThread: Texture %d invalid"), td_TextrueNo);
-        return nullptr;
-    }
-
-    return tp_Texture.Get();
 }
 
 FMatrix FModelRenders::ConvertCubismMatrix(Csm::CubismMatrix44& InCubismMartix)

@@ -63,8 +63,8 @@ struct FModelRenders
     static void FillVertexBuffer(
         Csm::CubismModel* tp_Model,
         const Csm::csmInt32 drawableIndex,
-        FVertexBufferRHIRef ScratchVertexBufferRHI,
-        FCubismRenderState* tp_States,
+		FVertexBufferRHIRef ScratchVertexBufferRHI,
+		FCubismRenderState* tp_States,
         FRHICommandListImmediate& RHICmdList
     );
 

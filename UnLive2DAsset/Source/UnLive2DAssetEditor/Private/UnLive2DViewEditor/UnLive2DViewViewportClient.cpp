@@ -1,12 +1,12 @@
 #include "UnLive2DViewViewportClient.h"
 #include "UnLive2D.h"
-#include "UnLive2DComponent.h"
 #include "Utils.h"
 #include "CanvasItem.h"
 #include "HitProxies.h"
 
 #include "UnLive2DAssetEditor.h"
 #include "DrawDebugHelpers.h"
+#include "UnLive2DRendererComponent.h"
 
 struct HUnLive2DSelectableObjectHitProxy : public HHitProxy
 {
@@ -26,10 +26,8 @@ FUnLive2DViewViewportClient::FUnLive2DViewViewportClient(TWeakObjectPtr<UUnLive2
 
 	SetRealtime(true);
 
-	AnimatedRenderComponent = NewObject<UUnLive2DComponent>();
-	AnimatedRenderComponent->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
+	AnimatedRenderComponent = NewObject<UUnLive2DRendererComponent>();
 	AnimatedRenderComponent->SetUnLive2D(UnLive2DBeingEditedLastFrame.Get());
-	AnimatedRenderComponent->UpdateBounds();
 	PreviewScene->AddComponent(AnimatedRenderComponent.Get(), FTransform::Identity);
 
 	bShowPivot = true;
@@ -191,7 +189,7 @@ FBox FUnLive2DViewViewportClient::GetDesiredFocusBounds() const
 
 void FUnLive2DViewViewportClient::EventOnLeftMouseDown(FIntPoint MousePoint)
 {
-	if (Viewport == nullptr) return;
+	/*if (Viewport == nullptr) return;
 
 	FSceneViewFamilyContext ViewFamily(FSceneViewFamily::ConstructionValues(Viewport, GetScene(), EngineShowFlags));
 	FSceneView* View = CalcSceneView(&ViewFamily);
@@ -207,7 +205,7 @@ void FUnLive2DViewViewportClient::EventOnLeftMouseDown(FIntPoint MousePoint)
 	OldMouseTapPos.X = FMath::Clamp<int32>((int32)TextureSpaceStartPos.X, 0, SourceTextureWidth - 1);
 	OldMouseTapPos.Y = FMath::Clamp<int32>((int32)TextureSpaceStartPos.Y, 0, SourceTextureHeight - 1);
 
-	UnLive2DBeingEditedLastFrame->OnTap(OldMouseTapPos);
+	UnLive2DBeingEditedLastFrame->OnTap(OldMouseTapPos);*/
 
 }
 

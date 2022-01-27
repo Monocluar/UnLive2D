@@ -18,7 +18,7 @@ public class UnLive2DAsset : ModuleRules
 			new string[]
 			{
 				"Core",
-
+                "ProceduralMeshComponent",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

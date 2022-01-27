@@ -4,8 +4,12 @@
 #include "ImageUtils.h"
 #include "CanvasTypes.h"
 
+/*
 const FVector UnLive2DAxisX = FVector(1.0f, 0.0f, 0.0f);
 const FVector UnLive2DAxisY = FVector(0.0f, 0.0f, 1.0f);
+FVector UnLive2DAxisX(1.0f, 0.0f, 0.0f);
+FVector UnLive2DAxisY(0.0f, 0.0f, 1.0f);
+FVector UnLive2DAxisZ(0.0f, 1.0f, 0.0f);*/
 
 FUnLive2DViewportClient::FUnLive2DViewportClient(const TWeakPtr<class SEditorViewport>& InEditorViewportWidget /*= nullptr*/)
 	: FEditorViewportClient(new FAssetEditorModeManager(), nullptr, InEditorViewportWidget)
@@ -17,7 +21,7 @@ FUnLive2DViewportClient::FUnLive2DViewportClient(const TWeakPtr<class SEditorVie
 	
 
 	SetViewModes(VMI_Lit, VMI_Lit);
-	SetViewportType(LVT_OrthoNegativeYZ);
+	SetViewportType(LVT_OrthoXZ);
 	bDeferZoomToUnLive2D = true;
 	bDeferZoomToUnLive2DIsInstant = true;
 

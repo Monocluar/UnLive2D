@@ -4,7 +4,7 @@
 #include "UnLive2DViewportClient.h"
 
 class UUnLive2D;
-class UUnLive2DComponent;
+class UUnLive2DRendererComponent;
 
 class FUnLive2DViewViewportClient : public FUnLive2DViewportClient
 {
@@ -51,7 +51,7 @@ private:
 
 	TWeakObjectPtr<UUnLive2D> UnLive2DBeingEditedLastFrame;
 
-	TWeakObjectPtr<UUnLive2DComponent> AnimatedRenderComponent;
+	TWeakObjectPtr<UUnLive2DRendererComponent> AnimatedRenderComponent;
 
 private:
 

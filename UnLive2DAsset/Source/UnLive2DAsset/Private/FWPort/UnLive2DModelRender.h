@@ -32,7 +32,7 @@ public:
      * @param Model            ->  模型实例
      * @param ClippingContext  ->  裁剪实例
      */
-    void CalcClippedDrawTotalBounds(CubismModel& Model, CubismClippingContext* ClippingContext);
+    void CalcClippedDrawTotalBounds(CubismModel* Model, CubismClippingContext* ClippingContext);
 
     /**
      * 管理器初始化处理，
@@ -43,7 +43,7 @@ public:
      * @param DrawableMasks   ->  绘图对象的索引列表
      * @param DrawableMaskCounts   ->  要遮罩绘图对象的绘图对象数量
      */
-    void Initialize(CubismModel& Model, csmInt32 DrawableCount, const csmInt32** DrawableMasks, const csmInt32* DrawableMaskCounts);
+    void Initialize(CubismModel* Model, csmInt32 DrawableCount, const csmInt32** DrawableMasks, const csmInt32* DrawableMaskCounts);
 
     /**
      * 创建消减上下文。绘制模型时执行。
@@ -51,7 +51,7 @@ public:
      * @param Model       ->  模型实例
      * @param Renderer    ->  渲染实例
      */
-    void SetupClippingContext(CubismModel& Model, struct FCubismRenderState* Renderer);
+    void SetupClippingContext(CubismModel* Model, struct FUnLive2DRenderState* Renderer);
 
     /**
      * 如果正在制作，则返回相应的剪裁实例，

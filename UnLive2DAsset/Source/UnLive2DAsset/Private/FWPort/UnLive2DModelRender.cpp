@@ -1,6 +1,6 @@
 #include "UnLive2DModelRender.h"
 #include "Model/CubismModel.hpp"
-#include "Draw/CubismSepRender.h"
+#include "Draw/UnLive2DSepRenderer.h"
 
 
 namespace {
@@ -59,7 +59,7 @@ CubismClippingManager_UE::~CubismClippingManager_UE()
     }
 }
 
-void CubismClippingManager_UE::Initialize(CubismModel& model, csmInt32 drawableCount, const csmInt32** drawableMasks, const csmInt32* drawableMaskCounts)
+void CubismClippingManager_UE::Initialize(CubismModel* model, csmInt32 drawableCount, const csmInt32** drawableMasks, const csmInt32* drawableMaskCounts)
 {
     //使用限幅遮罩注册所有绘图对象
     for (csmInt32 i = 0; i < drawableCount; i++)
@@ -71,11 +71,11 @@ void CubismClippingManager_UE::Initialize(CubismModel& model, csmInt32 drawableC
             continue;
         }
 
-        // 既にあるClipContextと同じかチェックする
+        // 检查是否与已存在的ClipContext相同
         CubismClippingContext* cc = FindSameClip(drawableMasks[i], drawableMaskCounts[i]);
         if (cc == NULL)
         {
-            // 同一のマスクが存在していない場合は生成する
+            // 如果不存在同一掩码，则生成
             cc = CSM_NEW CubismClippingContext(this, drawableMasks[i], drawableMaskCounts[i]);
             _clippingContextListForMask.PushBack(cc);
         }
@@ -88,15 +88,15 @@ void CubismClippingManager_UE::Initialize(CubismModel& model, csmInt32 drawableC
 
 CubismClippingContext* CubismClippingManager_UE::FindSameClip(const csmInt32* drawableMasks, csmInt32 drawableMaskCounts) const
 {
-    // 作成済みClippingContextと一致するか確認
+    // 确认是否与已创建的ClipingContext一致
     for (csmUint32 i = 0; i < _clippingContextListForMask.GetSize(); i++)
     {
         CubismClippingContext* cc = _clippingContextListForMask[i];
         const csmInt32 count = cc->_clippingIdCount;
-        if (count != drawableMaskCounts) continue; //個数が違う場合は別物
+        if (count != drawableMaskCounts) continue; //个数不同的情况下是不同的东西
         csmInt32 samecount = 0;
 
-        // 同じIDを持つか確認。配列の数が同じなので、一致した個数が同じなら同じ物を持つとする。
+        // 确认是否拥有相同ID。因为排列的数量相同，所以如果一致的个数相同的话，就拿相同的东西。
         for (csmInt32 j = 0; j < count; j++)
         {
             const csmInt32 clipId = cc->_clippingIdList[j];
@@ -117,160 +117,120 @@ CubismClippingContext* CubismClippingManager_UE::FindSameClip(const csmInt32* dr
     return NULL; //見つからなかった
 }
 
-void CubismClippingManager_UE::SetupClippingContext(CubismModel& model, struct FCubismRenderState* tp_RenderState)
+void CubismClippingManager_UE::SetupClippingContext(CubismModel* InModel, struct FUnLive2DRenderState* Renderer)
 {
-    _currentFrameNo++;
+	_currentFrameNo++;
 
-    // 全てのクリッピングを用意する
-    // 同じクリップ（複数の場合はまとめて１つのクリップ）を使う場合は１度だけ設定する
-    csmInt32 usingClipCount = 0;
-    for (csmUint32 clipIndex = 0; clipIndex < _clippingContextListForMask.GetSize(); clipIndex++)
-    {
-        // １つのクリッピングマスクに関して
-        CubismClippingContext* cc = _clippingContextListForMask[clipIndex];
+	// 全てのクリッピングを用意する
+	// 同じクリップ（複数の場合はまとめて１つのクリップ）を使う場合は１度だけ設定する
+	csmInt32 usingClipCount = 0;
+	for (csmUint32 clipIndex = 0; clipIndex < _clippingContextListForMask.GetSize(); clipIndex++)
+	{
+		// １つのクリッピングマスクに関して
+		CubismClippingContext* cc = _clippingContextListForMask[clipIndex];
 
-        // このクリップを利用する描画オブジェクト群全体を囲む矩形を計算
-        CalcClippedDrawTotalBounds(model, cc);
+		// このクリップを利用する描画オブジェクト群全体を囲む矩形を計算
+		CalcClippedDrawTotalBounds(InModel, cc);
 
-        if (cc->_isUsing)
-        {
-            usingClipCount++; //使用中としてカウント
-        }
-    }
+		if (cc->_isUsing)
+		{
+			usingClipCount++; //使用中としてカウント
+		}
+	}
 
-    // マスク作成処理
-    if (usingClipCount > 0)
-    {
-        //if (!renderer->IsUsingHighPrecisionMask())
-        //{
-        //    // ビューポートは退避済み
-        //    // 生成したFrameBufferと同じサイズでビューポートを設定
-        //    CubismRenderer_D3D11::GetRenderStateManager()->SetViewport(renderContext,
-        //        0,
-        //        0,
-        //        static_cast<FLOAT>(_clippingMaskBufferSize),
-        //        static_cast<FLOAT>(_clippingMaskBufferSize),
-        //        0.0f, 1.0f);
+	// マスク作成処理
+	if (usingClipCount > 0)
+	{
+		//if (!renderer->IsUsingHighPrecisionMask())
+		//{
+		//    // ビューポートは退避済み
+		//    // 生成したFrameBufferと同じサイズでビューポートを設定
+		//    CubismRenderer_D3D11::GetRenderStateManager()->SetViewport(renderContext,
+		//        0,
+		//        0,
+		//        static_cast<FLOAT>(_clippingMaskBufferSize),
+		//        static_cast<FLOAT>(_clippingMaskBufferSize),
+		//        0.0f, 1.0f);
 
-        //    useTarget.BeginDraw(renderContext);
-        //    // 1が無効（描かれない）領域、0が有効（描かれる）領域。（シェーダで Cd*Csで0に近い値をかけてマスクを作る。1をかけると何も起こらない）
-        //    useTarget.Clear(renderContext, 1.0f, 1.0f, 1.0f, 1.0f);
-        //}
+		//    useTarget.BeginDraw(renderContext);
+		//    // 1が無効（描かれない）領域、0が有効（描かれる）領域。（シェーダで Cd*Csで0に近い値をかけてマスクを作る。1をかけると何も起こらない）
+		//    useTarget.Clear(renderContext, 1.0f, 1.0f, 1.0f, 1.0f);
+		//}
 
-        // 各マスクのレイアウトを決定していく
-        const bool tb_SetupGood = SetupLayoutBounds(tp_RenderState->Get_UseHighPreciseMask() ? 0 : usingClipCount);
-        if (!tb_SetupGood)
-        {
-            tp_RenderState->NoLowPreciseMask(true);
-        }
+		// 各マスクのレイアウトを決定していく
+		const bool tb_SetupGood = SetupLayoutBounds(Renderer->GetUseHighPreciseMask() ? 0 : usingClipCount);
+		if (!tb_SetupGood)
+		{
+			Renderer->NoLowPreciseMask(true);
+		}
 
-        // 実際にマスクを生成する
-        // 全てのマスクをどの様にレイアウトして描くかを決定し、ClipContext , ClippedDrawContext に記憶する
-        for (csmUint32 clipIndex = 0; clipIndex < _clippingContextListForMask.GetSize(); clipIndex++)
-        {
-            // --- 実際に１つのマスクを描く ---
-            CubismClippingContext* clipContext = _clippingContextListForMask[clipIndex];
-            csmRectF* allClippedDrawRect = clipContext->_allClippedDrawRect; //このマスクを使う、全ての描画オブジェクトの論理座標上の囲み矩形
-            csmRectF* layoutBoundsOnTex01 = clipContext->_layoutBounds; //この中にマスクを収める
+		// 実際にマスクを生成する
+		// 全てのマスクをどの様にレイアウトして描くかを決定し、ClipContext , ClippedDrawContext に記憶する
+		for (csmUint32 clipIndex = 0; clipIndex < _clippingContextListForMask.GetSize(); clipIndex++)
+		{
+			// --- 実際に１つのマスクを描く ---
+			CubismClippingContext* clipContext = _clippingContextListForMask[clipIndex];
+			csmRectF* allClippedDrawRect = clipContext->_allClippedDrawRect; //このマスクを使う、全ての描画オブジェクトの論理座標上の囲み矩形
+			csmRectF* layoutBoundsOnTex01 = clipContext->_layoutBounds; //この中にマスクを収める
 
-            // モデル座標上の矩形を、適宜マージンを付けて使う
-            const csmFloat32 MARGIN = 0.05f;
-            _tmpBoundsOnModel.SetRect(allClippedDrawRect);
-            _tmpBoundsOnModel.Expand(allClippedDrawRect->Width * MARGIN, allClippedDrawRect->Height * MARGIN);
-            //########## 本来は割り当てられた領域の全体を使わず必要最低限のサイズがよい
+			// モデル座標上の矩形を、適宜マージンを付けて使う
+			const csmFloat32 MARGIN = 0.05f;
+			_tmpBoundsOnModel.SetRect(allClippedDrawRect);
+			_tmpBoundsOnModel.Expand(allClippedDrawRect->Width * MARGIN, allClippedDrawRect->Height * MARGIN);
+			//########## 本来は割り当てられた領域の全体を使わず必要最低限のサイズがよい
 
-            // シェーダ用の計算式を求める。回転を考慮しない場合は以下のとおり
-            // movePeriod' = movePeriod * scaleX + offX [[ movePeriod' = (movePeriod - tmpBoundsOnModel.movePeriod)*scale + layoutBoundsOnTex01.movePeriod ]]
-            const csmFloat32 scaleX = layoutBoundsOnTex01->Width / _tmpBoundsOnModel.Width;
-            const csmFloat32 scaleY = layoutBoundsOnTex01->Height / _tmpBoundsOnModel.Height;
+			// シェーダ用の計算式を求める。回転を考慮しない場合は以下のとおり
+			// movePeriod' = movePeriod * scaleX + offX [[ movePeriod' = (movePeriod - tmpBoundsOnModel.movePeriod)*scale + layoutBoundsOnTex01.movePeriod ]]
+			const csmFloat32 scaleX = layoutBoundsOnTex01->Width / _tmpBoundsOnModel.Width;
+			const csmFloat32 scaleY = layoutBoundsOnTex01->Height / _tmpBoundsOnModel.Height;
 
-            // マスク生成時に使う行列を求める
-            {
-                // シェーダに渡す行列を求める <<<<<<<<<<<<<<<<<<<<<<<< 要最適化（逆順に計算すればシンプルにできる）
-                _tmpMatrix.LoadIdentity();
-                {
-                    // Layout0..1 を -1..1に変換
-                    _tmpMatrix.TranslateRelative(-1.0f, -1.0f);
-                    _tmpMatrix.ScaleRelative(2.0f, 2.0f);
-                }
-                {
-                    // view to Layout0..1
-                    _tmpMatrix.TranslateRelative(layoutBoundsOnTex01->X, layoutBoundsOnTex01->Y); //new = [translate]
-                    _tmpMatrix.ScaleRelative(scaleX, scaleY); //new = [translate][scale]
-                    _tmpMatrix.TranslateRelative(-_tmpBoundsOnModel.X, -_tmpBoundsOnModel.Y);
-                    //new = [translate][scale][translate]
-                }
-                // tmpMatrixForMask が計算結果
-                _tmpMatrixForMask.SetMatrix(_tmpMatrix.GetArray());
-            }
+			// マスク生成時に使う行列を求める
+			{
+				// シェーダに渡す行列を求める <<<<<<<<<<<<<<<<<<<<<<<< 要最適化（逆順に計算すればシンプルにできる）
+				_tmpMatrix.LoadIdentity();
+				{
+					// Layout0..1 を -1..1に変換
+					_tmpMatrix.TranslateRelative(-1.0f, -1.0f);
+					_tmpMatrix.ScaleRelative(2.0f, 2.0f);
+				}
+				{
+					// view to Layout0..1
+					_tmpMatrix.TranslateRelative(layoutBoundsOnTex01->X, layoutBoundsOnTex01->Y); //new = [translate]
+					_tmpMatrix.ScaleRelative(scaleX, scaleY); //new = [translate][scale]
+					_tmpMatrix.TranslateRelative(-_tmpBoundsOnModel.X, -_tmpBoundsOnModel.Y);
+					//new = [translate][scale][translate]
+				}
+				// tmpMatrixForMask が計算結果
+				_tmpMatrixForMask.SetMatrix(_tmpMatrix.GetArray());
+			}
 
-            //--------- draw時の mask 参照用行列を計算
-            {
-                // シェーダに渡す行列を求める <<<<<<<<<<<<<<<<<<<<<<<< 要最適化（逆順に計算すればシンプルにできる）
-                _tmpMatrix.LoadIdentity();
-                {
-                    _tmpMatrix.TranslateRelative(layoutBoundsOnTex01->X, layoutBoundsOnTex01->Y); //new = [translate]
-                    // 上下反転
-                    _tmpMatrix.ScaleRelative(scaleX, scaleY * -1.0f); //new = [translate][scale]
-                    _tmpMatrix.TranslateRelative(-_tmpBoundsOnModel.X, -_tmpBoundsOnModel.Y);
-                    //new = [translate][scale][translate]
-                }
+			//--------- draw時の mask 参照用行列を計算
+			{
+				// シェーダに渡す行列を求める <<<<<<<<<<<<<<<<<<<<<<<< 要最適化（逆順に計算すればシンプルにできる）
+				_tmpMatrix.LoadIdentity();
+				{
+					_tmpMatrix.TranslateRelative(layoutBoundsOnTex01->X, layoutBoundsOnTex01->Y); //new = [translate]
+					// 上下反転
+					_tmpMatrix.ScaleRelative(scaleX, scaleY * -1.0f); //new = [translate][scale]
+					_tmpMatrix.TranslateRelative(-_tmpBoundsOnModel.X, -_tmpBoundsOnModel.Y);
+					//new = [translate][scale][translate]
+				}
 
-                _tmpMatrixForDraw.SetMatrix(_tmpMatrix.GetArray());
-            }
+				_tmpMatrixForDraw.SetMatrix(_tmpMatrix.GetArray());
+			}
 
-            clipContext->_matrixForMask.SetMatrix(_tmpMatrixForMask.GetArray());
+			clipContext->_matrixForMask.SetMatrix(_tmpMatrixForMask.GetArray());
 
-            clipContext->_matrixForDraw.SetMatrix(_tmpMatrixForDraw.GetArray());
+			clipContext->_matrixForDraw.SetMatrix(_tmpMatrixForDraw.GetArray());
 
-            //if (!renderer->IsUsingHighPrecisionMask())
-            //{
-            //    const csmInt32 clipDrawCount = clipContext->_clippingIdCount;
-            //    for (csmInt32 i = 0; i < clipDrawCount; i++)
-            //    {
-            //        const csmInt32 clipDrawIndex = clipContext->_clippingIdList[i];
-
-            //        // 頂点情報が更新されておらず、信頼性がない場合は描画をパスする
-            //        if (!model.GetDrawableDynamicFlagVertexPositionsDidChange(clipDrawIndex))
-            //        {
-            //            continue;
-            //        }
-
-            //        //renderer->IsCulling(model.GetDrawableCulling(clipDrawIndex) != 0);
-
-            //        // 今回専用の変換を適用して描く
-            //        // チャンネルも切り替える必要がある(A,R,G,B)
-            //        //renderer->SetClippingContextBufferForMask(clipContext);
-            //        //renderer->DrawMeshDX11(clipDrawIndex,
-            //        //    model.GetDrawableTextureIndices(clipDrawIndex),
-            //        //    model.GetDrawableVertexIndexCount(clipDrawIndex),
-            //        //    model.GetDrawableVertexCount(clipDrawIndex),
-            //        //    const_cast<csmUint16*>(model.GetDrawableVertexIndices(clipDrawIndex)),
-            //        //    const_cast<csmFloat32*>(model.GetDrawableVertices(clipDrawIndex)),
-            //        //    reinterpret_cast<csmFloat32*>(const_cast<Core::csmVector2*>(model.GetDrawableVertexUvs(clipDrawIndex))),
-            //        //    model.GetDrawableOpacity(clipDrawIndex),
-            //        //    CubismRenderer::CubismBlendMode::CubismBlendMode_Normal, //クリッピングは通常描画を強制
-            //        //    false   // マスク生成時はクリッピングの反転使用は全く関係がない
-            //        //);
-            //    }
-            //}
-            //else
-            //{
-            //    // NOP このモードの際はチャンネルを分けず、マトリクスの計算だけをしておいて描画自体は本体描画直前で行う
-            //}
-        }
-
-        //if (!renderer->IsUsingHighPrecisionMask())
-        //{
-        //    useTarget.EndDraw(renderContext);
-
-        //    renderer->SetClippingContextBufferForMask(NULL);
-        //}
+	    }
     }
 }
 
-void CubismClippingManager_UE::CalcClippedDrawTotalBounds(CubismModel& model, CubismClippingContext* clippingContext)
+void CubismClippingManager_UE::CalcClippedDrawTotalBounds(CubismModel* model, CubismClippingContext* clippingContext)
 {
+    if (model == nullptr) return;
+
     // 被クリッピングマスク（マスクされる描画オブジェクト）の全体の矩形
     csmFloat32 clippedDrawTotalMinX = FLT_MAX, clippedDrawTotalMinY = FLT_MAX;
     csmFloat32 clippedDrawTotalMaxX = FLT_MIN, clippedDrawTotalMaxY = FLT_MIN;
@@ -284,8 +244,8 @@ void CubismClippingManager_UE::CalcClippedDrawTotalBounds(CubismModel& model, Cu
         // マスクを使用する描画オブジェクトの描画される矩形を求める
         const csmInt32 drawableIndex = (*clippingContext->_clippedDrawableIndexList)[clippedDrawableIndex];
 
-        const csmInt32 drawableVertexCount = model.GetDrawableVertexCount(drawableIndex);
-        const csmFloat32* drawableVertexes = const_cast<csmFloat32*>(model.GetDrawableVertices(drawableIndex));
+        const csmInt32 drawableVertexCount = model->GetDrawableVertexCount(drawableIndex);
+        const csmFloat32* drawableVertexes = const_cast<csmFloat32*>(model->GetDrawableVertices(drawableIndex));
 
         csmFloat32 minX = FLT_MAX, minY = FLT_MAX;
         csmFloat32 maxX = FLT_MIN, maxY = FLT_MIN;
