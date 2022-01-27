@@ -39,27 +39,16 @@ public:
 	UPROPERTY(Category = Live2D, EditAnywhere)
 		UUnLive2D* SourceUnLive2D;
 
-public:
-	// Live2D颜色混合模式为CubismBlendMode_Normal使用的材质
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
-		UMaterialInterface* UnLive2DNormalMaterial;
-
-	// Live2D颜色混合模式为CubismBlendMode_Additive使用的材质
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
-		UMaterialInterface* UnLive2DAdditiveMaterial;
-
-	// Live2D颜色混合模式为CubismBlendMode_Multiplicative使用的材质
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
-		UMaterialInterface* UnLive2DMultiplyMaterial;
-
-	// 材质读取图片参数名
-	UPROPERTY(Category = Rendering, EditAnywhere, BlueprintReadWrite)
-		FName TextureParameterName;
+	TSharedPtr<struct FUnLive2DRenderState> UnLive2DRander;
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Live2D")
 		bool SetUnLive2D(UUnLive2D* NewUnLive2D);
 
+protected:
 
-	TSharedPtr<struct FUnLive2DRenderState> UnLive2DRander;
+	// 更新其他渲染参数
+	UFUNCTION()
+		void UpDataUnLive2DProperty();
+
 };

@@ -34,6 +34,8 @@ FUnLive2DViewViewportClient::FUnLive2DViewViewportClient(TWeakObjectPtr<UUnLive2
 	bShowSockets = true;
 	bIsMousePressed = false;
 
+	DrawHelper.bDrawGrid  = false;
+
 	OldMousePoint = FIntPoint::ZeroValue;
 
 	EngineShowFlags.DisableAdvancedFeatures();

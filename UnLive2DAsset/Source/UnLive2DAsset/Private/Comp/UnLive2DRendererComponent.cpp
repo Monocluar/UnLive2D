@@ -109,17 +109,6 @@ UUnLive2DRendererComponent::UUnLive2DRendererComponent(const FObjectInitializer&
 	bTickInEditor = true;
 	bAutoActivate = true;
 
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> NormalMaterial(TEXT("/UnLive2DAsset/UnLive2DPassNormalMaterial"));
-	UnLive2DNormalMaterial = NormalMaterial.Object;
-
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> AdditiveMaterial(TEXT("/UnLive2DAsset/UnLive2DPassAdditiveMaterial"));
-	UnLive2DAdditiveMaterial = AdditiveMaterial.Object;
-
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> MultiplyMaterial(TEXT("/UnLive2DAsset/UnLive2DPassMultiplyMaterial"));
-	UnLive2DMultiplyMaterial = MultiplyMaterial.Object;
-
-	TextureParameterName = TEXT("UnLive2D");
-
 }
 
 
@@ -278,6 +267,8 @@ bool UUnLive2DRendererComponent::SetUnLive2D(UUnLive2D* NewUnLive2D)
 
 	SourceUnLive2D = NewUnLive2D;
 
+	SourceUnLive2D->OnUpDataUnLive2DProperty.BindUObject(this, &UUnLive2DRendererComponent::UpDataUnLive2DProperty);
+
 	if (UnLive2DRander.IsValid())
 	{
 		UnLive2DRander->InitRender(SourceUnLive2D);
@@ -290,5 +281,12 @@ bool UUnLive2DRendererComponent::SetUnLive2D(UUnLive2D* NewUnLive2D)
 	SourceUnLive2D->SetOwnerObject(this);
 
 	return true;
+}
+
+void UUnLive2DRendererComponent::UpDataUnLive2DProperty()
+{
+	if (!UnLive2DRander.IsValid()) return;
+
+	UnLive2DRander->SetDynamicMaterialTintColor(SourceUnLive2D->TintColorAndOpacity);
 }
 

@@ -13,6 +13,34 @@
 
 FName MaskTextureParameterName = "UnLive2DMask";
 FName MaskParmeterIsMeskName = "IsMask";
+FName TintColorAndOpacityName = "TintColorAndOpacity";
+
+FMatrix ConvertCubismMatrix(Csm::CubismMatrix44& InCubismMartix)
+{
+	FMatrix Matrix;
+
+	Matrix.M[0][0] = InCubismMartix.GetArray()[0];
+	Matrix.M[0][1] = InCubismMartix.GetArray()[1];
+	Matrix.M[0][2] = InCubismMartix.GetArray()[2];
+	Matrix.M[0][3] = InCubismMartix.GetArray()[3];
+
+	Matrix.M[1][0] = InCubismMartix.GetArray()[4];
+	Matrix.M[1][1] = InCubismMartix.GetArray()[5];
+	Matrix.M[1][2] = InCubismMartix.GetArray()[6];
+	Matrix.M[1][3] = InCubismMartix.GetArray()[7];
+
+	Matrix.M[2][0] = InCubismMartix.GetArray()[8];
+	Matrix.M[2][1] = InCubismMartix.GetArray()[9];
+	Matrix.M[2][2] = InCubismMartix.GetArray()[10];
+	Matrix.M[2][3] = InCubismMartix.GetArray()[11];
+
+	Matrix.M[3][0] = InCubismMartix.GetArray()[12];
+	Matrix.M[3][1] = InCubismMartix.GetArray()[13];
+	Matrix.M[3][2] = InCubismMartix.GetArray()[14];
+	Matrix.M[3][3] = InCubismMartix.GetArray()[15];
+
+	return Matrix;
+}
 
 class FUnLive2DMaskShader : public FGlobalShader
 {
@@ -123,21 +151,10 @@ FUnLive2DRenderState::FUnLive2DRenderState(UUnLive2DRendererComponent* InComp)
 
 FUnLive2DRenderState::~FUnLive2DRenderState()
 {
+	MaskRenderBuffers.Reset();
 	UnLive2DClippingManager.Reset();
-	for (auto& Item : UnLive2DToNormalBlendMaterial)
-	{
-		Item.Value->RemoveFromRoot();
-	}
 	UnLive2DToNormalBlendMaterial.Empty();
-	for (auto& Item : UnLive2DToAdditiveBlendMaterial)
-	{
-		Item.Value->RemoveFromRoot();
-	}
 	UnLive2DToAdditiveBlendMaterial.Empty();
-	for (auto& Item : UnLive2DToMultiplyBlendMaterial)
-	{
-		Item.Value->RemoveFromRoot();
-	}
 	UnLive2DToMultiplyBlendMaterial.Empty();
 
 	if (MaskBufferRenderTarget != nullptr)
@@ -270,12 +287,25 @@ UMaterialInstanceDynamic* FUnLive2DRenderState::GetMaterialInstanceDynamicToInde
 {
 	if (!OwnerCompWeak.IsValid()) return nullptr;
 
+	UUnLive2D* UnLive2D = OwnerCompWeak->SourceUnLive2D;
+	if (UnLive2D == nullptr) return nullptr;
+
 	const csmInt32 TextureIndex = Live2DModel->GetDrawableTextureIndices(DrawableIndex);
 	Rendering::CubismRenderer::CubismBlendMode BlendMode = Live2DModel->GetDrawableBlendMode(DrawableIndex);
 	int32 IsMeskValue = bIsMesk ? 1 : 0;
 	int32 BlendModeIndex = (BlendMode + 1) * 1000; //根据绘制类型和图片ID来判断是否在缓存中储存了该动态材质
 	//int32 MapIndex = BlendModeIndex + (TextureIndex  * 10) + bIsMesk ? 1 : 0;
 	int32 MapIndex = BlendModeIndex + (TextureIndex * 10) + IsMeskValue;
+
+	auto SetMaterialInstanceDynamicParameter = [=](UMaterialInstanceDynamic* DynamicMat)
+	{
+		UTexture2D* Texture = GetRandererStatesTexturesTextureIndex(Live2DModel, DrawableIndex);
+		check(Texture && "Texture Is Null");
+		DynamicMat->SetTextureParameterValue(UnLive2D->TextureParameterName, Texture);
+		DynamicMat->SetTextureParameterValue(MaskTextureParameterName, MaskBufferRenderTarget);
+		DynamicMat->SetScalarParameterValue(MaskParmeterIsMeskName, IsMeskValue);
+		DynamicMat->SetVectorParameterValue(TintColorAndOpacityName, UnLive2D->TintColorAndOpacity);
+	};
 
 	UMaterialInstanceDynamic* Material = nullptr;
 	switch (BlendMode)
@@ -285,13 +315,8 @@ UMaterialInstanceDynamic* FUnLive2DRenderState::GetMaterialInstanceDynamicToInde
 		UMaterialInstanceDynamic*& FindMaterial = UnLive2DToNormalBlendMaterial.FindOrAdd(MapIndex);
 		if (FindMaterial == nullptr)
 		{
-			FindMaterial = UMaterialInstanceDynamic::Create(OwnerCompWeak->UnLive2DNormalMaterial, OwnerCompWeak.Get());
-			UTexture2D* Texture = GetRandererStatesTexturesTextureIndex(Live2DModel, DrawableIndex);
-			check(Texture && "Texture Is Null");
-			FindMaterial->SetTextureParameterValue(OwnerCompWeak->TextureParameterName, Texture);
-			FindMaterial->SetTextureParameterValue(MaskTextureParameterName, MaskBufferRenderTarget);
-			FindMaterial->SetScalarParameterValue(MaskParmeterIsMeskName, IsMeskValue);
-			FindMaterial->AddToRoot();
+			FindMaterial = UMaterialInstanceDynamic::Create(UnLive2D->UnLive2DNormalMaterial, OwnerCompWeak.Get());
+			SetMaterialInstanceDynamicParameter(FindMaterial);
 		}
 		Material = FindMaterial;
 	}
@@ -301,13 +326,8 @@ UMaterialInstanceDynamic* FUnLive2DRenderState::GetMaterialInstanceDynamicToInde
 		UMaterialInstanceDynamic*& FindMaterial = UnLive2DToAdditiveBlendMaterial.FindOrAdd(MapIndex);
 		if (FindMaterial == nullptr)
 		{
-			FindMaterial = UMaterialInstanceDynamic::Create(OwnerCompWeak->UnLive2DAdditiveMaterial, OwnerCompWeak.Get());
-			UTexture2D* Texture = GetRandererStatesTexturesTextureIndex(Live2DModel, DrawableIndex);
-			check(Texture && "Texture Is Null");
-			FindMaterial->SetTextureParameterValue(OwnerCompWeak->TextureParameterName, Texture);
-			FindMaterial->SetTextureParameterValue(MaskTextureParameterName, MaskBufferRenderTarget);
-			FindMaterial->SetScalarParameterValue(MaskParmeterIsMeskName, IsMeskValue);
-			FindMaterial->AddToRoot();
+			FindMaterial = UMaterialInstanceDynamic::Create(UnLive2D->UnLive2DAdditiveMaterial, OwnerCompWeak.Get());
+			SetMaterialInstanceDynamicParameter(FindMaterial);
 		}
 		Material = FindMaterial;
 	}
@@ -317,13 +337,8 @@ UMaterialInstanceDynamic* FUnLive2DRenderState::GetMaterialInstanceDynamicToInde
 		UMaterialInstanceDynamic*& FindMaterial = UnLive2DToMultiplyBlendMaterial.FindOrAdd(MapIndex);
 		if (FindMaterial == nullptr)
 		{
-			FindMaterial = UMaterialInstanceDynamic::Create(OwnerCompWeak->UnLive2DMultiplyMaterial, OwnerCompWeak.Get());
-			UTexture2D* Texture = GetRandererStatesTexturesTextureIndex(Live2DModel, DrawableIndex);
-			check(Texture && "Texture Is Null");
-			FindMaterial->SetTextureParameterValue(OwnerCompWeak->TextureParameterName, Texture);
-			FindMaterial->SetTextureParameterValue(MaskTextureParameterName, MaskBufferRenderTarget);
-			FindMaterial->SetScalarParameterValue(MaskParmeterIsMeskName, IsMeskValue);
-			FindMaterial->AddToRoot();
+			FindMaterial = UMaterialInstanceDynamic::Create(UnLive2D->UnLive2DMultiplyMaterial, OwnerCompWeak.Get());
+			SetMaterialInstanceDynamicParameter(FindMaterial);
 		}
 		Material = FindMaterial;
 	}
@@ -354,13 +369,14 @@ void FUnLive2DRenderState::InitRenderBuffers()
 
 	Csm::csmInt32 DrawableCount = UnLive2DModel->GetDrawableCount();
 
-	IndexBuffers.Empty();
-	VertexBuffers.Empty();
-	VertexCounts.Empty();
+	MaskRenderBuffers = MakeShared<FUnLive2DRenderBuffers>();
 
 	ENQUEUE_RENDER_COMMAND(UnLiveRenderInit)([=](FRHICommandListImmediate& RHICmdList)
 	{
 		check(IsInRenderingThread()); // 如果不是渲染线程请弄成渲染线程
+
+		if (!MaskRenderBuffers.IsValid()) return;
+
 		for (Csm::csmInt32 DrawIter = 0; DrawIter < DrawableCount; ++DrawIter)
 		{
 			/** Vertex buffer */
@@ -372,8 +388,8 @@ void FUnLive2DRenderState::InitRenderBuffers()
 				FVertexBufferRHIRef ScratchVertexBufferRHI = RHICreateAndLockVertexBuffer(VCount * sizeof(FCubismVertex), BUF_Dynamic, CreateInfoVert, DrawableData);
 				RHIUnlockVertexBuffer(ScratchVertexBufferRHI);
 
-				VertexBuffers.Add(DrawIter, ScratchVertexBufferRHI);
-				VertexCounts.Add(DrawIter, VCount);
+				MaskRenderBuffers->VertexBuffers.Add(DrawIter, ScratchVertexBufferRHI);
+				MaskRenderBuffers->VertexCounts.Add(DrawIter, VCount);
 			}
 			
 			{
@@ -389,7 +405,7 @@ void FUnLive2DRenderState::InitRenderBuffers()
 				FMemory::Memcpy(VoidPtr, IndexArray, IndexCount * sizeof(uint16));
 				RHIUnlockIndexBuffer(IndexBufferRHI);
 
-				IndexBuffers.Add(DrawIter, IndexBufferRHI);
+				MaskRenderBuffers->IndexBuffers.Add(DrawIter, IndexBufferRHI);
 			}
 		}
 	});
@@ -429,7 +445,7 @@ void UnLive2DFillMaskParameter(CubismClippingContext* clipContext, CubismClippin
 
 	csmRectF* rect = clipContext->_layoutBounds;
 
-	ts_MartixForMask = FModelRenders::ConvertCubismMatrix(clipContext->_matrixForMask);
+	ts_MartixForMask = ConvertCubismMatrix(clipContext->_matrixForMask);
 	ts_BaseColor = FVector4(rect->X * 2.0f - 1.0f, rect->Y * 2.0f - 1.0f, rect->GetRight() * 2.0f - 1.0f, rect->GetBottom() * 2.0f - 1.0f);
 	ts_ChanelFlag = FVector4(colorChannel->R, colorChannel->G, colorChannel->B, colorChannel->A);
 }
@@ -497,16 +513,16 @@ void FUnLive2DRenderState::UpdateMaskBufferRenderTarget(FRHICommandListImmediate
 					continue;
 				}
 
-				if (!IndexBuffers.Contains(clipDrawIndex))
+				/*if (!MaskRenderBuffers->IndexBuffers.Contains(clipDrawIndex))
 				{
 					continue;
 				}
 
-				if (!VertexBuffers.Contains(clipDrawIndex))
+				if (!MaskRenderBuffers->VertexBuffers.Contains(clipDrawIndex))
 				{
 					UE_LOG(LogUnLive2D, Error, TEXT("DrawSeparateToRenderTarget_RenderThread:[Mask] Vertext buffer not inited."));
 					continue;
-				}
+				}*/
 
 				//////////////////////////////////////////////////////////////////////////
 				csmFloat32 tf_Opacity = tp_Model->GetDrawableOpacity(clipDrawIndex);
@@ -518,8 +534,8 @@ void FUnLive2DRenderState::UpdateMaskBufferRenderTarget(FRHICommandListImmediate
 				/** Drawable draw */
 				const csmInt32 td_NumVertext = tp_Model->GetDrawableVertexCount(clipDrawIndex);
 
-				FIndexBufferRHIRef IndexBufferRHI = IndexBuffers.FindRef(clipDrawIndex);
-				FVertexBufferRHIRef ScratchVertexBufferRHI = VertexBuffers.FindRef(clipDrawIndex);
+				FIndexBufferRHIRef IndexBufferRHI = MaskRenderBuffers->IndexBuffers.FindRef(clipDrawIndex);
+				FVertexBufferRHIRef ScratchVertexBufferRHI = MaskRenderBuffers->VertexBuffers.FindRef(clipDrawIndex);
 				FTextureRHIRef tsr_TextureRHI = tp_Texture->Resource->TextureRHI;
 
 				MaskFillVertexBuffer(tp_Model, clipDrawIndex, ScratchVertexBufferRHI, RHICmdList);
@@ -561,7 +577,7 @@ void FUnLive2DRenderState::MaskFillVertexBuffer(Csm::CubismModel* tp_Model, cons
 	const csmInt32 td_NumVertext = tp_Model->GetDrawableVertexCount(drawableIndex);
 	UE_LOG(LogUnLive2D, Verbose, TEXT("FillVertexBuffer: Vertext buffer info %d|%d >> (%u, %u)"), drawableIndex, td_NumVertext, ScratchVertexBufferRHI->GetSize(), ScratchVertexBufferRHI->GetUsage());
 
-	if (VertexCounts.Find(drawableIndex) == nullptr) return;
+	if (MaskRenderBuffers->VertexCounts.Find(drawableIndex) == nullptr) return;
 
 	//check(td_NumVertext == tp_States->VertexCount[drawableIndex]);
 	{
@@ -587,33 +603,6 @@ void FUnLive2DRenderState::MaskFillVertexBuffer(Csm::CubismModel* tp_Model, cons
 	}
 }
 
-FMatrix ConvertCubismMatrix(Csm::CubismMatrix44& InCubismMartix)
-{
-	FMatrix Matrix;
-
-	Matrix.M[0][0] = InCubismMartix.GetArray()[0];
-	Matrix.M[0][1] = InCubismMartix.GetArray()[1];
-	Matrix.M[0][2] = InCubismMartix.GetArray()[2];
-	Matrix.M[0][3] = InCubismMartix.GetArray()[3];
-
-	Matrix.M[1][0] = InCubismMartix.GetArray()[4];
-	Matrix.M[1][1] = InCubismMartix.GetArray()[5];
-	Matrix.M[1][2] = InCubismMartix.GetArray()[6];
-	Matrix.M[1][3] = InCubismMartix.GetArray()[7];
-
-	Matrix.M[2][0] = InCubismMartix.GetArray()[8];
-	Matrix.M[2][1] = InCubismMartix.GetArray()[9];
-	Matrix.M[2][2] = InCubismMartix.GetArray()[10];
-	Matrix.M[2][3] = InCubismMartix.GetArray()[11];
-
-	Matrix.M[3][0] = InCubismMartix.GetArray()[12];
-	Matrix.M[3][1] = InCubismMartix.GetArray()[13];
-	Matrix.M[3][2] = InCubismMartix.GetArray()[14];
-	Matrix.M[3][3] = InCubismMartix.GetArray()[15];
-
-	return Matrix;
-}
-
 FMatrix FUnLive2DRenderState::GetUnLive2DPosToClipMartix(class CubismClippingContext* ClipContext, FVector4& ChanelFlag)
 {
 	if (ClipContext == nullptr) return FMatrix();
@@ -626,5 +615,21 @@ FMatrix FUnLive2DRenderState::GetUnLive2DPosToClipMartix(class CubismClippingCon
 	ChanelFlag = FVector4(ColorChannel->R, ColorChannel->G, ColorChannel->B, ColorChannel->A);
 
 	return ConvertCubismMatrix(ClipContext->_matrixForDraw);
+}
+
+void FUnLive2DRenderState::SetDynamicMaterialTintColor(FLinearColor& NewColor)
+{
+	for (auto& Item : UnLive2DToNormalBlendMaterial)
+	{
+		Item.Value->SetVectorParameterValue(TintColorAndOpacityName, NewColor);
+	}
+	for (auto& Item : UnLive2DToAdditiveBlendMaterial)
+	{
+		Item.Value->SetVectorParameterValue(TintColorAndOpacityName, NewColor);
+	}
+	for (auto& Item : UnLive2DToMultiplyBlendMaterial)
+	{
+		Item.Value->SetVectorParameterValue(TintColorAndOpacityName, NewColor);
+	}
 }
 

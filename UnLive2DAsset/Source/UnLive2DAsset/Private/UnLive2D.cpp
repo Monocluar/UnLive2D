@@ -13,16 +13,19 @@
 UUnLive2D::UUnLive2D(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, PlayRate(1.f)
-	, DrawSize(FIntPoint(500, 500))
-	, Pivot(FVector2D(0.5f, 0.5f))
 	, TintColorAndOpacity(FLinearColor::White)
-	, BackgroundColor(FLinearColor::Transparent)
-	, OpacityFromTexture(1.f)
 {
 
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> MaskedMaterial_Finder(TEXT("/UnLive2DAsset/UnLive2DPassThrough_Masked"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> NormalMaterial(TEXT("/UnLive2DAsset/UnLive2DPassNormalMaterial"));
+	UnLive2DNormalMaterial = NormalMaterial.Object;
 
-	UnLive2DMaterial = MaskedMaterial_Finder.Object;
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> AdditiveMaterial(TEXT("/UnLive2DAsset/UnLive2DPassAdditiveMaterial"));
+	UnLive2DAdditiveMaterial = AdditiveMaterial.Object;
+
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> MultiplyMaterial(TEXT("/UnLive2DAsset/UnLive2DPassMultiplyMaterial"));
+	UnLive2DMultiplyMaterial = MultiplyMaterial.Object;
+
+	TextureParameterName = TEXT("UnLive2D");
 
 	UnLive2DCollisionDomain = EUnLive2DCollisionMode::Use3DPhysics;
 
@@ -38,26 +41,7 @@ void UUnLive2D::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEve
 	const FName MemberPropertyName = (PropertyChangedEvent.MemberProperty != nullptr) ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
 
 
-	if (MemberPropertyName == GET_MEMBER_NAME_STRING_CHECKED(UUnLive2D, DrawSize))
-	{
-		int32 MaximumRenderTargetWidth = 3840;
-		int32 MaximumRenderTargetHeight = 3840;
-		if (DrawSize.X > MaximumRenderTargetWidth)
-		{
-			DrawSize.X = MaximumRenderTargetWidth;
-		}
-		if (DrawSize.Y > MaximumRenderTargetHeight)
-		{
-			DrawSize.Y = MaximumRenderTargetHeight;
-		}
-	}
-
-	/*if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(UUnLive2D, SourceFilePath))
-	{
-		LoadFromPath();
-
-	}*/
-	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(UUnLive2D, PlayMotionIndex))
+	if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(UUnLive2D, PlayMotionIndex))
 	{
 		if (Live2DMotionGroup.IsValidIndex(PlayMotionIndex))
 		{
@@ -65,17 +49,7 @@ void UUnLive2D::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEve
 		}
 
 	}
-	else if (MemberPropertyName == GET_MEMBER_NAME_STRING_CHECKED(UUnLive2D, DrawSize)
-		|| MemberPropertyName == GET_MEMBER_NAME_STRING_CHECKED(UUnLive2D, Pivot))
-	{
-		if (OnUpDataUnLive2DBodySetup.IsBound())
-		{
-			OnUpDataUnLive2DBodySetup.Execute();
-		}
-	}
-	else if (MemberPropertyName == GET_MEMBER_NAME_STRING_CHECKED(UUnLive2D, BackgroundColor)
-		|| MemberPropertyName == GET_MEMBER_NAME_STRING_CHECKED(UUnLive2D, TintColorAndOpacity)
-		|| MemberPropertyName == GET_MEMBER_NAME_STRING_CHECKED(UUnLive2D, OpacityFromTexture))
+	else if ( MemberPropertyName == GET_MEMBER_NAME_STRING_CHECKED(UUnLive2D, TintColorAndOpacity))
 	{
 		if (OnUpDataUnLive2DProperty.IsBound())
 		{
@@ -103,7 +77,6 @@ void UUnLive2D::CreatePolygonFromBoundingBox(FUnLive2DGeometryCollection& GeomOw
 	}
 	else
 	{
-		BoxSize = FVector2D(DrawSize.X, DrawSize.Y);
 		BoxPosition = FVector2D::ZeroVector;
 	}
 
@@ -184,29 +157,22 @@ const FUnLive2DLoadData* UUnLive2D::GetUnLive2DLoadData()
 	return &Live2DFileData;
 }
 
-FVector2D UUnLive2D::GetRawPivotPosition() const
-{
-	FVector2D Size = FVector2D(DrawSize.X, DrawSize.Y);
-
-	return Size * Pivot; //原点坐标
-}
-
 void UUnLive2D::OnTap(const FVector2D& TapPosition)
 {
 	if (!UnLive2DRawModel.IsValid()) return;
 
-	FVector2D PointPos = TapPosition / DrawSize;
+	/*FVector2D PointPos = TapPosition / DrawSize;
 
-	UnLive2DRawModel->OnTapMotion(FVector2D(PointPos.X - 0.5f, 0.5f - PointPos.Y /* 因为UE4轴向和Live2D轴向不同，该Y轴向是相反的 */) * 2);
+	UnLive2DRawModel->OnTapMotion(FVector2D(PointPos.X - 0.5f, 0.5f - PointPos.Y / * 因为UE4轴向和Live2D轴向不同，该Y轴向是相反的 * /) * 2);*/
 }
 
 void UUnLive2D::OnDrag(const FVector2D& DragPosition)
 {
 	if (!UnLive2DRawModel.IsValid()) return;
 
-	FVector2D PointPos = DragPosition / DrawSize;
+	/*FVector2D PointPos = DragPosition / DrawSize;
 
-	UnLive2DRawModel->SetDragPos(FVector2D(PointPos.X - 0.5f, 0.5f - PointPos.Y /* 因为UE4轴向和Live2D轴向不同，该Y轴向是相反的 */) * 2);
+	UnLive2DRawModel->SetDragPos(FVector2D(PointPos.X - 0.5f, 0.5f - PointPos.Y / * 因为UE4轴向和Live2D轴向不同，该Y轴向是相反的 * /) * 2);*/
 }
 
 void UUnLive2D::PostLoad()

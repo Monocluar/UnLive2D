@@ -25,14 +25,6 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Live2D , meta = (ClampMin = 0.0f))
         float PlayRate;
 
-	/** 显示四边形大小. */
-	UPROPERTY(EditAnywhere, Category = Live2D)
-		FIntPoint DrawSize;
-
-	// 相对于位置放置的对齐/轴心点。
-	UPROPERTY(EditAnywhere, Category = Live2D)
-		FVector2D Pivot;
-
 	// Live2D动画组
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = Live2D)
 		TArray<FName> Live2DMotionGroup;
@@ -42,21 +34,32 @@ public:
 		int32 PlayMotionIndex = 0;
 
 public:
+	// Live2D颜色混合模式为CubismBlendMode_Normal使用的材质
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
+		UMaterialInterface* UnLive2DNormalMaterial;
+
+	// Live2D颜色混合模式为CubismBlendMode_Additive使用的材质
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
+		UMaterialInterface* UnLive2DAdditiveMaterial;
+
+	// Live2D颜色混合模式为CubismBlendMode_Multiplicative使用的材质
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
+		UMaterialInterface* UnLive2DMultiplyMaterial;
+
+	// 材质读取图片参数名
+	UPROPERTY(Category = Rendering, EditAnywhere, BlueprintReadWrite)
+		FName TextureParameterName;
+
+public:
 	// Collision domain (no collision, 2D, or 3D)
 	UPROPERTY(Category = Collision, EditAnywhere)
 		TEnumAsByte<EUnLive2DCollisionMode::Type> UnLive2DCollisionDomain;
-
-public:
 
 	// 自定义碰撞几何体多边形（在纹理空间中）
 	UPROPERTY(Category = Collision, EditAnywhere)
 		FUnLive2DGeometryCollection CollisionGeometry;
 
 public:
-
-	// UnLive2D组件的材质实例
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
-		UMaterialInterface* UnLive2DMaterial;
 
 	// 渲染设置数据
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
@@ -66,21 +69,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = Rendering)
 		FLinearColor TintColorAndOpacity;
 
-	// 组件的背景色
-	UPROPERTY(EditAnywhere, Category = Rendering)
-		FLinearColor BackgroundColor;
-
-	// 从窗口的Live2D纹理设置向视口渲染半透明或遮罩UI时要使用的不透明度（0.0-1.0）
-	UPROPERTY(EditAnywhere, Category = Rendering, meta = (ClampMin = 0.0f, ClampMax = 1.0f))
-		float OpacityFromTexture;
-
-
 public:
     // UnLive2D更新
     FSimpleDelegate OnUpDataUnLive2D;
-
-	// 更新UnLive2D物体大小
-	FSimpleDelegate OnUpDataUnLive2DBodySetup;
 
 	// 更新UnLive2D其他参数
 	FSimpleDelegate OnUpDataUnLive2DProperty;
@@ -104,9 +95,6 @@ public:
     FORCEINLINE const FModelConfig& GetModelConfigData() {return ModelConfigData; }
 
 	const FUnLive2DLoadData* GetUnLive2DLoadData();
-
-	// 中心点位置
-	FVector2D GetRawPivotPosition() const;
 
 
 	// 敲击

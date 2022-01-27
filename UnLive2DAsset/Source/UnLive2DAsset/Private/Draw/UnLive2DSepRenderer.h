@@ -8,6 +8,14 @@
 
 class UUnLive2DRendererComponent;
 
+struct FUnLive2DRenderBuffers
+{
+public:
+	TMap<int32, FIndexBufferRHIRef> IndexBuffers; // 索引缓冲
+	TMap<int32, FVertexBufferRHIRef> VertexBuffers; // 顶点缓冲
+	TMap<int32, int32> VertexCounts; // 顶点数
+};
+
 struct FUnLive2DRenderState
 {
 public:
@@ -48,6 +56,9 @@ public:
 	// 获取Live2D模型在遮罩矩阵中的矩阵
 	FMatrix GetUnLive2DPosToClipMartix(class CubismClippingContext* ClipContext, FVector4& ChanelFlag);
 
+	// 更新背景颜色
+	void SetDynamicMaterialTintColor(FLinearColor& NewColor);
+
 protected:
 
 	// 初始化渲染
@@ -57,11 +68,6 @@ protected:
 private:
 
 	FUnLive2DRenderState(){}
-
-public:
-	TMap<int32, FIndexBufferRHIRef> IndexBuffers; // 索引缓冲
-	TMap<int32, FVertexBufferRHIRef> VertexBuffers; // 顶点缓冲
-	TMap<int32, int32> VertexCounts; // 顶点数
 
 private:
 
@@ -81,5 +87,7 @@ private:
 	TMap<int32, UMaterialInstanceDynamic*> UnLive2DToNormalBlendMaterial; // CubismBlendMode_Normal普通动态材质
 	TMap<int32, UMaterialInstanceDynamic*> UnLive2DToAdditiveBlendMaterial; // CubismBlendMode_Additive叠加动态材质
 	TMap<int32, UMaterialInstanceDynamic*> UnLive2DToMultiplyBlendMaterial; // CubismBlendMode_Multiplicative乘积动态材质
+
+	TSharedPtr<FUnLive2DRenderBuffers> MaskRenderBuffers;
 
 };
