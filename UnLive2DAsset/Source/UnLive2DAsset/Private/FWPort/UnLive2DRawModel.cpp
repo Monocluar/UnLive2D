@@ -10,6 +10,7 @@
 
 #include "UnLive2DAsset.h"
 #include "CubismConfig.h"
+#include "UnLive2D.h"
 
 using namespace Live2D::Cubism::Framework;
 
@@ -27,19 +28,21 @@ const csmChar* MotionGroupTapBody = "TapBody";
 const csmChar* HitAreaNameHead = "Head";
 const csmChar* HitAreaNameBody = "Body";
 
-FUnLive2DRawModel::FUnLive2DRawModel()
-	:Csm::CubismUserModel()
+
+FUnLive2DRawModel::FUnLive2DRawModel(class UUnLive2D* Owner)
+	: Csm::CubismUserModel()
+	, OwnerLive2D(Owner)
 {
 #if WITH_EDITOR
 	UserTimeSeconds = 0;
 #endif
 
-    ID_ParamAngleX = CubismFramework::GetIdManager()->GetId(DefaultParameterId::ParamAngleX);
-    ID_ParamAngleY = CubismFramework::GetIdManager()->GetId(DefaultParameterId::ParamAngleY);
-    ID_ParamAngleZ = CubismFramework::GetIdManager()->GetId(DefaultParameterId::ParamAngleZ);
-    ID_ParamBodyAngleX = CubismFramework::GetIdManager()->GetId(DefaultParameterId::ParamBodyAngleX);
-    ID_ParamEyeBallX = CubismFramework::GetIdManager()->GetId(DefaultParameterId::ParamEyeBallX);
-    ID_ParamEyeBallY = CubismFramework::GetIdManager()->GetId(DefaultParameterId::ParamEyeBallY);
+	ID_ParamAngleX = CubismFramework::GetIdManager()->GetId(DefaultParameterId::ParamAngleX);
+	ID_ParamAngleY = CubismFramework::GetIdManager()->GetId(DefaultParameterId::ParamAngleY);
+	ID_ParamAngleZ = CubismFramework::GetIdManager()->GetId(DefaultParameterId::ParamAngleZ);
+	ID_ParamBodyAngleX = CubismFramework::GetIdManager()->GetId(DefaultParameterId::ParamBodyAngleX);
+	ID_ParamEyeBallX = CubismFramework::GetIdManager()->GetId(DefaultParameterId::ParamEyeBallX);
+	ID_ParamEyeBallY = CubismFramework::GetIdManager()->GetId(DefaultParameterId::ParamEyeBallY);
 
 	Live2DModelSetting = nullptr;
 	PhysicsData = nullptr;
@@ -397,6 +400,31 @@ FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& I
 
 	}
 
+	// 动作组数据读取
+	// 动画系统
+	for (csmInt32 i = 0; i < JsonData->GetMotionGroupCount(); i++)
+	{
+		const csmChar* Group = JsonData->GetMotionGroupName(i);
+		if (Group == nullptr) continue;
+
+		const csmInt32 Count = JsonData->GetMotionCount(Group);
+
+		for (csmInt32 j = 0; j < Count; j++)
+		{
+			csmString Name = Utils::CubismString::GetFormatedString("%s_%d", Group, j);
+			csmString Path = JsonData->GetMotionFileName(Group, j);
+
+			FString TempReadPath = FileHomeDir / UTF8_TO_TCHAR(Path.GetRawString());
+
+			TArray<uint8> ModelFile;
+			const bool ReadSuc = FFileHelper::LoadFileToArray(ModelFile, *TempReadPath);
+
+			if (!ReadSuc) continue;
+
+			LoadData.Live2DMotionData.Add(Name.GetRawString(),FUnLiveByteData(ModelFile));
+		}
+	}
+
 	delete JsonData;
 
 	return LoadData;
@@ -405,6 +433,8 @@ FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& I
 
 void FUnLive2DRawModel::PlayMotion(const FName& InName)
 {
+	if (!OwnerLive2D.IsValid()) return;
+
 	int32 PriorityIndex = -1;
 	FName GroupName = GetPlayMotionGroupName(InName, PriorityIndex);
 	StartMotion(TCHAR_TO_UTF8(*GroupName.ToString()), PriorityIndex, GetPlayMotionPriority(GroupName));
@@ -587,16 +617,11 @@ Csm::CubismMotionQueueEntryHandle FUnLive2DRawModel::StartMotion(const Csm::csmC
 
 	if (FindPtr == nullptr)
 	{
-		csmString Path = FileName;
+		const FUnLiveByteData* FindMotionPtr = OwnerLive2D->GetUnLive2DLoadData()->Live2DMotionData.Find(Name.GetRawString());
 
-		FString TempReadPath = HomeDir / UTF8_TO_TCHAR(Path.GetRawString());
-
-		TArray<uint8> ModelFile;
-		const bool ReadSuc = FFileHelper::LoadFileToArray(ModelFile, *TempReadPath);
-
-		if (ReadSuc)
+		if (FindMotionPtr != nullptr)
 		{
-			Csm::CubismMotion* Motion = static_cast<CubismMotion*>(LoadMotion(ModelFile.GetData(), ModelFile.Num(), NULL));
+			Csm::CubismMotion* Motion = static_cast<CubismMotion*>(LoadMotion(FindMotionPtr->ByteData.GetData(), FindMotionPtr->ByteData.Num(), NULL));
 
 			FindPtr = Motion;
 
@@ -613,10 +638,6 @@ Csm::CubismMotionQueueEntryHandle FUnLive2DRawModel::StartMotion(const Csm::csmC
 			}
 			Motion->SetEffectIds(EyeBlinkIds, LipSyncIds);
 
-			UE_LOG(LogUnLive2D, Log, TEXT("FRawModel::StartMotion: Read <%s> res=%d"),
-				*TempReadPath,
-				ReadSuc ? 1 : 0
-			);
 		}
 	}
 

@@ -123,7 +123,7 @@ void UUnLive2D::InitLive2D()
 	/*if (SourceFilePath.FilePath.IsEmpty()) return;*/
 	if (Live2DFileData.Live2DModelData.Num() == 0) return;
 
-	UnLive2DRawModel = MakeShared<FUnLive2DRawModel>();
+	UnLive2DRawModel = MakeShared<FUnLive2DRawModel>(this);
 
 	const bool ReadSuc = UnLive2DRawModel->LoadAsset(Live2DFileData);
 	if (!ReadSuc)

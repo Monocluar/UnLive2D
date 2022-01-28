@@ -19,6 +19,9 @@ public:
 struct FUnLive2DRenderState
 {
 public:
+
+	FUnLive2DRenderState() {}
+
 	FUnLive2DRenderState(UUnLive2DRendererComponent* InComp);
 
 	~FUnLive2DRenderState();
@@ -64,11 +67,6 @@ protected:
 	// 初始化渲染
 	void InitRenderBuffers();
 
-
-private:
-
-	FUnLive2DRenderState(){}
-
 private:
 
 	// 渲染图片组
@@ -77,7 +75,7 @@ private:
 	// 裁剪管理器
 	TSharedPtr<class CubismClippingManager_UE> UnLive2DClippingManager;
 
-	class UTextureRenderTarget2D* MaskBufferRenderTarget; //遮罩渲染缓冲图片
+	TWeakObjectPtr<UTextureRenderTarget2D> MaskBufferRenderTarget; //遮罩渲染缓冲图片
 
 private:
 	bool bNoLowPreciseMask; // 是否有高精度遮罩

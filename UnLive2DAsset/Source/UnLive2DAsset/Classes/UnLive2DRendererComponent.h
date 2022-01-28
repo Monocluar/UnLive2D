@@ -51,4 +51,7 @@ protected:
 	UFUNCTION()
 		void UpDataUnLive2DProperty();
 
+	UFUNCTION()
+		void OnLevelRemovedFromWorld(ULevel* InLevel, UWorld* InWorld);
+
 };

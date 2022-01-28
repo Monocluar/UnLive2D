@@ -12,8 +12,11 @@ using namespace Live2D::Cubism::Framework;
 class FUnLive2DRawModel : public Csm::CubismUserModel
 {
 public:
-    FUnLive2DRawModel();
+    FUnLive2DRawModel(class UUnLive2D* Owner);
     virtual ~FUnLive2DRawModel();
+
+private:
+    FUnLive2DRawModel(){}
 
 public:
 
@@ -101,7 +104,6 @@ protected:
 
 
 private:
-	FString HomeDir;
 
 	const Csm::CubismId* ID_ParamAngleX; ///< ID: ParamAngleX
 	const Csm::CubismId* ID_ParamAngleY; ///< ID: ParamAngleX
@@ -132,6 +134,8 @@ private:
     TMap<FName, TArray<FName>> AllMotionGroup;
 
     TSharedPtr<CubismPhysics::Options> PhysicsData;
+
+    TWeakObjectPtr<class UUnLive2D> OwnerLive2D;
 
 #if WITH_EDITOR
 private:

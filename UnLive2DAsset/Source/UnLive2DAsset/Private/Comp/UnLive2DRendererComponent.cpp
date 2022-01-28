@@ -85,14 +85,7 @@ void DrawSepMask(UUnLive2DRendererComponent* UnLive2DRendererComponent, Csm::Cub
 {
 	if (Live2DModel == nullptr) return;
 
-	if (Live2DModel->GetDrawableInvertedMask(DrawableIndex)) // 是否该点为口罩使用
-	{
-		// TODO
-	}
-	else
-	{
-		DrawSepMask_Normal(UnLive2DRendererComponent, Live2DModel, DrawableIndex, ClipContext, ElementIndex);
-	}
+	DrawSepMask_Normal(UnLive2DRendererComponent, Live2DModel, DrawableIndex, ClipContext, ElementIndex);
 }
 
 void DrawSepNormal(UUnLive2DRendererComponent* UnLive2DRendererComponent, Csm::CubismModel* Live2DModel, const Csm::csmInt32 DrawableIndex, int32& ElementIndex)
@@ -143,7 +136,11 @@ void UUnLive2DRendererComponent::OnRegister()
 {
 	Super::OnRegister();
 
+	if (SourceUnLive2D == nullptr) return;
+
 #if !UE_SERVER
+
+	FWorldDelegates::LevelRemovedFromWorld.AddUObject(this, &UUnLive2DRendererComponent::OnLevelRemovedFromWorld);
 
 	if (IsRunningDedicatedServer()) return;
 
@@ -162,9 +159,13 @@ void UUnLive2DRendererComponent::OnRegister()
 
 void UUnLive2DRendererComponent::DestroyComponent(bool bPromoteChildren /*= false*/)
 {
-	UnLive2DRander.Reset();
+	if (GetWorld() && !GetWorld()->IsEditorWorld())
+	{
+		UnLive2DRander.Reset();
+	}
 
 	Super::DestroyComponent(bPromoteChildren);
+
 }
 
 #if WITH_EDITOR
@@ -181,7 +182,11 @@ void UUnLive2DRendererComponent::PostEditChangeProperty(FPropertyChangedEvent& P
 		{
 			if (SourceUnLive2D )
 			{
-				InitUnLive2D();
+				if (!UnLive2DRander.IsValid())
+				{
+					UnLive2DRander = MakeShared<FUnLive2DRenderState>(this);
+				}
+				UnLive2DRander->InitRender(SourceUnLive2D);
 			}
 			MarkRenderStateDirty();
 		}
@@ -197,7 +202,7 @@ void UUnLive2DRendererComponent::UpdateRenderer()
 
 	Csm::CubismModel* UnLive2DModel = SourceUnLive2D->GetUnLive2DRawModel().Pin()->GetModel();
 
-	if (UnLive2DModel == nullptr) return;
+	if (UnLive2DModel == nullptr || !UnLive2DRander.IsValid()) return;
 
 	// 限幅掩码・缓冲前处理方式的情况
 	UnLive2DRander->UpdateRenderBuffers();
@@ -253,10 +258,13 @@ void UUnLive2DRendererComponent::InitUnLive2D()
 
 	UWorld* World = GetWorld();
 
-	if (World == nullptr || World->bIsTearingDown || SourceUnLive2D == nullptr || !SourceUnLive2D->GetUnLive2DRawModel().IsValid()) return;
+	if (World == nullptr || World->bIsTearingDown || SourceUnLive2D == nullptr ) return;
 
-	UnLive2DRander = MakeShared<FUnLive2DRenderState>(this);
-	UnLive2DRander->InitRender(SourceUnLive2D);
+	if (!UnLive2DRander.IsValid())
+	{
+		UnLive2DRander = MakeShared<FUnLive2DRenderState>(this);
+		UnLive2DRander->InitRender(SourceUnLive2D);
+	}
 }
 
 bool UUnLive2DRendererComponent::SetUnLive2D(UUnLive2D* NewUnLive2D)
@@ -288,5 +296,13 @@ void UUnLive2DRendererComponent::UpDataUnLive2DProperty()
 	if (!UnLive2DRander.IsValid()) return;
 
 	UnLive2DRander->SetDynamicMaterialTintColor(SourceUnLive2D->TintColorAndOpacity);
+}
+
+void UUnLive2DRendererComponent::OnLevelRemovedFromWorld(ULevel* InLevel, UWorld* InWorld)
+{
+	if (InLevel == nullptr && InWorld == GetWorld())
+	{
+		UnLive2DRander.Reset();
+	}
 }
 

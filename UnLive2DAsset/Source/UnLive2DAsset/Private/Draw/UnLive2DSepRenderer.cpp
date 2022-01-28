@@ -13,6 +13,7 @@
 
 FName MaskTextureParameterName = "UnLive2DMask";
 FName MaskParmeterIsMeskName = "IsMask";
+FName MaskParmterIsInvertedMaskName = "IsInvertedMask";
 FName TintColorAndOpacityName = "TintColorAndOpacity";
 
 FMatrix ConvertCubismMatrix(Csm::CubismMatrix44& InCubismMartix)
@@ -140,24 +141,22 @@ IMPLEMENT_SHADER_TYPE(, FUnLive2DMaskPS, TEXT("/Plugin/UnLive2DAsset/Private/Cub
 
 FUnLive2DRenderState::FUnLive2DRenderState(UUnLive2DRendererComponent* InComp)
 	: UnLive2DClippingManager(nullptr)
-	, MaskBufferRenderTarget(nullptr)
 	, bNoLowPreciseMask(false)
 	, OwnerCompWeak(InComp)
 {
-	if (InComp == nullptr) return;
-
-	
 }
 
 FUnLive2DRenderState::~FUnLive2DRenderState()
 {
+	UnLoadTextures();
+
 	MaskRenderBuffers.Reset();
 	UnLive2DClippingManager.Reset();
 	UnLive2DToNormalBlendMaterial.Empty();
 	UnLive2DToAdditiveBlendMaterial.Empty();
 	UnLive2DToMultiplyBlendMaterial.Empty();
 
-	if (MaskBufferRenderTarget != nullptr)
+	if (!MaskBufferRenderTarget.IsValid())
 	{
 		MaskBufferRenderTarget->RemoveFromRoot();
 	}
@@ -172,6 +171,8 @@ void FUnLive2DRenderState::InitRender(TWeakObjectPtr<UUnLive2D> InNewUnLive2D)
 	UUnLive2D* SourceUnLive2D = InNewUnLive2D.Get();
 
 	if (!SourceUnLive2D->GetUnLive2DRawModel().IsValid()) return;
+
+	if (UnLive2DClippingManager.IsValid()) return;
 
 	LoadTextures();
 
@@ -191,9 +192,11 @@ void FUnLive2DRenderState::InitRender(TWeakObjectPtr<UUnLive2D> InNewUnLive2D)
 
 	const csmInt32 BufferHeight = UnLive2DClippingManager->GetClippingMaskBufferSize();
 
-	MaskBufferRenderTarget = NewObject<UTextureRenderTarget2D>(OwnerCompWeak.Get());
+	//MaskBufferRenderTarget = NewObject<UTextureRenderTarget2D>(GetTransientPackage(), NAME_None, RF_Transient);
+	MaskBufferRenderTarget = NewObject<UTextureRenderTarget2D>(GetTransientPackage());
 	MaskBufferRenderTarget->ClearColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	MaskBufferRenderTarget->InitCustomFormat(BufferHeight, BufferHeight, EPixelFormat::PF_B8G8R8A8, false);
+	MaskBufferRenderTarget->AddToRoot();
 }
 
 bool FUnLive2DRenderState::GetUseHighPreciseMask() const
@@ -290,20 +293,26 @@ UMaterialInstanceDynamic* FUnLive2DRenderState::GetMaterialInstanceDynamicToInde
 	UUnLive2D* UnLive2D = OwnerCompWeak->SourceUnLive2D;
 	if (UnLive2D == nullptr) return nullptr;
 
+	int32 InvertedMesk = 0;
+	if (bIsMesk && Live2DModel->GetDrawableInvertedMask(DrawableIndex)) //为遮罩材质并且是否该点是否是反转遮罩
+	{
+		InvertedMesk = 1;
+	}
+
 	const csmInt32 TextureIndex = Live2DModel->GetDrawableTextureIndices(DrawableIndex);
 	Rendering::CubismRenderer::CubismBlendMode BlendMode = Live2DModel->GetDrawableBlendMode(DrawableIndex);
 	int32 IsMeskValue = bIsMesk ? 1 : 0;
-	int32 BlendModeIndex = (BlendMode + 1) * 1000; //根据绘制类型和图片ID来判断是否在缓存中储存了该动态材质
-	//int32 MapIndex = BlendModeIndex + (TextureIndex  * 10) + bIsMesk ? 1 : 0;
-	int32 MapIndex = BlendModeIndex + (TextureIndex * 10) + IsMeskValue;
+	int32 BlendModeIndex = (BlendMode + 1) * 10000; //根据绘制类型和图片ID来判断是否在缓存中储存了该动态材质
+	int32 MapIndex = BlendModeIndex + (TextureIndex * 100) + (IsMeskValue * 10) + InvertedMesk;
 
 	auto SetMaterialInstanceDynamicParameter = [=](UMaterialInstanceDynamic* DynamicMat)
 	{
 		UTexture2D* Texture = GetRandererStatesTexturesTextureIndex(Live2DModel, DrawableIndex);
 		check(Texture && "Texture Is Null");
 		DynamicMat->SetTextureParameterValue(UnLive2D->TextureParameterName, Texture);
-		DynamicMat->SetTextureParameterValue(MaskTextureParameterName, MaskBufferRenderTarget);
+		DynamicMat->SetTextureParameterValue(MaskTextureParameterName, MaskBufferRenderTarget.Get());
 		DynamicMat->SetScalarParameterValue(MaskParmeterIsMeskName, IsMeskValue);
+		DynamicMat->SetScalarParameterValue(MaskParmterIsInvertedMaskName, InvertedMesk);
 		DynamicMat->SetVectorParameterValue(TintColorAndOpacityName, UnLive2D->TintColorAndOpacity);
 	};
 
@@ -365,15 +374,19 @@ void FUnLive2DRenderState::InitRenderBuffers()
 {
 	check(IsInGameThread());
 
-	Csm::CubismModel* UnLive2DModel = OwnerCompWeak->SourceUnLive2D->GetUnLive2DRawModel().Pin()->GetModel();
-
-	Csm::csmInt32 DrawableCount = UnLive2DModel->GetDrawableCount();
-
 	MaskRenderBuffers = MakeShared<FUnLive2DRenderBuffers>();
 
-	ENQUEUE_RENDER_COMMAND(UnLiveRenderInit)([=](FRHICommandListImmediate& RHICmdList)
+	ENQUEUE_RENDER_COMMAND(UnLiveRenderInit)([this](FRHICommandListImmediate& RHICmdList)
 	{
 		check(IsInRenderingThread()); // 如果不是渲染线程请弄成渲染线程
+
+		if (!OwnerCompWeak.IsValid()) return;
+
+		Csm::CubismModel* UnLive2DModel = OwnerCompWeak->SourceUnLive2D->GetUnLive2DRawModel().Pin()->GetModel();
+
+		Csm::csmInt32 DrawableCount = UnLive2DModel->GetDrawableCount();
+
+		if (UnLive2DModel == nullptr) return;
 
 		if (!MaskRenderBuffers.IsValid()) return;
 
@@ -525,9 +538,9 @@ void FUnLive2DRenderState::UpdateMaskBufferRenderTarget(FRHICommandListImmediate
 				}*/
 
 				//////////////////////////////////////////////////////////////////////////
-				csmFloat32 tf_Opacity = tp_Model->GetDrawableOpacity(clipDrawIndex);
+				/*csmFloat32 tf_Opacity = tp_Model->GetDrawableOpacity(clipDrawIndex);
 				Rendering::CubismRenderer::CubismBlendMode ts_BlendMode = tp_Model->GetDrawableBlendMode(clipDrawIndex);
-				csmBool tb_InvertMask = tp_Model->GetDrawableInvertedMask(clipDrawIndex);
+				csmBool tb_InvertMask = tp_Model->GetDrawableInvertedMask(clipDrawIndex);*/
 
 
 				//////////////////////////////////////////////////////////////////////////

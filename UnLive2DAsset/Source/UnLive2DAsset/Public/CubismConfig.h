@@ -162,6 +162,10 @@ public:
 	UPROPERTY()
 		TMap<FName, FUnLiveByteData> Live2DExpressionData;
 
+	// <Live2D动作组数据
+	UPROPERTY()
+		TMap<FName, FUnLiveByteData> Live2DMotionData;
+
 	// <Live2D物理数据
 	UPROPERTY()
 		TArray<uint8> Live2DPhysicsData;
