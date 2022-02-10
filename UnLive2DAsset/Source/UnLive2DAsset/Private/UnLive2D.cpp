@@ -146,9 +146,10 @@ void UUnLive2D::InitLive2D()
 }
 
 #if WITH_EDITOR
-void UUnLive2D::LoadLive2DFileDataFormPath(const FString& InPath)
+void UUnLive2D::LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& TexturePaths)
 {
-	Live2DFileData = FUnLive2DRawModel::LoadLive2DFileDataFormPath(InPath);
+	Live2DFileData = FUnLive2DRawModel::LoadLive2DFileDataFormPath(InPath, TexturePaths);
+
 }
 #endif
 

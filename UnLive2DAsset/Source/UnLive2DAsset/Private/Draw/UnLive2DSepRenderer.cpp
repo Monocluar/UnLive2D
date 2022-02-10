@@ -245,7 +245,7 @@ void FUnLive2DRenderState::LoadTextures()
 	RandererStatesTextures.SetNum(TextureNum);
 
 	// 加载新的图片
-	const FUnLive2DLoadData* LoadData = SourceUnLive2D->GetUnLive2DLoadData();
+	/*const FUnLive2DLoadData* LoadData = SourceUnLive2D->GetUnLive2DLoadData();
 	if (LoadData == nullptr) return;
 
 	for (int32 i = 0; i < LoadData->Live2DTexture2DData.Num(); i++)
@@ -256,7 +256,19 @@ void FUnLive2DRenderState::LoadTextures()
 			RandererStatesTextures[i] = LoadedImage;
 		}
 		LoadedImage->AddToRoot();
+	}*/
+
+	for (int32 i = 0; i < TextureNum; i++)
+	{
+		if (!SourceUnLive2D->TextureAssets.IsValidIndex(i)) break;
+
+		UTexture2D* LoadedImage = SourceUnLive2D->TextureAssets[i].LoadSynchronous();
+		if (IsValid(LoadedImage))
+		{
+			RandererStatesTextures[i] = LoadedImage;
+		}
 	}
+
 
 	UE_LOG(LogUnLive2D, Log, TEXT("加载了 %d 数量的图片"), ModelSetting->GetTextureCount());
 }
@@ -308,7 +320,11 @@ UMaterialInstanceDynamic* FUnLive2DRenderState::GetMaterialInstanceDynamicToInde
 	auto SetMaterialInstanceDynamicParameter = [=](UMaterialInstanceDynamic* DynamicMat)
 	{
 		UTexture2D* Texture = GetRandererStatesTexturesTextureIndex(Live2DModel, DrawableIndex);
-		check(Texture && "Texture Is Null");
+		//check(Texture && "Texture Is Null");
+		if (Texture == nullptr)
+		{
+			return;
+		}
 		DynamicMat->SetTextureParameterValue(UnLive2D->TextureParameterName, Texture);
 		DynamicMat->SetTextureParameterValue(MaskTextureParameterName, MaskBufferRenderTarget.Get());
 		DynamicMat->SetScalarParameterValue(MaskParmeterIsMeskName, IsMeskValue);

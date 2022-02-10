@@ -33,7 +33,7 @@ public:
     FORCEINLINE TMap<FName, TArray<FName>>& GetAllMotionGroup() { return AllMotionGroup; };
 
 #if WITH_EDITOR
-	static FUnLive2DLoadData LoadLive2DFileDataFormPath(const FString& InPath);
+	static FUnLive2DLoadData LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& LoadTexturePaths);
 #endif
 
 public:

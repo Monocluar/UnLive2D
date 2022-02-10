@@ -286,9 +286,11 @@ void FUnLive2DRawModel::OnUpDate(float InDeltaTime)
 }
 
 #if WITH_EDITOR
-FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& InPath)
+FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& LoadTexturePaths)
 {
 	FUnLive2DLoadData LoadData;
+
+	LoadTexturePaths.Empty();
 
 	TArray<uint8> FileData;
 	if (!FFileHelper::LoadFileToArray(FileData, *InPath)) return LoadData;
@@ -391,13 +393,14 @@ FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& I
 
 		if (TempReadPath.IsEmpty()) continue;
 
-		TArray<uint8> ModelFile;
+		/*TArray<uint8> ModelFile;
 		const bool ReadSuc = FFileHelper::LoadFileToArray(ModelFile, *TempReadPath);
 		if (ReadSuc)
 		{
 			LoadData.Live2DTexture2DData.Add(FUnLiveByteData(ModelFile));
-		}
+		}*/
 
+		LoadTexturePaths.Add(TempReadPath);
 	}
 
 	// 动作组数据读取

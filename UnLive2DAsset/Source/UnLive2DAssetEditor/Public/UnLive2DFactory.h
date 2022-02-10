@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CoreMinimal.h"
 #include "Factories/Factory.h"
 #include "EditorReimportHandler.h"
 #include "UnLive2DFactory.generated.h"
@@ -23,6 +24,13 @@ public:
 
 	// 通过从文件名导入新对象来创建新对象。
 	virtual UObject* FactoryCreateFile(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, const FString& Filename, const TCHAR* Parms, FFeedbackContext* Warn, bool& bOutOperationCanceled) override;
+
+
+	virtual void PostInitProperties() override;
 	
 	// End of UFactory interface
+
+public:
+	UPROPERTY()
+		class UUnLive2DImportUI* ImportUI;
 };

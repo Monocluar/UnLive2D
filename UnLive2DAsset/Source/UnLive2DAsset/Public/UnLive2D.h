@@ -33,6 +33,10 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Live2D)
 		int32 PlayMotionIndex = 0;
 
+	// 贴图资源
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Live2D)
+		TArray<TSoftObjectPtr<UTexture2D>> TextureAssets;
+
 public:
 	// Live2D颜色混合模式为CubismBlendMode_Normal使用的材质
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
@@ -87,7 +91,7 @@ public:
 
 #if WITH_EDITOR
 	// 加载Live2D文件数据
-	void LoadLive2DFileDataFormPath(const FString& InPath);
+	void LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& TexturePaths);
 #endif
 
     FORCEINLINE TWeakPtr<FUnLive2DRawModel> GetUnLive2DRawModel() {return UnLive2DRawModel; }

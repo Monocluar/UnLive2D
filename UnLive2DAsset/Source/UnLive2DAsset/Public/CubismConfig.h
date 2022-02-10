@@ -179,6 +179,6 @@ public:
 		TArray<uint8> Live2DUserDataData;
 
 	// <Live2D贴图数据
-	UPROPERTY()
-		TArray<FUnLiveByteData> Live2DTexture2DData;
+	/*UPROPERTY()
+		TArray<FUnLiveByteData> Live2DTexture2DData;*/
 };
