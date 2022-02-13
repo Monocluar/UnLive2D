@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Framework/Commands/Commands.h"
+#include "UnLive2DEditorStyle.h"
 
 class FUnLive2DEditorCommands : public TCommands<FUnLive2DEditorCommands>
 {
@@ -17,4 +18,8 @@ public:
 	}
 
 	virtual void RegisterCommands() override;
+
+public:
+	TSharedPtr<FUICommandInfo> EnterViewMode;
+	TSharedPtr<FUICommandInfo> EnterAnimMode;
 };

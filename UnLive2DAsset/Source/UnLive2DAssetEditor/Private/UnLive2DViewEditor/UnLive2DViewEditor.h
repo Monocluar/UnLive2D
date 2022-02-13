@@ -72,5 +72,8 @@ protected:
 protected:
 	// 绑定按键命令
 	void BindCommands();
+	void ExtendToolBar();
+
+	void CreateModeToolbarWidgets(FToolBarBuilder& ToolbarBuilder);
 
 };

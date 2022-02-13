@@ -68,7 +68,7 @@ void FUnLive2DViewEditor::InitUnLive2DViewEditor(const EToolkitMode::Type Mode, 
 
 	CurrentSelectedKeyframe = INDEX_NONE;
 
-	//FUnLive2DEditorCommands::Register();
+	FUnLive2DEditorCommands::Register();
 
 	BindCommands();
 
@@ -110,6 +110,8 @@ void FUnLive2DViewEditor::InitUnLive2DViewEditor(const EToolkitMode::Type Mode, 
 		);
 
 	InitAssetEditor(Mode, InitToolkitHost, FlipbookEditorAppName, StandaloneDefaultLayout, /*bCreateDefaultStandaloneMenu=*/ true, /*bCreateDefaultToolbar=*/ true, InitUnLive2D);
+
+	ExtendToolBar();
 
 	RegenerateMenusAndToolbars();
 }
@@ -256,7 +258,30 @@ float FUnLive2DViewEditor::GetTotalSequenceLength() const
 
 void FUnLive2DViewEditor::BindCommands()
 {
+}
 
+void FUnLive2DViewEditor::ExtendToolBar()
+{
+	TSharedPtr<FExtender> ToolbarExtender = MakeShareable(new FExtender);
+
+	ToolbarExtender->AddToolBarExtension
+	(
+		"Asset",
+		EExtensionHook::After,
+		ViewportPtr->GetCommandList(),
+		FToolBarExtensionDelegate::CreateSP(this, &FUnLive2DViewEditor::CreateModeToolbarWidgets)
+	);
+
+	AddToolbarExtender(ToolbarExtender);
+
+}
+
+void FUnLive2DViewEditor::CreateModeToolbarWidgets(FToolBarBuilder& IgnoredBuilder)
+{
+	FToolBarBuilder ToolbarBuilder(ViewportPtr->GetCommandList(), FMultiBoxCustomization::None);
+	ToolbarBuilder.AddToolBarButton(FUnLive2DEditorCommands::Get().EnterViewMode);
+	ToolbarBuilder.AddToolBarButton(FUnLive2DEditorCommands::Get().EnterAnimMode);
+	AddToolbarWidget(ToolbarBuilder.MakeWidget());
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -6,6 +6,15 @@
 class UUnLive2D;
 class UUnLive2DRendererComponent;
 
+namespace EUnLive2DEditorMode
+{
+	enum Type
+	{
+		ViewMode,
+		AnimMode
+	};
+}
+
 class FUnLive2DViewViewportClient : public FUnLive2DViewportClient
 {
 public:
@@ -35,6 +44,12 @@ public:
 	void ToggleShowSockets() { bShowSockets = !bShowSockets; Invalidate(); }
 	bool IsShowSocketsChecked() const { return bShowSockets; }
 
+	void EnterViewMode() { InternalActivateNewMode(EUnLive2DEditorMode::ViewMode); }
+	bool IsInViewMode() const { return CurrentMode == EUnLive2DEditorMode::ViewMode;}
+
+	void EnterAnimMode() { InternalActivateNewMode(EUnLive2DEditorMode::AnimMode); }
+	bool IsInAnimMode() const {return CurrentMode == EUnLive2DEditorMode::AnimMode; }
+
 protected:
 
 	void DrawSocketNames(UPrimitiveComponent* PreviewComponent, FViewport& Viewport, FSceneView& View, FCanvas& Canvas);
@@ -48,12 +63,18 @@ protected:
 	void EventOnLeftMouseMove(FIntPoint MousePointDifference);
 
 private:
+	// 选择窗口
+	void InternalActivateNewMode(EUnLive2DEditorMode::Type NewMode);
+
+private:
 
 	TWeakObjectPtr<UUnLive2D> UnLive2DBeingEditedLastFrame;
 
 	TWeakObjectPtr<UUnLive2DRendererComponent> AnimatedRenderComponent;
 
 private:
+	// 编辑器类型
+	EUnLive2DEditorMode::Type CurrentMode;
 
 	// The preview scene
 	FPreviewScene OwnedPreviewScene;
