@@ -14,8 +14,26 @@ void SUnLive2DEditorViewport::Construct(const FArguments& InArgs)
 void SUnLive2DEditorViewport::BindCommands()
 {
 	SEditorViewport::BindCommands();
+	
+	const FUnLive2DEditorCommands& Commands = FUnLive2DEditorCommands::Get();
 
-	//const FUnLive2DEditorCommands& Commands = FUnLive2DEditorCommands::Get();
+	TSharedRef<FUnLive2DViewViewportClient> EditorViewportClientRef = EditorViewportClient.ToSharedRef();
+
+	CommandList->MapAction
+	(
+		Commands.EnterViewMode,
+		FExecuteAction::CreateSP(EditorViewportClientRef, &FUnLive2DViewViewportClient::EnterViewMode),
+		FCanExecuteAction(),
+		FIsActionChecked::CreateSP(EditorViewportClientRef, &FUnLive2DViewViewportClient::IsInViewMode)
+	);
+
+	CommandList->MapAction
+	(
+		Commands.EnterAnimMode,
+		FExecuteAction::CreateSP(EditorViewportClientRef, &FUnLive2DViewViewportClient::EnterAnimMode),
+		FCanExecuteAction(),
+		FIsActionChecked::CreateSP(EditorViewportClientRef, &FUnLive2DViewViewportClient::IsInAnimMode)
+	);
 }
 
 TSharedRef<FEditorViewportClient> SUnLive2DEditorViewport::MakeEditorViewportClient()

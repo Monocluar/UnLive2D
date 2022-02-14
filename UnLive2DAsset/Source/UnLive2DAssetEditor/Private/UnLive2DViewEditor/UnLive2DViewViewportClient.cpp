@@ -20,6 +20,7 @@ struct HUnLive2DSelectableObjectHitProxy : public HHitProxy
 IMPLEMENT_HIT_PROXY(HUnLive2DSelectableObjectHitProxy, HHitProxy);
 
 FUnLive2DViewViewportClient::FUnLive2DViewViewportClient(TWeakObjectPtr<UUnLive2D> InUnLive2DBeingEdited)
+	: CurrentMode(EUnLive2DEditorMode::ViewMode)
 {
 	UnLive2DBeingEditedLastFrame = InUnLive2DBeingEdited;
 	PreviewScene = &OwnedPreviewScene;
@@ -222,5 +223,10 @@ void FUnLive2DViewViewportClient::EventOnLeftMouseMove(FIntPoint MousePointDiffe
 
 	UnLive2DBeingEditedLastFrame->OnDrag(OldMouseTapPos);
 	UE_LOG(LogUnLive2DEditor, Log, TEXT("MousePos:X:%d,Y:%d"), MousePointDifference.X, MousePointDifference.Y);
+}
+
+void FUnLive2DViewViewportClient::InternalActivateNewMode(EUnLive2DEditorMode::Type NewMode)
+{
+	CurrentMode = NewMode;
 }
 
