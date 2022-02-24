@@ -24,6 +24,11 @@
 			"Name": "UnLive2DAssetEditor",
 			"Type": "Editor",
 			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "UnLive2DManager",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
 		}
 	],
   "Plugins": [

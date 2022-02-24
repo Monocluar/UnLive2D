@@ -37,7 +37,9 @@ public class UnLive2DAssetEditor : ModuleRules
 				"RenderCore",
 				"MainFrame",
 				"Documentation",
-				"ApplicationCore"
+				"ApplicationCore",
+				"Kismet",
+				"UnLive2DManager"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

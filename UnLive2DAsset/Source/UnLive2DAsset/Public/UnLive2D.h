@@ -12,6 +12,7 @@
 class FUnLive2DRawModel;
 class UMaterialInterface;
 class UBodySetup;
+class UTexture2D;
 
 
 UCLASS(Blueprintable, BlueprintType, Category = UnLive2D)

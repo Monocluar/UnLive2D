@@ -1,10 +1,12 @@
 #include "UnLive2DViewEditor.h"
 #include "SScrubControlPanel.h"
-#include "UnLive2DEditorCommands.h"
 #include "UnLive2DEditorViewport.h"
 #include "Toolkits/AssetEditorToolkit.h"
 #include "UnLive2D.h"
 #include "SSingleObjectDetailsPanel.h"
+#include "UnLive2DManagerModule.h"
+#include "IUnLive2DAssetFamily.h"
+
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
 
@@ -62,13 +64,17 @@ FUnLive2DViewEditor::FUnLive2DViewEditor()
 
 void FUnLive2DViewEditor::InitUnLive2DViewEditor(const EToolkitMode::Type Mode, const TSharedPtr< IToolkitHost >& InitToolkitHost, UUnLive2D* InitUnLive2D)
 {
-	GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->CloseOtherEditors(InitUnLive2D, this);
+	//GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->CloseOtherEditors(InitUnLive2D, this);
 
 	UnLive2DBeingEdited = InitUnLive2D;
 
-	CurrentSelectedKeyframe = INDEX_NONE;
+	FUnLive2DManagerModule& MangerModule = FModuleManager::LoadModuleChecked<FUnLive2DManagerModule>("UnLive2DManager");
+	UnLive2DToolkit = MangerModule.CreatePersonaToolkit(UnLive2DBeingEdited);
 
-	FUnLive2DEditorCommands::Register();
+	TSharedRef<IUnLive2DAssetFamily> AssetFamily = MangerModule.CreatePersonaAssetFamily(UnLive2DBeingEdited);
+	AssetFamily->RecordAssetOpened(FAssetData(UnLive2DBeingEdited));
+
+	CurrentSelectedKeyframe = INDEX_NONE;
 
 	BindCommands();
 
@@ -111,7 +117,7 @@ void FUnLive2DViewEditor::InitUnLive2DViewEditor(const EToolkitMode::Type Mode, 
 
 	InitAssetEditor(Mode, InitToolkitHost, FlipbookEditorAppName, StandaloneDefaultLayout, /*bCreateDefaultStandaloneMenu=*/ true, /*bCreateDefaultToolbar=*/ true, InitUnLive2D);
 
-	ExtendToolBar();
+	ExtendToolbar();
 
 	RegenerateMenusAndToolbars();
 }
@@ -140,6 +146,28 @@ void FUnLive2DViewEditor::UnregisterTabSpawners(const TSharedRef<FTabManager>& I
 
 	InTabManager->UnregisterTabSpawner(FUnLive2DViewEditorTabs::ViewportID);
 	InTabManager->UnregisterTabSpawner(FUnLive2DViewEditorTabs::DetailsID);
+}
+
+void FUnLive2DViewEditor::PostUndo(bool bSuccess)
+{
+	OnPostUndo.Broadcast();
+}
+
+void FUnLive2DViewEditor::PostRedo(bool bSuccess)
+{
+	OnPostUndo.Broadcast();
+}
+
+bool FUnLive2DViewEditor::OnRequestClose()
+{
+	bool bAllowClose = true;
+
+	if (UnLive2DToolkit.IsValid() && UnLive2DBeingEdited)
+	{
+
+	}
+
+	return bAllowClose;
 }
 
 FName FUnLive2DViewEditor::GetToolkitFName() const
@@ -260,28 +288,30 @@ void FUnLive2DViewEditor::BindCommands()
 {
 }
 
-void FUnLive2DViewEditor::ExtendToolBar()
+void FUnLive2DViewEditor::ExtendToolbar()
 {
-	TSharedPtr<FExtender> ToolbarExtender = MakeShareable(new FExtender);
+	if (ToolbarExtender.IsValid())
+	{
+		RemoveToolbarExtender(ToolbarExtender);
+		ToolbarExtender.Reset();
+	}
+
+	ToolbarExtender = MakeShareable(new FExtender);
+
+	AddToolbarExtender(ToolbarExtender);
 
 	ToolbarExtender->AddToolBarExtension
 	(
 		"Asset",
 		EExtensionHook::After,
-		ViewportPtr->GetCommandList(),
-		FToolBarExtensionDelegate::CreateSP(this, &FUnLive2DViewEditor::CreateModeToolbarWidgets)
-	);
-
-	AddToolbarExtender(ToolbarExtender);
-
+		GetToolkitCommands(),
+		FToolBarExtensionDelegate::CreateLambda([this](FToolBarBuilder& ParentToolbarBuilder)
+	{
+		FUnLive2DManagerModule& MangerModule = FModuleManager::LoadModuleChecked<FUnLive2DManagerModule>("UnLive2DManager");
+		TSharedRef<IUnLive2DAssetFamily> AssetFamily = MangerModule.CreatePersonaAssetFamily(UnLive2DBeingEdited);
+		AddToolbarWidget(MangerModule.CreateAssetFamilyShortcutWidget(SharedThis(this), AssetFamily));
+	}));
 }
 
-void FUnLive2DViewEditor::CreateModeToolbarWidgets(FToolBarBuilder& IgnoredBuilder)
-{
-	FToolBarBuilder ToolbarBuilder(ViewportPtr->GetCommandList(), FMultiBoxCustomization::None);
-	ToolbarBuilder.AddToolBarButton(FUnLive2DEditorCommands::Get().EnterViewMode);
-	ToolbarBuilder.AddToolBarButton(FUnLive2DEditorCommands::Get().EnterAnimMode);
-	AddToolbarWidget(ToolbarBuilder.MakeWidget());
-}
 
 #undef LOCTEXT_NAMESPACE
