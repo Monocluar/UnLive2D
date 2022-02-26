@@ -23,13 +23,6 @@ void FUnLive2DEditorStyle::Initialize()
 
 	}
 
-	{
-		StyleSet->Set(FName(TEXT("UnLive2DEditor.EnterViewMode")), new IMAGE_BRUSH("UnLive2D/Designer_40x", FVector2D(40, 40)));
-		StyleSet->Set(FName(TEXT("UnLive2DEditor.EnterViewMode.Small")), new IMAGE_BRUSH("UnLive2D/Designer_16x", FVector2D(16, 16)));
-		StyleSet->Set(FName(TEXT("UnLive2DEditor.EnterAnimMode")), new IMAGE_BRUSH("UnLive2D/Animations_40x", FVector2D(40, 40)));
-		StyleSet->Set(FName(TEXT("UnLive2DEditor.EnterAnimMode.Small")), new IMAGE_BRUSH("UnLive2D/Animations_16x", FVector2D(16, 16)));
-	}
-
     FSlateStyleRegistry::RegisterSlateStyle(*StyleSet);
 }
 #undef IMAGE_BRUSH

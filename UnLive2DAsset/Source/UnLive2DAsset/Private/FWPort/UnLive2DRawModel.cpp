@@ -8,7 +8,7 @@
 #include "Utils/CubismString.hpp"
 #include "Motion/CubismMotion.hpp"
 
-#include "UnLive2DAsset.h"
+#include "UnLive2DAssetModule.h"
 #include "CubismConfig.h"
 #include "UnLive2D.h"
 
@@ -612,7 +612,7 @@ Csm::CubismMotionQueueEntryHandle FUnLive2DRawModel::StartMotion(const Csm::csmC
 		return InvalidMotionQueueEntryHandleValue;
 	}
 
-	const csmString FileName = Live2DModelSetting->GetMotionFileName(Group, No);
+	//const csmString FileName = Live2DModelSetting->GetMotionFileName(Group, No);
 
 	csmString Name = Utils::CubismString::GetFormatedString("%s_%d", Group, No);
 

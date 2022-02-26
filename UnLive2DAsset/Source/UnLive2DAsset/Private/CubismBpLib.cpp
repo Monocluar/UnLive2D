@@ -9,7 +9,7 @@
 #include "Interfaces/IPluginManager.h"
 #include "Templates/SharedPointer.h"
 
-#include "UnLive2DAsset.h"
+#include "UnLive2DAssetModule.h"
 
 using namespace Live2D::Cubism::Core;
 using namespace Live2D::Cubism::Framework;

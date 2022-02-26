@@ -3,7 +3,7 @@
 #include "FWPort/UnLive2DRawModel.h"
 #include "Engine/TextureRenderTarget2D.h"
 
-#include "UnLive2DAsset.h"
+#include "UnLive2DAssetModule.h"
 #include "Materials/MaterialInterface.h"
 #include "Interfaces/IPluginManager.h"
 
@@ -26,8 +26,6 @@ UUnLive2D::UUnLive2D(const FObjectInitializer& ObjectInitializer)
 	UnLive2DMultiplyMaterial = MultiplyMaterial.Object;
 
 	TextureParameterName = TEXT("UnLive2D");
-
-	UnLive2DCollisionDomain = EUnLive2DCollisionMode::Use3DPhysics;
 
 	// 初始化Live2D库（只需要初始化一次）
 	UCubismBpLib::InitCubism();
@@ -65,47 +63,6 @@ void UUnLive2D::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEve
 }
 #endif
 
-
-void UUnLive2D::CreatePolygonFromBoundingBox(FUnLive2DGeometryCollection& GeomOwner, bool bUseTightBounds)
-{
-	FVector2D BoxSize;
-	FVector2D BoxPosition;
-
-	if (bUseTightBounds)
-	{
-		FindTextureBoundingBox(BoxSize, BoxPosition);
-	}
-	else
-	{
-		BoxPosition = FVector2D::ZeroVector;
-	}
-
-	// 重新将箱子放在中间
-	BoxPosition += BoxSize * 0.5f;
-
-	const FVector2D HalfSize = BoxSize * 0.5f;
-
-	new (GeomOwner.Vertices) FVector2D(-HalfSize.X, -HalfSize.Y);
-	new (GeomOwner.Vertices) FVector2D(+HalfSize.X, -HalfSize.Y);
-	new (GeomOwner.Vertices) FVector2D(+HalfSize.X, +HalfSize.Y);
-	new (GeomOwner.Vertices) FVector2D(-HalfSize.X, +HalfSize.Y);
-
-	GeomOwner.BoxSize = BoxSize;
-	GeomOwner.BoxPosition = BoxPosition;
-}
-
-bool UUnLive2D::FindTextureBoundingBox(/*out*/ FVector2D& OutBoxPosition, /*out*/ FVector2D& OutBoxSize)
-{
-	/*if (OwnerObject.IsValid())
-	{
-		if (UUnLive2DComponent* Live2DComp = Cast<UUnLive2DComponent>(OwnerObject.Get()))
-		{
-			return Live2DComp->FindTextureBoundingBox(OutBoxPosition, OutBoxSize);
-		}
-	}*/
-
-	return false;
-}
 
 void UUnLive2D::SetOwnerObject(UObject* Owner)
 {

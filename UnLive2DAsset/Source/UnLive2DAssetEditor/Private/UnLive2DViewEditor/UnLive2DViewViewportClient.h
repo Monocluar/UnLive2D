@@ -44,12 +44,6 @@ public:
 	void ToggleShowSockets() { bShowSockets = !bShowSockets; Invalidate(); }
 	bool IsShowSocketsChecked() const { return bShowSockets; }
 
-	void EnterViewMode() { InternalActivateNewMode(EUnLive2DEditorMode::ViewMode); }
-	bool IsInViewMode() const { return CurrentMode == EUnLive2DEditorMode::ViewMode;}
-
-	void EnterAnimMode() { InternalActivateNewMode(EUnLive2DEditorMode::AnimMode); }
-	bool IsInAnimMode() const {return CurrentMode == EUnLive2DEditorMode::AnimMode; }
-
 protected:
 
 	void DrawSocketNames(UPrimitiveComponent* PreviewComponent, FViewport& Viewport, FSceneView& View, FCanvas& Canvas);

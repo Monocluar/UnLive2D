@@ -7,7 +7,7 @@
 #include "FWPort/UnLive2DRawModel.h"
 #include "FWPort/UnLive2DModelRender.h"
 #include "Engine/TextureRenderTarget2D.h"
-#include "UnLive2DAsset.h"
+#include "UnLive2DAssetModule.h"
 #include "ModelRenders.h"
 #include "PipelineStateCache.h"
 

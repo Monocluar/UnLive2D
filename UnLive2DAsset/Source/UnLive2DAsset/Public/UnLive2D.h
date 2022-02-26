@@ -56,15 +56,6 @@ public:
 		FName TextureParameterName;
 
 public:
-	// Collision domain (no collision, 2D, or 3D)
-	UPROPERTY(Category = Collision, EditAnywhere)
-		TEnumAsByte<EUnLive2DCollisionMode::Type> UnLive2DCollisionDomain;
-
-	// 自定义碰撞几何体多边形（在纹理空间中）
-	UPROPERTY(Category = Collision, EditAnywhere)
-		FUnLive2DGeometryCollection CollisionGeometry;
-
-public:
 
 	// 渲染设置数据
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
@@ -115,14 +106,6 @@ public:
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
 
-
-protected:
-
-	// <创建Polygon Box碰撞
-	void CreatePolygonFromBoundingBox(FUnLive2DGeometryCollection& GeomOwner, bool bUseTightBounds);
-
-	// 计算矩形，找到仍然包含alpha高于AlphaThreshold的所有像素的最紧边界。
-	bool FindTextureBoundingBox(/*out*/ FVector2D& OutBoxPosition, /*out*/ FVector2D& OutBoxSize);
 
 public:
 

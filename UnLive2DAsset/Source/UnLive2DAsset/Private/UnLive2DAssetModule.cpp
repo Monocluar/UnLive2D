@@ -1,14 +1,12 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "UnLive2DAsset.h"
+#include "UnLive2DAssetModule.h"
 #include "Interfaces/IPluginManager.h"
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetModule"
 
 DEFINE_LOG_CATEGORY(LogUnLive2D);
 DEFINE_LOG_CATEGORY(LogLive2D);
-
-DEFINE_STAT(STAT_UnLive2DRender_SetUnLive2DRT);
 
 void FUnLive2DAssetModule::StartupModule()
 {

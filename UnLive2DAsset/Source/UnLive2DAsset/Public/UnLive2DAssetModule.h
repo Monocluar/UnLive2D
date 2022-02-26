@@ -17,6 +17,3 @@ public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 };
-
-DECLARE_STATS_GROUP(TEXT("UnLive2D"), STATGROUP_UnLive2D, STATCAT_Advanced);
-DECLARE_CYCLE_STAT_EXTERN(TEXT("SetUnLive2D (RT)"), STAT_UnLive2DRender_SetUnLive2DRT, STATGROUP_UnLive2D, UNLIVE2DASSET_API);
