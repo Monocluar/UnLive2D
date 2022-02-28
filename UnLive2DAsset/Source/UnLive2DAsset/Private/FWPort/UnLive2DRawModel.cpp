@@ -286,11 +286,12 @@ void FUnLive2DRawModel::OnUpDate(float InDeltaTime)
 }
 
 #if WITH_EDITOR
-FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& LoadTexturePaths)
+FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& LoadTexturePaths, TArray<FUnLive2DMotionData>& LoadMotionData)
 {
 	FUnLive2DLoadData LoadData;
 
 	LoadTexturePaths.Empty();
+	LoadMotionData.Empty();
 
 	TArray<uint8> FileData;
 	if (!FFileHelper::LoadFileToArray(FileData, *InPath)) return LoadData;
@@ -414,7 +415,6 @@ FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& I
 
 		for (csmInt32 j = 0; j < Count; j++)
 		{
-			csmString Name = Utils::CubismString::GetFormatedString("%s_%d", Group, j);
 			csmString Path = JsonData->GetMotionFileName(Group, j);
 
 			FString TempReadPath = FileHomeDir / UTF8_TO_TCHAR(Path.GetRawString());
@@ -424,8 +424,21 @@ FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& I
 
 			if (!ReadSuc) continue;
 
-			LoadData.Live2DMotionData.Add(Name.GetRawString(),FUnLiveByteData(ModelFile));
+			FUnLive2DMotionData MotionData;
+
+			MotionData.FadeInTime = JsonData->GetMotionFadeInTimeValue(Group, j);
+			MotionData.FadeOutTime = JsonData->GetMotionFadeOutTimeValue(Group, j);
+			MotionData.MotionByteData = ModelFile;
+
+			UEnum* GroupType = StaticEnum<EUnLive2DMotionGroup>();
+			MotionData.MotionGroupType = (EUnLive2DMotionGroup)GroupType->GetIndexByName(Group);
+
+			MotionData.MotionCount = j;
+			LoadMotionData.Add(MotionData);
+
+			//LoadData.Live2DMotionData.Add(Name.GetRawString(),FUnLiveByteData(ModelFile));
 		}
+
 	}
 
 	delete JsonData;
@@ -618,7 +631,7 @@ Csm::CubismMotionQueueEntryHandle FUnLive2DRawModel::StartMotion(const Csm::csmC
 
 	Csm::ACubismMotion* FindPtr = Live2DMotions.FindOrAdd(Name.GetRawString());
 
-	if (FindPtr == nullptr)
+	/*if (FindPtr == nullptr)
 	{
 		const FUnLiveByteData* FindMotionPtr = OwnerLive2D->GetUnLive2DLoadData()->Live2DMotionData.Find(Name.GetRawString());
 
@@ -642,7 +655,7 @@ Csm::CubismMotionQueueEntryHandle FUnLive2DRawModel::StartMotion(const Csm::csmC
 			Motion->SetEffectIds(EyeBlinkIds, LipSyncIds);
 
 		}
-	}
+	}*/
 
 	UE_LOG(LogUnLive2D, Log, TEXT("FRawModel::StartMotion: Start [%s_%d]"), UTF8_TO_TCHAR(Group), No);
 

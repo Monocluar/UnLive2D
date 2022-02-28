@@ -10,6 +10,9 @@
 #include "Interfaces/IMainFrameModule.h"
 #include "HAL/PlatformApplicationMisc.h"
 #include "AssetToolsModule.h"
+#include "UnLive2DAssetEditor.h"
+#include "AssetRegistry/AssetRegistryModule.h"
+#include "UnLive2DMotion.h"
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
 
@@ -119,8 +122,8 @@ UObject* UUnLive2DFactory::FactoryCreateFile(UClass* InClass, UObject* InParent,
 			UnLive2DPtr = NewObject<UUnLive2D>(InParent, InClass, InName, Flags | RF_Transactional);
 
 			TArray<FString> TexturePaths;
-
-			UnLive2DPtr->LoadLive2DFileDataFormPath(Live2DDataPath, TexturePaths);
+			TArray<FUnLive2DMotionData> LoadMotionDataArr;
+			UnLive2DPtr->LoadLive2DFileDataFormPath(Live2DDataPath, TexturePaths, LoadMotionDataArr);
 
 			if (ImportUI->bIsImportTexture) // 是否导入图片
 			{
@@ -138,6 +141,17 @@ UObject* UUnLive2DFactory::FactoryCreateFile(UClass* InClass, UObject* InParent,
 					}
 				}
 			}
+
+			if (ImportUI->bIsImportMotion) // 是否导入动作
+			{
+				
+				for (FUnLive2DMotionData& Item : LoadMotionDataArr)
+				{
+					UUnLive2DMotion* Motion = CreateAsset<UUnLive2DMotion>(InParent->GetPathName()/ TEXT("Motions"), Item.GetMotionName());
+					Motion->SetLive2DMotionData(Item);
+					Motion->UnLive2D = UnLive2DPtr;
+				}
+			}
 		}
 
 	}
@@ -149,6 +163,40 @@ void UUnLive2DFactory::PostInitProperties()
 {
 	Super::PostInitProperties();
 	ImportUI = NewObject<UUnLive2DImportUI>(this, NAME_None, RF_NoFlags);
+}
+
+UObject* UUnLive2DFactory::CreateAssetOfClass(UClass* AssetClass, FString ParentPackageName, FString ObjectName, bool bAllowReplace /*= false*/)
+{
+	// 看看这个序列是否已经存在。
+	UObject* ParentPkg = CreatePackage(*ParentPackageName);
+	FString ParentPath = FString::Printf(TEXT("%s/%s"), *FPackageName::GetLongPackagePath(*ParentPackageName), *ObjectName);
+	UObject* Parent = CreatePackage( *ParentPath);
+
+	// 查看是否存在具有此名称的对象
+	UObject* Object = LoadObject<UObject>(Parent, *ObjectName, NULL, LOAD_NoWarn | LOAD_Quiet, NULL);
+
+	// 如果存在同名但不同类的对象，则警告用户
+	if ((Object != nullptr) && (Object->GetClass() != AssetClass))
+	{
+		UE_LOG(LogUnLive2DEditor, Error, TEXT("UnLive2DFactory : 存在同名资产。无法覆盖其他资产"));
+		return nullptr;
+	}
+
+	if (Object != nullptr && ! bAllowReplace)
+	{
+		UE_LOG(LogUnLive2DEditor, Warning, TEXT("UnLive2DFactory : 存在名为%s 的资产覆盖"), *ParentPath);
+	}
+
+	if (Object == nullptr)
+	{
+		// 不要添加到集合中，现在创建独立资产
+		Object = NewObject<UObject>(Parent, AssetClass, *ObjectName, RF_Public | RF_Standalone);
+		Object->MarkPackageDirty();
+		// 通知资产登记处
+		FAssetRegistryModule::AssetCreated(Object);
+	}
+
+	return Object;
 }
 
 #undef LOCTEXT_NAMESPACE

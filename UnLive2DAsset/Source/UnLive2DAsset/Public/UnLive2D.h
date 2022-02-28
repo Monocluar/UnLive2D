@@ -83,7 +83,7 @@ public:
 
 #if WITH_EDITOR
 	// 加载Live2D文件数据
-	void LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& TexturePaths);
+	void LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& TexturePaths, TArray<FUnLive2DMotionData>& LoadMotionData);
 #endif
 
     FORCEINLINE TWeakPtr<FUnLive2DRawModel> GetUnLive2DRawModel() {return UnLive2DRawModel; }

@@ -22,21 +22,15 @@ public:
 public:
 
 #if WITH_EDITOR
-	bool LoadLive2DMotionData(const FString& ReadMotionPath, EUnLive2DMotionGroup InMotionGroupType, int32 InMotionCount);
+	bool LoadLive2DMotionData(const FString& ReadMotionPath, EUnLive2DMotionGroup InMotionGroupType = EUnLive2DMotionGroup::None, int32 InMotionCount = 0, float FadeInTime = 0.5f, float FadeOutTime = 0.5f);
+
+	void SetLive2DMotionData(FUnLive2DMotionData& InMotionData);
 #endif
 
 
-private:
-
-	// 动作组名称
-	UPROPERTY()
-		EUnLive2DMotionGroup MotionGroupType;
-
-	// 该动作组ID
-	UPROPERTY()
-		int32 MotionCount;
-
+protected:
 	// 动作数据
-	UPROPERTY()
-		TArray<uint8> MotionByteData;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Animation)
+		FUnLive2DMotionData MotionData;
+
 };

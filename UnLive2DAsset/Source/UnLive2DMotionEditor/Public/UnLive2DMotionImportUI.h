@@ -20,6 +20,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ImportSetting)
 		int32 MotionCount;
 
+	// 动作开始时淡入淡出处理时间
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ImportSetting)
+		float FadeInTime;
+
+	// 动作结束时淡入淡出处理时间
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ImportSetting)
+		float FadeOutTime;
+
 	UPROPERTY(VisibleAnywhere)
 		FName AssetPath;
 

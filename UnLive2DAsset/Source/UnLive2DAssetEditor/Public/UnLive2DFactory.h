@@ -30,6 +30,16 @@ public:
 	
 	// End of UFactory interface
 
+	/** 从包和objectname和类创建新资源 */
+	static UObject* CreateAssetOfClass(UClass* AssetClass, FString ParentPackageName, FString ObjectName, bool bAllowReplace = false);
+
+	/* 模板化函数，用于创建具有给定包和名称的资产 */
+	template< class T = UObject>
+	static T* CreateAsset(FString ParentPackageName, FString ObjectName, bool bAllowReplace = false)
+	{
+		return (T*)CreateAssetOfClass(T::StaticClass(), ParentPackageName, ObjectName, bAllowReplace);
+	}
+
 public:
 	UPROPERTY()
 		class UUnLive2DImportUI* ImportUI;

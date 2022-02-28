@@ -33,6 +33,44 @@ enum class EUnLive2DMotionGroup : uint8
 	TapBody
 };
 
+USTRUCT(BlueprintType)
+struct FUnLive2DMotionData
+{
+	GENERATED_USTRUCT_BODY()
+
+public:
+	// 动作开始时淡入淡出处理时间
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+		float FadeInTime;
+
+	// 动作结束时淡入淡出处理时间
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+		float FadeOutTime;
+
+	// 动作组名称
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+		EUnLive2DMotionGroup MotionGroupType;
+
+	// 该动作组ID
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+		int32 MotionCount;
+
+	// 动作数据
+	UPROPERTY()
+		TArray<uint8> MotionByteData;
+
+public:
+	FUnLive2DMotionData()
+	{}
+
+	FString GetMotionName()
+	{
+		UEnum* GroupEnumPtr = StaticEnum<EUnLive2DMotionGroup>();
+		FString GroupStr = GroupEnumPtr->GetNameStringByIndex((int32)MotionGroupType);
+		return FString::Printf(TEXT("%s_%d"), *GroupStr, MotionCount);
+	}
+
+};
 
 USTRUCT()
 struct FUnLiveByteData
@@ -70,9 +108,9 @@ public:
 	UPROPERTY()
 		TMap<FName, FUnLiveByteData> Live2DExpressionData;
 
-	// <Live2D动作组数据
+	/*// <Live2D动作组数据
 	UPROPERTY()
-		TMap<FName, FUnLiveByteData> Live2DMotionData;
+		TMap<FName, FUnLiveByteData> Live2DMotionData;*/
 
 	// <Live2D物理数据
 	UPROPERTY()
