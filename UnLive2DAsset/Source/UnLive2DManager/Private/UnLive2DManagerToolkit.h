@@ -6,6 +6,7 @@
 #include "IUnLive2DToolkit.h"
 
 class UUnLive2D;
+class UUnLive2DMotion;
 
 
 class FUnLive2DMangerToolkit : public IUnLive2DToolkit, public TSharedFromThis<FUnLive2DMangerToolkit> 
@@ -18,6 +19,7 @@ public:
 public:
 
 	void Initialize(UUnLive2D* InUnLive2D);
+	void Initialize(UUnLive2DMotion* InUnLive2DMotion);
 
 	// 创建预览窗口
 	void CreatePreviewScene();
@@ -38,6 +40,9 @@ public:
 private:
 	// Live2D资源
 	TWeakObjectPtr<UUnLive2D> UnLive2D;
+
+	// 动画资源
+	TWeakObjectPtr<UUnLive2DMotion> UnLive2DMotion;
 
 	/** 允许此编辑器使用自定义数据 */
 	TMap<int32, int32> CustomEditorData;

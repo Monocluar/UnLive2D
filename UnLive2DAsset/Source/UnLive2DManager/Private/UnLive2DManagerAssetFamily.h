@@ -7,6 +7,7 @@
 #include "IUnLive2DAssetFamily.h"
 
 class UUnLive2D;
+class UUnLive2DMotion;
 
 class FUnLive2DManagerAssetFamily : public IUnLive2DAssetFamily
 {
@@ -32,6 +33,8 @@ protected:
 
 private:
 	TWeakObjectPtr<const UUnLive2D> UnLive2D;
+
+	TWeakObjectPtr<const UUnLive2DMotion> UnLive2DMotion;
 
 	/** Event fired when an asset is opened */
 	FOnUnLive2DAssetOpened OnAssetOpened;

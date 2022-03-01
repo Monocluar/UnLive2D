@@ -45,8 +45,6 @@ public:
 	}
 };
 
-const FName FlipbookEditorAppName = FName(TEXT("UnLive2DEditorApp"));
-
 struct FUnLive2DViewEditorTabs
 {
 	// Tab identifiers
@@ -74,7 +72,7 @@ void FUnLive2DViewEditor::InitUnLive2DViewEditor(const EToolkitMode::Type Mode, 
 	TSharedRef<IUnLive2DAssetFamily> AssetFamily = MangerModule.CreatePersonaAssetFamily(UnLive2DBeingEdited);
 	AssetFamily->RecordAssetOpened(FAssetData(UnLive2DBeingEdited));
 
-	CurrentSelectedKeyframe = INDEX_NONE;
+	const FName UnLive2DEditorAppName = FName(TEXT("UnLive2DEditorApp"));
 
 	BindCommands();
 
@@ -115,7 +113,7 @@ void FUnLive2DViewEditor::InitUnLive2DViewEditor(const EToolkitMode::Type Mode, 
 			)
 		);
 
-	InitAssetEditor(Mode, InitToolkitHost, FlipbookEditorAppName, StandaloneDefaultLayout, /*bCreateDefaultStandaloneMenu=*/ true, /*bCreateDefaultToolbar=*/ true, InitUnLive2D);
+	InitAssetEditor(Mode, InitToolkitHost, UnLive2DEditorAppName, StandaloneDefaultLayout, /*bCreateDefaultStandaloneMenu=*/ true, /*bCreateDefaultToolbar=*/ true, InitUnLive2D);
 
 	ExtendToolbar();
 
@@ -124,7 +122,7 @@ void FUnLive2DViewEditor::InitUnLive2DViewEditor(const EToolkitMode::Type Mode, 
 
 void FUnLive2DViewEditor::RegisterTabSpawners(const TSharedRef<FTabManager>& InTabManager)
 {
-	WorkspaceMenuCategory = InTabManager->AddLocalWorkspaceMenuCategory(LOCTEXT("WorkspaceMenu_UnLive2DViewEditorXiangYuMuEditor", "UnLive2DView Editor"));
+	WorkspaceMenuCategory = InTabManager->AddLocalWorkspaceMenuCategory(LOCTEXT("WorkspaceMenu_UnLive2DViewEdito", "UnLive2DView Editor"));
 	auto WorkspaceMenuCategoryRef = WorkspaceMenuCategory.ToSharedRef();
 
 	FAssetEditorToolkit::RegisterTabSpawners(InTabManager);

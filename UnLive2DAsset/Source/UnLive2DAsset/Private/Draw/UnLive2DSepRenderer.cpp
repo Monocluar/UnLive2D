@@ -245,19 +245,6 @@ void FUnLive2DRenderState::LoadTextures()
 	RandererStatesTextures.SetNum(TextureNum);
 
 	// 加载新的图片
-	/*const FUnLive2DLoadData* LoadData = SourceUnLive2D->GetUnLive2DLoadData();
-	if (LoadData == nullptr) return;
-
-	for (int32 i = 0; i < LoadData->Live2DTexture2DData.Num(); i++)
-	{
-		UTexture2D* LoadedImage = FImageUtils::ImportBufferAsTexture2D(LoadData->Live2DTexture2DData[i].ByteData);
-		if (IsValid(LoadedImage))
-		{
-			RandererStatesTextures[i] = LoadedImage;
-		}
-		LoadedImage->AddToRoot();
-	}*/
-
 	for (int32 i = 0; i < TextureNum; i++)
 	{
 		if (!SourceUnLive2D->TextureAssets.IsValidIndex(i)) break;

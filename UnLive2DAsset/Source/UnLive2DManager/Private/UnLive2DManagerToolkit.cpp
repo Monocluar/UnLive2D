@@ -1,4 +1,7 @@
 #include "UnLive2DManagerToolkit.h"
+#include "UnLive2DMotion.h"
+#include "UnLive2DManagerAssetFamily.h"
+#include "UnLive2D.h"
 
 FUnLive2DMangerToolkit::FUnLive2DMangerToolkit()
 	: UnLive2D(nullptr)
@@ -20,6 +23,15 @@ void FUnLive2DMangerToolkit::Initialize(UUnLive2D* InUnLive2D)
 	InitialAssetClass = UUnLive2D::StaticClass();
 
 	FindCounterpartAssets(InUnLive2D, UnLive2D);
+}
+
+void FUnLive2DMangerToolkit::Initialize(UUnLive2DMotion* InUnLive2DMotion)
+{
+	check(InUnLive2DMotion);
+	UnLive2DMotion = InUnLive2DMotion;
+	InitialAssetClass = UUnLive2DMotion::StaticClass();
+
+	FindCounterpartAssets(InUnLive2DMotion, UnLive2D);
 }
 
 void FUnLive2DMangerToolkit::CreatePreviewScene()

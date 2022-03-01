@@ -2,26 +2,21 @@
 
 #include "CoreMinimal.h"
 #include "Toolkits/AssetEditorToolkit.h"
-#include "Toolkits/AssetEditorManager.h"
-#include "ITransportControl.h"
-#include "EditorUndoClient.h"
-#include "Framework/Commands/UICommandList.h"
 #include "WorkflowOrientedApp/WorkflowCentricApplication.h"
+#include "EditorUndoClient.h"
 
-class SDockTab;
-class UUnLive2D;
+class UUnLive2DMotion;
 
-class FUnLive2DViewEditor : public FWorkflowCentricApplication, public FGCObject, public FEditorUndoClient
+class FUnLive2DMotionViewEditor : public FWorkflowCentricApplication, public FGCObject, public FEditorUndoClient
 {
 public:
-
-	FUnLive2DViewEditor();
+	FUnLive2DMotionViewEditor();
 
 public:
 	// 初始化编辑器
-	void InitUnLive2DViewEditor(const EToolkitMode::Type Mode, const TSharedPtr< IToolkitHost >& InitToolkitHost, UUnLive2D* InitUnLive2D);
+	void InitUnLive2DMotionViewEditor(const EToolkitMode::Type Mode, const TSharedPtr< IToolkitHost >& InitToolkitHost, UUnLive2DMotion* InitUnLive2DMotion);
 
-public:
+protected:
 	// IToolkit interface
 	virtual void RegisterTabSpawners(const TSharedRef<FTabManager>& TabManager) override;
 	virtual void UnregisterTabSpawners(const TSharedRef<FTabManager>& TabManager) override;
@@ -31,12 +26,6 @@ public:
 	virtual void PostUndo(bool bSuccess) override;
 	virtual void PostRedo(bool bSuccess) override;
 
-	
-	//~ Begin FAssetEditorToolkit Interface.
-	virtual bool OnRequestClose() override;
-	//~ End FAssetEditorToolkit Interface.
-
-public:
 	// FAssetEditorToolkit
 	virtual FName GetToolkitFName() const override;
 	virtual FText GetBaseToolkitName() const override;
@@ -54,42 +43,34 @@ public:
 
 public:
 
-	UUnLive2D* GetUnLive2DBeingEdited() const { return UnLive2DBeingEdited; }
+	UUnLive2DMotion* GetUnLive2DMotionEdited() {return UnLive2DMotionBeingEdited; }
 
-protected:
+	void SetUnLive2DMotionBeingEdited(UUnLive2DMotion* NewMotion);
 
-	TSharedRef<SDockTab> SpawnTab_Viewport(const FSpawnTabArgs& Args);
-	TSharedRef<SDockTab> SpawnTab_Details(const FSpawnTabArgs& Args);
-
-protected:
-	// 打开的资源指针
-	UUnLive2D* UnLive2DBeingEdited;
+private:
+	// Live2D动作
+	UUnLive2DMotion* UnLive2DMotionBeingEdited;
 
 	/** 工具栏扩展器 */
-	TSharedPtr<FExtender> ToolbarExtender;
-
-	TSharedPtr<class SUnLive2DEditorViewport> ViewportPtr;
+	TSharedPtr<class FExtender> ToolbarExtender;
 
 	/** UnLive2D资源管理器 */
-	TSharedPtr<class IUnLive2DToolkit> UnLive2DToolkit;
+	TSharedPtr<class IUnLive2DToolkit> UnLive2DMotionToolkit;
 
-	// Range of times currently being viewed
-	mutable float ViewInputMin;
-	mutable float ViewInputMax;
-	mutable float LastObservedSequenceLength;
+	TSharedPtr<class SUnLive2DMotionAssetBrowser> UnLive2DMotionAssetListPtr;
 
-	
 public:
 	/** 在全局撤消/重做时触发多播委托*/
 	FSimpleMulticastDelegate OnPostUndo;
-
-protected:
-	// 序列总长度
-	float GetTotalSequenceLength() const;
 
 protected:
 	// 绑定按键命令
 	void BindCommands();
 	void ExtendToolbar();
 
+	TSharedRef<SDockTab> SpawnTab_Viewport(const FSpawnTabArgs& Args);
+	TSharedRef<SDockTab> SpawnTab_Details(const FSpawnTabArgs& Args);
+	TSharedRef<SDockTab> SpawnTab_AssetBrowser(const FSpawnTabArgs& Args);
+
+	TSharedPtr<SDockTab> OpenNewMotionDocumentTab(UUnLive2DMotion* InMotion);
 };

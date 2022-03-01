@@ -4,6 +4,7 @@
 #include "UnLive2DAssetFamilyManager.h"
 #include "Modules/ModuleManager.h"
 #include "SUnLive2DAssetFamilyShortcutBar.h"
+#include "IUnLive2DAssetFamily.h"
 
 DEFINE_LOG_CATEGORY(LogUnLive2DManagerModule);
 
@@ -25,6 +26,14 @@ TSharedRef<IUnLive2DToolkit> FUnLive2DManagerModule::CreatePersonaToolkit(UUnLiv
 {
 	TSharedRef<FUnLive2DMangerToolkit> NewPersonaToolkit(new FUnLive2DMangerToolkit());
 	NewPersonaToolkit->Initialize(InAsset);
+	NewPersonaToolkit->CreatePreviewScene();
+	return NewPersonaToolkit;
+}
+
+TSharedRef<IUnLive2DToolkit> FUnLive2DManagerModule::CreatePersonaToolkit(UUnLive2DMotion* InMotionAsset) const
+{
+	TSharedRef<FUnLive2DMangerToolkit> NewPersonaToolkit(new FUnLive2DMangerToolkit());
+	NewPersonaToolkit->Initialize(InMotionAsset);
 	NewPersonaToolkit->CreatePreviewScene();
 	return NewPersonaToolkit;
 }

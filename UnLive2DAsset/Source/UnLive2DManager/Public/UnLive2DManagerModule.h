@@ -10,6 +10,7 @@
 class UUnLive2D;
 class IUnLive2DToolkit;
 class IUnLive2DAssetFamily;
+class UUnLive2DMotion;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogUnLive2DManagerModule, Log, All);
 
@@ -34,6 +35,7 @@ public:
 public:
 	// 创建一个工具包
 	virtual TSharedRef<IUnLive2DToolkit> CreatePersonaToolkit(UUnLive2D* InAsset) const;
+	virtual TSharedRef<IUnLive2DToolkit> CreatePersonaToolkit(UUnLive2DMotion* InMotionAsset) const;
 
 	/** 为资产族创建快捷方式小部件 */
 	virtual TSharedRef<SWidget> CreateAssetFamilyShortcutWidget(const TSharedRef<class FWorkflowCentricApplication>& InHostingApp, const TSharedRef<class IUnLive2DAssetFamily>& InAssetFamily) const;
