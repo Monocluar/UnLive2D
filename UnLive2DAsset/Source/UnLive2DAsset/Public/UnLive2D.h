@@ -13,6 +13,7 @@ class FUnLive2DRawModel;
 class UMaterialInterface;
 class UBodySetup;
 class UTexture2D;
+class UUnLive2DMotion;
 
 
 UCLASS(Blueprintable, BlueprintType, Category = UnLive2D)
@@ -64,6 +65,11 @@ public:
 	/** 此组件的着色颜色和不透明度 */
 	UPROPERTY(EditAnywhere, Category = Rendering)
 		FLinearColor TintColorAndOpacity;
+
+public:
+	// 播放动画
+	UFUNCTION(BlueprintCallable)
+		virtual void  PlayMotion(UUnLive2DMotion* InMotion);
 
 public:
     // UnLive2D更新

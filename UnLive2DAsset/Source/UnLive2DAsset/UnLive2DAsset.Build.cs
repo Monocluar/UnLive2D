@@ -39,6 +39,10 @@ public class UnLive2DAsset : ModuleRules
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
-		
-    }
+
+		if (Target.bBuildEditor == true)
+        {
+
+        }
+	}
 }

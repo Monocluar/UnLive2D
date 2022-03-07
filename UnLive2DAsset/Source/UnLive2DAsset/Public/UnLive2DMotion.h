@@ -27,6 +27,8 @@ public:
 	void SetLive2DMotionData(FUnLive2DMotionData& InMotionData);
 #endif
 
+	const FUnLive2DMotionData* GetMotionData();
+
 
 protected:
 	// 动作数据

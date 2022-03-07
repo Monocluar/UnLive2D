@@ -37,7 +37,7 @@ private:
 	void CloseDialog(bool bWasPicked=false);
 
 	// 为父类创建组合菜单
-	void MakeParentClassPicker();
+	//void MakeParentClassPicker();
 
 	// 为目标UnLive2D创建组合菜单
 	void MakeMotionPicker();
@@ -47,9 +47,12 @@ private:
 
 private:
 
-	void OnSkeletonSelected(const FAssetData& AssetData);
+	void OnUnLive2DSelected(const FAssetData& AssetData);
 
-	bool FilterSkeletonBasedOnParentClass(const FAssetData& AssetData);
+	bool FilterMotionBasedOnParentClass(const FAssetData& AssetData);
+
+	// 是否含有该资源
+	bool HasUnLive2DMotion(int32 MotionCount, EUnLive2DMotionGroup MotionGroupType);
 
 private:
 	// 工厂类指针
@@ -75,4 +78,7 @@ private:
 
 	// 设置
 	UUnLive2DMotionImportUI* ImportUI;
+
+	// UnLive2D含有的动作组
+	TArray<FAssetData> MotionAssetArr;
 };

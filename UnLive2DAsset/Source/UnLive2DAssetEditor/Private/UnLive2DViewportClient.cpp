@@ -118,3 +118,13 @@ void FUnLive2DViewportClient::DrawSelectionRectangles(FViewport* InViewport, FCa
 	}
 }
 
+void FUnLive2DViewportClient::DrawCanvas(FViewport& InViewport, FSceneView& View, FCanvas& Canvas)
+{
+	const bool bIsHitTesting = Canvas.IsHitTesting();
+	if (!bIsHitTesting)
+	{
+		Canvas.SetHitProxy(nullptr);
+	}
+	FEditorViewportClient::DrawCanvas(InViewport, View, Canvas);
+}
+

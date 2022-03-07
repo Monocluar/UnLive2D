@@ -7,7 +7,7 @@
 #include "UnLive2DMotionFactory.generated.h"
 
 UCLASS()
-class UNLIVE2DMOTIONEDITOR_API UUnLive2DMotionFactory : public UFactory
+class UNLIVE2DASSETEDITOR_API UUnLive2DMotionFactory : public UFactory
 {
 
 	GENERATED_UCLASS_BODY()

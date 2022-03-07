@@ -11,6 +11,7 @@
 #include "UnLive2DAssetModule.h"
 #include "CubismConfig.h"
 #include "UnLive2D.h"
+#include "UnLive2DMotion.h"
 
 using namespace Live2D::Cubism::Framework;
 
@@ -216,7 +217,7 @@ void FUnLive2DRawModel::OnUpDate(float InDeltaTime)
 		OnMotionPlayEnd.ExecuteIfBound();
 
 		// 没有动作的时候，从Idle动作组里面随机选择一个播放
-		StartRandomMotion(MotionGroupIdle, PriorityIdle);
+		//StartRandomMotion(MotionGroupIdle, PriorityIdle);
 	}
 	else
 	{
@@ -660,6 +661,49 @@ Csm::CubismMotionQueueEntryHandle FUnLive2DRawModel::StartMotion(const Csm::csmC
 	UE_LOG(LogUnLive2D, Log, TEXT("FRawModel::StartMotion: Start [%s_%d]"), UTF8_TO_TCHAR(Group), No);
 
 	return _motionManager->StartMotionPriority(FindPtr, false, Priority);
+}
+
+float FUnLive2DRawModel::StartMotion(UUnLive2DMotion* InMotion)
+{
+	if (InMotion == nullptr) return 0.f;
+
+	const FUnLive2DMotionData* MotionData = InMotion->GetMotionData();
+
+	int32 Priority = (int32)MotionData->MotionGroupType;
+
+	/*if (MotionData->MotionGroupType == EUnLive2DMotionGroup::TapBody)
+	{
+		_motionManager->SetReservePriority(Priority);
+	}
+	else if (!_motionManager->ReserveMotion(Priority))
+	{
+		return 0.f;
+	}*/
+
+	const FString Name = MotionData->GetMotionName();
+
+	Csm::ACubismMotion* FindPtr = Live2DMotions.FindOrAdd(*Name);
+
+	if (FindPtr == nullptr)
+	{
+		Csm::CubismMotion* Motion = static_cast<CubismMotion*>(LoadMotion(MotionData->MotionByteData.GetData(), MotionData->MotionByteData.Num(), NULL));
+
+		FindPtr = Motion;
+
+		if (MotionData->FadeInTime >= 0.0f)
+		{
+			Motion->SetFadeInTime(MotionData->FadeInTime);
+		}
+
+		if (MotionData->FadeOutTime >= 0.0f)
+		{
+			Motion->SetFadeOutTime(MotionData->FadeOutTime);
+		}
+		Motion->SetEffectIds(EyeBlinkIds, LipSyncIds);
+	}
+
+	_motionManager->StartMotionPriority(FindPtr, false, Priority);
+	return 0.f;
 }
 
 Csm::CubismMotionQueueEntryHandle FUnLive2DRawModel::StartRandomMotion(const Csm::csmChar* Group, Csm::csmInt32 Priority)

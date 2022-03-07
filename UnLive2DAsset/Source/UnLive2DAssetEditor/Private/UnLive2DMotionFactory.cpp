@@ -2,7 +2,7 @@
 #include "UnLive2DMotion.h"
 #include "UnLive2DMotionImportUI.h"
 #include "Misc/FileHelper.h"
-#include "Slate/SUnLive2DMotionCrateDialog.h"
+#include "UnLive2DMotionEditor/SUnLive2DMotionCrateDialog.h"
 
 UUnLive2DMotionFactory::UUnLive2DMotionFactory(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)

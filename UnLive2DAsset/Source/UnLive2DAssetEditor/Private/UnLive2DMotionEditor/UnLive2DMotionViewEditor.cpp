@@ -2,6 +2,11 @@
 #include "UnLive2DManagerModule.h"
 #include "SSingleObjectDetailsPanel.h"
 #include "IUnLive2DAssetFamily.h"
+#include "UnLive2DMotion.h"
+#include "UnLive2DMotionEditor/SUnLive2DMotionAssetBrowser.h"
+#include "SUnLive2DMotionEditorViewport.h"
+#include "UnLive2DMotionViewportClient.h"
+#include "UnLive2D.h"
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
 
@@ -61,17 +66,18 @@ FUnLive2DMotionViewEditor::FUnLive2DMotionViewEditor()
 void FUnLive2DMotionViewEditor::InitUnLive2DMotionViewEditor(const EToolkitMode::Type Mode, const TSharedPtr< IToolkitHost >& InitToolkitHost, UUnLive2DMotion* InitUnLive2DMotion)
 {
 	UnLive2DMotionBeingEdited = InitUnLive2DMotion;
-
 	FUnLive2DManagerModule& MangerModule = FModuleManager::LoadModuleChecked<FUnLive2DManagerModule>("UnLive2DManager");
 	UnLive2DMotionToolkit = MangerModule.CreatePersonaToolkit(UnLive2DMotionBeingEdited);
 
 	TSharedRef<IUnLive2DAssetFamily> AssetFamily = MangerModule.CreatePersonaAssetFamily(InitUnLive2DMotion);
 	AssetFamily->RecordAssetOpened(FAssetData(InitUnLive2DMotion));
 
+	UpDataMotion();
+
 	BindCommands();
 
-	/*ViewportPtr = SNew(SUnLive2DEditorViewport)
-		.UnLive2DBeingEdited(this, &FUnLive2DMotionViewEditor::GetUnLive2DBeingEdited);*/
+	ViewportPtr = SNew(SUnLive2DMotionEditorViewport)
+		.UnLive2DMotionBeingEdited(this, &FUnLive2DMotionViewEditor::GetUnLive2DMotionEdited);
 
 	UnLive2DMotionAssetListPtr = SNew(SUnLive2DMotionAssetBrowser, SharedThis(this));
 
@@ -218,8 +224,6 @@ void FUnLive2DMotionViewEditor::SetUnLive2DMotionBeingEdited(UUnLive2DMotion* Ne
 		UUnLive2DMotion* OldMotion = UnLive2DMotionBeingEdited;
 		UnLive2DMotionBeingEdited = NewMotion;
 
-		//ViewportPtr->NotifySpriteBeingEditedHasChanged();
-
 		RemoveEditingObject(OldMotion);
 		AddEditingObject(NewMotion);
 
@@ -259,6 +263,14 @@ void FUnLive2DMotionViewEditor::ExtendToolbar()
 	}));
 }
 
+void FUnLive2DMotionViewEditor::UpDataMotion()
+{
+	if (UnLive2DMotionBeingEdited && UnLive2DMotionBeingEdited->UnLive2D)
+	{
+		UnLive2DMotionBeingEdited->UnLive2D->PlayMotion(UnLive2DMotionBeingEdited);
+	}
+}
+
 TSharedRef<SDockTab> FUnLive2DMotionViewEditor::SpawnTab_Viewport(const FSpawnTabArgs& Args)
 {
 	return SNew(SDockTab)
@@ -266,10 +278,10 @@ TSharedRef<SDockTab> FUnLive2DMotionViewEditor::SpawnTab_Viewport(const FSpawnTa
 		[
 			SNew(SVerticalBox)
 
-			/*+ SVerticalBox::Slot()
+			+ SVerticalBox::Slot()
 			[
 				ViewportPtr.ToSharedRef()
-			]*/
+			]
 		];
 }
 
@@ -305,6 +317,7 @@ TSharedPtr<SDockTab> FUnLive2DMotionViewEditor::OpenNewMotionDocumentTab(UUnLive
 		TSharedRef<IUnLive2DAssetFamily> AssetFamily = MangerModule.CreatePersonaAssetFamily(InMotion);
 		AssetFamily->RecordAssetOpened(FAssetData(InMotion));
 
+		UpDataMotion();
 	}
 
 	return OpenedTab;

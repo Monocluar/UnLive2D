@@ -10,6 +10,18 @@
 
 #define LOCTEXT_NAMESPACE "UnLive2DMotionFactory"
 
+template<typename AssetType>
+static void FindAssets(const UUnLive2D* InUnLive2D, TArray<FAssetData>& OutAssetData)
+{
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	FARFilter Filter;
+	Filter.bRecursiveClasses = true;
+	Filter.ClassNames.Add(AssetType::StaticClass()->GetFName());
+	Filter.TagsAndValues.Add(TEXT("UnLive2D"), FAssetData(InUnLive2D).GetExportTextName());
+
+	AssetRegistryModule.Get().GetAssets(Filter, OutAssetData);
+}
+
 void SUnLive2DMotionCrateDialog::Construct(const FArguments& InArgs)
 {
 	ImportUI = InArgs._ImportUI;
@@ -84,6 +96,7 @@ void SUnLive2DMotionCrateDialog::Construct(const FArguments& InArgs)
 
 bool SUnLive2DMotionCrateDialog::ConfigureProperties(TWeakObjectPtr<UUnLive2DMotionFactory> InUnLive2DMotionFactory)
 {
+
 	UnLive2DMotionFactory = InUnLive2DMotionFactory;
 
 	TSharedRef<SWindow> Window = SNew(SWindow)
@@ -104,10 +117,17 @@ bool SUnLive2DMotionCrateDialog::ConfigureProperties(TWeakObjectPtr<UUnLive2DMot
 
 FReply SUnLive2DMotionCrateDialog::OkClicked()
 {
+	MotionAssetArr.Empty();
+
 	if (UnLive2DMotionFactory.IsValid())
 	{
 		UnLive2DMotionFactory->BlueprintType = BPTYPE_Normal;
 		UnLive2DMotionFactory->TargetUnLive2D = Cast<UUnLive2D>(TargetUnLive2DAsset.GetAsset());
+
+		if (UnLive2DMotionFactory.IsValid() && (UnLive2DMotionFactory->TargetUnLive2D != nullptr))
+		{
+			FindAssets<UUnLive2DMotion>(UnLive2DMotionFactory->TargetUnLive2D, MotionAssetArr);
+		}
 	}
 
 	if (!TargetUnLive2DAsset.IsValid())
@@ -122,6 +142,13 @@ FReply SUnLive2DMotionCrateDialog::OkClicked()
 		FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("NeedValidMotionGroupType", "动作组类型错误"));
 		return FReply::Handled();
 	}
+
+	if (HasUnLive2DMotion(ImportUI->MotionCount, ImportUI->MotionGroupType))
+	{
+		FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("HasNeedValidMotione", "已经重复了动作组"));
+		return FReply::Handled();
+	}
+
 
 	CloseDialog(true);
 
@@ -149,8 +176,8 @@ void SUnLive2DMotionCrateDialog::MakeMotionPicker()
 
 	FAssetPickerConfig AssetPickerConfig;
 	AssetPickerConfig.Filter.ClassNames.Add(UUnLive2D::StaticClass()->GetFName());
-	AssetPickerConfig.OnAssetSelected = FOnAssetSelected::CreateSP(this, &SUnLive2DMotionCrateDialog::OnSkeletonSelected);
-	AssetPickerConfig.OnShouldFilterAsset = FOnShouldFilterAsset::CreateSP(this, &SUnLive2DMotionCrateDialog::FilterSkeletonBasedOnParentClass);
+	AssetPickerConfig.OnAssetSelected = FOnAssetSelected::CreateSP(this, &SUnLive2DMotionCrateDialog::OnUnLive2DSelected);
+	AssetPickerConfig.OnShouldFilterAsset = FOnShouldFilterAsset::CreateSP(this, &SUnLive2DMotionCrateDialog::FilterMotionBasedOnParentClass);
 	AssetPickerConfig.bAllowNullSelection = true;
 	AssetPickerConfig.InitialAssetViewType = EAssetViewType::Column;
 	AssetPickerConfig.InitialAssetSelection = TargetUnLive2DAsset;
@@ -186,13 +213,31 @@ void SUnLive2DMotionCrateDialog::MakeMotionDetail()
 	DetailsView->SetObject(ImportUI);
 }
 
-void SUnLive2DMotionCrateDialog::OnSkeletonSelected(const FAssetData& AssetData)
+void SUnLive2DMotionCrateDialog::OnUnLive2DSelected(const FAssetData& AssetData)
 {
 	TargetUnLive2DAsset = AssetData;
 }
 
-bool SUnLive2DMotionCrateDialog::FilterSkeletonBasedOnParentClass(const FAssetData& AssetData)
+bool SUnLive2DMotionCrateDialog::FilterMotionBasedOnParentClass(const FAssetData& AssetData)
 {
+	return false;
+}
+
+bool SUnLive2DMotionCrateDialog::HasUnLive2DMotion(int32 MotionCount, EUnLive2DMotionGroup MotionGroupType)
+{
+	for (FAssetData& Item : MotionAssetArr)
+	{
+		UUnLive2DMotion* Motion = Cast<UUnLive2DMotion>(Item.GetAsset());
+		if (Motion)
+		{
+			const FUnLive2DMotionData* MotionData = Motion->GetMotionData();
+			if (MotionData->MotionCount == MotionCount && MotionData->MotionGroupType == MotionGroupType )
+			{
+				return true;
+			}
+		}
+	}
+
 	return false;
 }
 

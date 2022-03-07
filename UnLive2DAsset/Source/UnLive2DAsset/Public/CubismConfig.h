@@ -27,7 +27,7 @@ public:
 UENUM(BlueprintType)
 enum class EUnLive2DMotionGroup : uint8
 {
-	None,
+	None = 0,
 	Idle,
 	Normal,
 	TapBody
@@ -63,7 +63,7 @@ public:
 	FUnLive2DMotionData()
 	{}
 
-	FString GetMotionName()
+	FString GetMotionName() const
 	{
 		UEnum* GroupEnumPtr = StaticEnum<EUnLive2DMotionGroup>();
 		FString GroupStr = GroupEnumPtr->GetNameStringByIndex((int32)MotionGroupType);

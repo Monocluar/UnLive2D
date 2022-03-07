@@ -20,4 +20,9 @@ void UUnLive2DMotion::SetLive2DMotionData(FUnLive2DMotionData& InMotionData)
 	MotionData = InMotionData;
 }
 
+const FUnLive2DMotionData* UUnLive2DMotion::GetMotionData()
+{
+	return &MotionData;
+}
+
 #endif

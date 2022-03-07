@@ -43,7 +43,7 @@ public:
 
 public:
 
-	UUnLive2DMotion* GetUnLive2DMotionEdited() {return UnLive2DMotionBeingEdited; }
+	UUnLive2DMotion* GetUnLive2DMotionEdited() const {return UnLive2DMotionBeingEdited; }
 
 	void SetUnLive2DMotionBeingEdited(UUnLive2DMotion* NewMotion);
 
@@ -57,7 +57,11 @@ private:
 	/** UnLive2D资源管理器 */
 	TSharedPtr<class IUnLive2DToolkit> UnLive2DMotionToolkit;
 
+	// UnLive2D动作资源列表
 	TSharedPtr<class SUnLive2DMotionAssetBrowser> UnLive2DMotionAssetListPtr;
+
+
+	TSharedPtr<class SUnLive2DMotionEditorViewport> ViewportPtr;
 
 public:
 	/** 在全局撤消/重做时触发多播委托*/
@@ -67,6 +71,8 @@ protected:
 	// 绑定按键命令
 	void BindCommands();
 	void ExtendToolbar();
+
+	void UpDataMotion();
 
 	TSharedRef<SDockTab> SpawnTab_Viewport(const FSpawnTabArgs& Args);
 	TSharedRef<SDockTab> SpawnTab_Details(const FSpawnTabArgs& Args);

@@ -60,6 +60,8 @@ protected:
 		return FBox(ForceInitToZero);
 	}
 
+	virtual void DrawCanvas(FViewport& InViewport, FSceneView& View, FCanvas& Canvas) override;
+
 protected:
 	/** Checkerboard texture */
 	UTexture2D* CheckerboardTexture;

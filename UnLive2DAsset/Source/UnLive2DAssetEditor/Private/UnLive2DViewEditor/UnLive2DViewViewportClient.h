@@ -6,15 +6,6 @@
 class UUnLive2D;
 class UUnLive2DRendererComponent;
 
-namespace EUnLive2DEditorMode
-{
-	enum Type
-	{
-		ViewMode,
-		AnimMode
-	};
-}
-
 class FUnLive2DViewViewportClient : public FUnLive2DViewportClient
 {
 public:
@@ -56,9 +47,6 @@ protected:
 	void EventOnLeftMouseUp(FIntPoint MousePoint);
 	void EventOnLeftMouseMove(FIntPoint MousePointDifference);
 
-private:
-	// 选择窗口
-	void InternalActivateNewMode(EUnLive2DEditorMode::Type NewMode);
 
 private:
 
@@ -67,9 +55,6 @@ private:
 	TWeakObjectPtr<UUnLive2DRendererComponent> AnimatedRenderComponent;
 
 private:
-	// 编辑器类型
-	EUnLive2DEditorMode::Type CurrentMode;
-
 	// The preview scene
 	FPreviewScene OwnedPreviewScene;
 

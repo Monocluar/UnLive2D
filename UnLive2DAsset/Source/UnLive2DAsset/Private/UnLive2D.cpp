@@ -73,6 +73,14 @@ void UUnLive2D::OnMotionPlayeEnd_Implementation()
 {
 }
 
+void UUnLive2D::PlayMotion(UUnLive2DMotion* InMotion)
+{
+	if (UnLive2DRawModel.IsValid())
+	{
+		UnLive2DRawModel->StartMotion(InMotion);
+	}
+}
+
 void UUnLive2D::InitLive2D()
 {
 	if (UnLive2DRawModel.IsValid()) return;

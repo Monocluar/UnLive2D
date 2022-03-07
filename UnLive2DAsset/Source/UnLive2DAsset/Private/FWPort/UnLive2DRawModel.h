@@ -7,6 +7,7 @@
 #include "Motion/CubismMotionQueueManager.hpp"
 
 using namespace Live2D::Cubism::Framework;
+class UUnLive2DMotion;
 
 // Live2D 模型基础类
 class FUnLive2DRawModel : public Csm::CubismUserModel
@@ -56,7 +57,10 @@ public:
     void SetPhysicsGravity(const FVector2D& InGravity);
 
     // 设置风力方向
-    void SetPhysicsWind(const FVector2D& InWind);
+	void SetPhysicsWind(const FVector2D& InWind);
+
+    // 播放Live2D动作
+	float StartMotion(UUnLive2DMotion* InMotion);
 
 private:
 
@@ -76,6 +80,7 @@ private:
 private:
     // 播放Live2D动作
     Csm::CubismMotionQueueEntryHandle StartMotion(const Csm::csmChar* Group, Csm::csmInt32 No, Csm::csmInt32 Priority);
+
     // 开始随机播放Live2D动作
 	Csm::CubismMotionQueueEntryHandle StartRandomMotion(const Csm::csmChar* Group, Csm::csmInt32 Priority);
 

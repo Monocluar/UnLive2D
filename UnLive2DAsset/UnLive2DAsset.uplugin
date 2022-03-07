@@ -29,11 +29,6 @@
 			"Name": "UnLive2DManager",
 			"Type": "Editor",
 			"LoadingPhase": "Default"
-		},
-		{
-			"Name": "UnLive2DMotionEditor",
-			"Type": "Editor",
-			"LoadingPhase": "Default"
 		}
 	],
   "Plugins": [

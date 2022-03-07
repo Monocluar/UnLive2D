@@ -1,6 +1,6 @@
 #include "UnLive2DMotionTypeAction.h"
 #include "UnLive2DMotion.h"
-#include "UnLive2DMotionViewEditor.h"
+#include "UnLive2DMotionEditor/UnLive2DMotionViewEditor.h"
 
 #define LOCTEXT_NAMESPACE "FUnLive2DMotionTypeAction"
 
