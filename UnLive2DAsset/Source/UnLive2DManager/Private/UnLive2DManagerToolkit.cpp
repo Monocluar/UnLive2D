@@ -2,6 +2,7 @@
 #include "UnLive2DMotion.h"
 #include "UnLive2DManagerAssetFamily.h"
 #include "UnLive2D.h"
+#include "Animation/UnLive2DAnimBlueprint.h"
 
 FUnLive2DMangerToolkit::FUnLive2DMangerToolkit()
 	: UnLive2D(nullptr)
@@ -34,6 +35,16 @@ void FUnLive2DMangerToolkit::Initialize(UUnLive2DMotion* InUnLive2DMotion)
 	FindCounterpartAssets(InUnLive2DMotion, UnLive2D);
 }
 
+void FUnLive2DMangerToolkit::Initialize(UUnLive2DAnimBlueprint* InAnimBlueprint)
+{
+	check(InAnimBlueprint);
+	UnLive2DAnimBlueprint = InAnimBlueprint;
+	InitialAssetClass = UUnLive2DAnimBlueprint::StaticClass();
+
+	FindCounterpartAssets(InAnimBlueprint, UnLive2D);
+
+}
+
 void FUnLive2DMangerToolkit::CreatePreviewScene()
 {
 
@@ -42,6 +53,21 @@ void FUnLive2DMangerToolkit::CreatePreviewScene()
 UUnLive2D* FUnLive2DMangerToolkit::GetUnLive2D() const
 {
 	return UnLive2D.Get();
+}
+
+UUnLive2DRendererComponent* FUnLive2DMangerToolkit::GetPreviewUnLive2DComponent() const
+{
+	return nullptr;
+}
+
+UUnLive2DAnimBlueprint* FUnLive2DMangerToolkit::GetAnimBlueprint() const
+{
+	return UnLive2DAnimBlueprint.Get();
+}
+
+UUnLive2DMotion* FUnLive2DMangerToolkit::GetMotionAsset() const
+{
+	return UnLive2DMotion.Get();
 }
 
 int32 FUnLive2DMangerToolkit::GetCustomData(const int32 Key) const

@@ -38,6 +38,14 @@ TSharedRef<IUnLive2DToolkit> FUnLive2DManagerModule::CreatePersonaToolkit(UUnLiv
 	return NewPersonaToolkit;
 }
 
+TSharedRef<IUnLive2DToolkit> FUnLive2DManagerModule::CreatePersonaToolkit(UUnLive2DAnimBlueprint* InAnimBlueprint) const
+{
+	TSharedRef<FUnLive2DMangerToolkit> NewPersonaToolkit(new FUnLive2DMangerToolkit());
+	NewPersonaToolkit->Initialize(InAnimBlueprint);
+	NewPersonaToolkit->CreatePreviewScene();
+	return NewPersonaToolkit;
+}
+
 TSharedRef<SWidget> FUnLive2DManagerModule::CreateAssetFamilyShortcutWidget(const TSharedRef<class FWorkflowCentricApplication>& InHostingApp, const TSharedRef<class IUnLive2DAssetFamily>& InAssetFamily) const
 {
 	return SNew(SUnLive2DAssetFamilyShortcutBar, InHostingApp, InAssetFamily);
@@ -46,6 +54,11 @@ TSharedRef<SWidget> FUnLive2DManagerModule::CreateAssetFamilyShortcutWidget(cons
 TSharedRef<IUnLive2DAssetFamily> FUnLive2DManagerModule::CreatePersonaAssetFamily(const UObject* InAsset) const
 {
 	return FUnLive2DAssetFamilyManager::Get().CreatePersonaAssetFamily(InAsset);
+}
+
+void FUnLive2DManagerModule::CustomizeBlueprintEditorDetails(const TSharedRef<class IDetailsView>& InDetailsView, FOnInvokeTab InOnInvokeTab)
+{
+	/*InDetailsView->RegisterInstancedCustomPropertyLayout()*/
 }
 
 

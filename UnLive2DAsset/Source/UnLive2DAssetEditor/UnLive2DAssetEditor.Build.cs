@@ -39,6 +39,9 @@ public class UnLive2DAssetEditor : ModuleRules
 				"Documentation",
 				"ApplicationCore",
 				"Kismet",
+				"BlueprintGraph",
+				"ContentBrowser",
+				"ToolMenus",
 				"UnLive2DManager"
 				// ... add private dependencies that you statically link with here ...	
 			}

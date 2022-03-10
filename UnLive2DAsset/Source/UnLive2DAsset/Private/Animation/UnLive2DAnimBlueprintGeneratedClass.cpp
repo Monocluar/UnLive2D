@@ -7,7 +7,8 @@ UUnLive2DAnimBlueprintGeneratedClass::UUnLive2DAnimBlueprintGeneratedClass(const
 
 #if WITH_EDITORONLY_DATA
 
-const int32* UUnLive2DAnimBlueprintGeneratedClass::GetNodePropertyIndexFromGuid(FGuid Guid, EPropertySearchMode::Type SearchMode /*= EPropertySearchMode::OnlyThis*/)
+/*
+const int32* UUnLive2DAnimBlueprintGeneratedClass::GetNodePropertyIndexFromGuid(FGuid Guid, EPropertySearchMode::Type SearchMode / *= EPropertySearchMode::OnlyThis* /)
 {
 	if (SearchMode == EPropertySearchMode::OnlyThis)
 	{
@@ -16,6 +17,6 @@ const int32* UUnLive2DAnimBlueprintGeneratedClass::GetNodePropertyIndexFromGuid(
 	}
 
 	return NULL;
-}
+}*/
 
 #endif

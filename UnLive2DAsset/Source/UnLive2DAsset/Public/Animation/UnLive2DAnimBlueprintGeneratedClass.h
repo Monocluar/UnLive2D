@@ -5,6 +5,8 @@
 
 #include "UnLive2DAnimBlueprintGeneratedClass.generated.h"
 
+class UUnLive2D;
+
 USTRUCT()
 struct FUnLive2DStateMachineDebugData
 {
@@ -57,8 +59,12 @@ class UNLIVE2DASSET_API UUnLive2DAnimBlueprintGeneratedClass : public UBlueprint
 public:
 
 	// 此blueprint类中存在的状态机列表
+	/*UPROPERTY()
+		TArray<FBakedAnimationStateMachine> BakedAnimationStateMachines;*/
+
+	/** Target UnLive2D for this blueprint class */
 	UPROPERTY()
-		TArray<FBakedAnimationStateMachine> BakedAnimationStateMachines;
+		UUnLive2D* TargetUnLive2D;
 
 public:
 
@@ -70,7 +76,9 @@ public:
 		return AnimBlueprintDebugData;
 	}
 
-	const int32* GetNodePropertyIndexFromGuid(FGuid Guid, EPropertySearchMode::Type SearchMode = EPropertySearchMode::OnlyThis);
+	//const int32* GetNodePropertyIndexFromGuid(FGuid Guid, EPropertySearchMode::Type SearchMode = EPropertySearchMode::OnlyThis);
 
 #endif
+
+	UUnLive2D* GetTargetUnLive2D() const { return TargetUnLive2D; }
 };

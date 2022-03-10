@@ -7,6 +7,7 @@
 
 class UUnLive2D;
 class UUnLive2DMotion;
+class UUnLive2DAnimBlueprint;
 
 
 class FUnLive2DMangerToolkit : public IUnLive2DToolkit, public TSharedFromThis<FUnLive2DMangerToolkit> 
@@ -20,6 +21,7 @@ public:
 
 	void Initialize(UUnLive2D* InUnLive2D);
 	void Initialize(UUnLive2DMotion* InUnLive2DMotion);
+	void Initialize(UUnLive2DAnimBlueprint* InAnimBlueprint);
 
 	// 创建预览窗口
 	void CreatePreviewScene();
@@ -27,6 +29,15 @@ public:
 public:	
 	/** 获取Live2D资源 */
 	virtual UUnLive2D* GetUnLive2D() const override;
+
+	/** 获取Live2D浏览组件 */
+	virtual UUnLive2DRendererComponent* GetPreviewUnLive2DComponent() const override;
+
+	// 获取Live2D动画蓝图
+	virtual UUnLive2DAnimBlueprint* GetAnimBlueprint() const override;
+
+	// 获取Live2D动画资源
+	virtual UUnLive2DMotion* GetMotionAsset() const override;
 
 	/** 检索编辑器自定义数据。如果密钥无效，则返回INDEX_NONE */
 	virtual int32 GetCustomData(const int32 Key) const override;
@@ -43,6 +54,9 @@ private:
 
 	// 动画资源
 	TWeakObjectPtr<UUnLive2DMotion> UnLive2DMotion;
+
+	// 动画蓝图
+	TWeakObjectPtr<UUnLive2DAnimBlueprint> UnLive2DAnimBlueprint;
 
 	/** 允许此编辑器使用自定义数据 */
 	TMap<int32, int32> CustomEditorData;

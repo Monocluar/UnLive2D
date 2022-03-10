@@ -8,6 +8,7 @@
 #include "AssetToolsModule.h"
 #include "UnLive2D.h"
 #include "UnLive2DMotionTypeAction.h"
+#include "UnLive2DAnimBlueprint/UnLive2DAnimBlurprintTypeAction.h"
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
 
@@ -41,6 +42,7 @@ void FUnLive2DAssetEditorModule::OnPostEngineInit()
 
 	AssetTools.RegisterAssetTypeActions(MakeShareable(new FUnLive2DTypeAction(GameAssetCategory)));
 	AssetTools.RegisterAssetTypeActions(MakeShareable(new FUnLive2DMotionTypeAction(GameAssetCategory)));
+	AssetTools.RegisterAssetTypeActions(MakeShareable(new FUnLive2DAnimBlurprintTypeAction(GameAssetCategory)));
 
 }
 

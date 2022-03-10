@@ -27,3 +27,17 @@ UClass* UUnLive2DAnimBlueprint::GetBlueprintClass() const
 }
 
 #endif
+
+UUnLive2DAnimBlueprint* UUnLive2DAnimBlueprint::GetPreviewAnimationBlueprint() const
+{
+#if WITH_EDITORONLY_DATA
+	/*if (!PreviewAnimationBlueprint.IsValid())
+	{
+		PreviewAnimationBlueprint.LoadSynchronous();
+	}
+	return PreviewAnimationBlueprint.Get();*/
+	return nullptr;
+#else
+	return nullptr;
+#endif
+}

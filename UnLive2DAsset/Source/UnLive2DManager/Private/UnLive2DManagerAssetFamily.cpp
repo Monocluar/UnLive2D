@@ -1,6 +1,7 @@
 #include "UnLive2DManagerAssetFamily.h"
 #include "UnLive2D.h"
 #include "UnLive2DMotion.h"
+#include "Animation/UnLive2DAnimBlueprint.h"
 
 #define LOCTEXT_NAMESPACE "UnLive2DManagerAssetFamily"
 
@@ -30,6 +31,10 @@ FUnLive2DManagerAssetFamily::FUnLive2DManagerAssetFamily(const UObject* InFromOb
 		{
 			UnLive2DMotion = CastChecked<UUnLive2DMotion>(InFromObject);
 		}
+		else if (InFromObject->IsA<UUnLive2DAnimBlueprint>())
+		{
+			UnLive2DAnimBlueprint = CastChecked<UUnLive2DAnimBlueprint>(InFromObject);
+		}
 
 		FindCounterpartAssets(InFromObject, UnLive2D);
 	}
@@ -53,6 +58,11 @@ void FUnLive2DManagerAssetFamily::FindCounterpartAssets(const UObject* InAsset, 
 		const UUnLive2DMotion* MotionAsset = CastChecked<const UUnLive2DMotion>(InAsset);
 		OutUnLive2D = MotionAsset->UnLive2D;
 	}
+	else if (InAsset->IsA<UUnLive2DAnimBlueprint>())
+	{
+		const UUnLive2DAnimBlueprint* UnLive2DAnimBlueprintAsset = CastChecked<const UUnLive2DAnimBlueprint>(InAsset);
+		OutUnLive2D = UnLive2DAnimBlueprintAsset->TargetUnLive2D;
+	}
 }
 
 void FUnLive2DManagerAssetFamily::GetAssetTypes(TArray<UClass*>& OutAssetTypes) const
@@ -60,6 +70,7 @@ void FUnLive2DManagerAssetFamily::GetAssetTypes(TArray<UClass*>& OutAssetTypes) 
 	OutAssetTypes.Reset();
 	OutAssetTypes.Add(UUnLive2D::StaticClass());
 	OutAssetTypes.Add(UUnLive2DMotion::StaticClass());
+	OutAssetTypes.Add(UUnLive2DAnimBlueprint::StaticClass());
 }
 
 FAssetData FUnLive2DManagerAssetFamily::FindAssetOfType(UClass* InAssetClass) const
@@ -86,6 +97,22 @@ FAssetData FUnLive2DManagerAssetFamily::FindAssetOfType(UClass* InAssetClass) co
 				}
 			}
 		}
+		else if (InAssetClass->IsChildOf<UUnLive2DAnimBlueprint>())
+		{
+			if (UnLive2DAnimBlueprint.IsValid())
+			{
+				return FAssetData(UnLive2DAnimBlueprint.Get());
+			}
+			else
+			{
+				TArray<FAssetData> Assets;
+				FindAssets<UUnLive2DAnimBlueprint>(UnLive2D.Get(), Assets, "TargetUnLive2D");
+				if (Assets.IsValidIndex(0))
+				{
+					return Assets[0];
+				}
+			}
+		}
 	}
 
 	return FAssetData();
@@ -104,6 +131,10 @@ void FUnLive2DManagerAssetFamily::FindAssetsOfType(UClass* InAssetClass, TArray<
 		{
 			FindAssets<UAnimationAsset>(UnLive2D.Get(), OutAssets, "UnLive2D");
 		}
+		else if (InAssetClass->IsChildOf<UUnLive2DAnimBlueprint>())
+		{
+			FindAssets<UUnLive2DAnimBlueprint>(UnLive2D.Get(), OutAssets, "TargetUnLive2D");
+		}
 	}
 }
 
@@ -118,6 +149,10 @@ FText FUnLive2DManagerAssetFamily::GetAssetTypeDisplayName(UClass* InAssetClass)
 		else if (InAssetClass->IsChildOf<UUnLive2DMotion>())
 		{
 			return LOCTEXT("UnLive2DMotionDisplayName", "Live2D动作");
+		}
+		else if (InAssetClass->IsChildOf<UUnLive2DAnimBlueprint>())
+		{
+			return LOCTEXT("UnLive2DMotionDisplayName", "Live2D动画蓝图");
 		}
 	}
 
@@ -142,6 +177,15 @@ bool FUnLive2DManagerAssetFamily::IsAssetCompatible(const FAssetData& InAssetDat
 				return Result.GetValue() == FAssetData(UnLive2D.Get()).GetExportTextName();
 			}
 		}
+		else if (Class->IsChildOf<UUnLive2DAnimBlueprint>())
+		{
+			FAssetDataTagMapSharedView::FFindTagResult Result = InAssetData.TagsAndValues.FindTag("TargetUnLive2D");
+
+			if (Result.IsSet())
+			{
+				return Result.GetValue() == FAssetData(UnLive2D.Get()).GetExportTextName();
+			}
+		}
 	}
 
 	return false;
@@ -158,6 +202,10 @@ UClass* FUnLive2DManagerAssetFamily::GetAssetFamilyClass(UClass* InClass) const
 		else if (InClass->IsChildOf<UUnLive2DMotion>())
 		{
 			return UUnLive2DMotion::StaticClass();
+		}
+		else if (InClass->IsChildOf<UUnLive2DAnimBlueprint>())
+		{
+			return UUnLive2DAnimBlueprint::StaticClass();
 		}
 	}
 
@@ -178,6 +226,10 @@ void FUnLive2DManagerAssetFamily::RecordAssetOpened(const FAssetData& InAssetDat
 			else if (Class->IsChildOf<UUnLive2DMotion>())
 			{
 				UnLive2DMotion = Cast<UUnLive2DMotion>(InAssetData.GetAsset());
+			}
+			else if (Class->IsChildOf<UUnLive2DAnimBlueprint>())
+			{
+				UnLive2DAnimBlueprint = Cast<UUnLive2DAnimBlueprint>(InAssetData.GetAsset());
 			}
 
 			OnAssetOpened.Broadcast(InAssetData.GetAsset());

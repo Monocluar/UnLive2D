@@ -28,6 +28,10 @@ void FUnLive2DEditorStyle::Initialize()
 		StyleSet->Set(FName(TEXT("ClassIcon.UnLive2DMotion")), new IMAGE_BRUSH("AnimComposite_16x", FVector2D(16, 16)));
 	}
 
+	{
+		StyleSet->Set(FName(TEXT("ClassThumbnail.UnLive2DAnimBlueprint")), new IMAGE_BRUSH("AnimInstance_64x", FVector2D(64, 64)));
+		StyleSet->Set(FName(TEXT("ClassIcon.UnLive2DAnimBlueprint")), new IMAGE_BRUSH("AnimInstance_16x", FVector2D(16, 16)));
+	}
 
     FSlateStyleRegistry::RegisterSlateStyle(*StyleSet);
 }

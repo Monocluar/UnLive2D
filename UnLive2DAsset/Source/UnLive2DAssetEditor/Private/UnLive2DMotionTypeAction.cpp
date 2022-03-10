@@ -5,7 +5,8 @@
 #define LOCTEXT_NAMESPACE "FUnLive2DMotionTypeAction"
 
 FUnLive2DMotionTypeAction::FUnLive2DMotionTypeAction(uint32 InAssetCategory)
-	:AssetType(InAssetCategory)
+	: FAssetTypeActions_Base()
+	, AssetType(InAssetCategory)
 {
 
 }

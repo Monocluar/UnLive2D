@@ -13,8 +13,17 @@ public:
 	virtual FText GetName() const override;
 	virtual UClass* GetSupportedClass() const override;
 	virtual FColor GetTypeColor() const override;
+	virtual bool HasActions(const TArray<UObject*>& InObjects) const override { return true; }
+	virtual void GetActions(const TArray<UObject*>& InObjects, struct FToolMenuSection& Section) override;
 
 	virtual void OpenAssetEditor(const TArray<UObject*>& InObjects, TSharedPtr<class IToolkitHost> EditWithinLevelEditor = TSharedPtr<IToolkitHost>()) override;
+
+private:
+
+	void FillCreateMenu(FMenuBuilder& MenuBuilder, TArray<TWeakObjectPtr<UUnLive2D>> UnLive2DArr);
+
+	void CreateNewAnimBlueprint( TArray<TWeakObjectPtr<UUnLive2D>> UnLive2DArr);
+
 private:
 	uint32 AssetType;
 };
