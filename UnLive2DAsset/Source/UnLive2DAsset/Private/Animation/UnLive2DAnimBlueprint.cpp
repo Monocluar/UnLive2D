@@ -2,6 +2,10 @@
 #include "Animation/UnLive2DAnimBlueprintGeneratedClass.h"
 #include "Animation/UnLive2DAnimInstance.h"
 
+#if WITH_EDITOR
+#include "UnLive2DAssetEditor.h"
+#endif
+
 UUnLive2DAnimBlueprint::UUnLive2DAnimBlueprint(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -19,6 +23,11 @@ UUnLive2DAnimBlueprintGeneratedClass* UUnLive2DAnimBlueprint::GetUnLive2DAnimBlu
 	return Result;
 }
 
+void UUnLive2DAnimBlueprint::RecompileVM()
+{
+
+}
+
 #if WITH_EDITOR
 
 UClass* UUnLive2DAnimBlueprint::GetBlueprintClass() const
@@ -26,7 +35,22 @@ UClass* UUnLive2DAnimBlueprint::GetBlueprintClass() const
 	return UUnLive2DAnimBlueprintGeneratedClass::StaticClass();
 }
 
+void UUnLive2DAnimBlueprint::GetTypeActions(FBlueprintActionDatabaseRegistrar& ActionRegistrar) const
+{
+	FUnLive2DAssetEditorModule::Get().GetTypeActions((UUnLive2DAnimBlueprint*)this, ActionRegistrar);
+}
+
 #endif
+
+void UUnLive2DAnimBlueprint::CleanupBoneHierarchyDeprecated()
+{
+
+}
+
+void UUnLive2DAnimBlueprint::CreateMemberVariablesOnLoad()
+{
+
+}
 
 UUnLive2DAnimBlueprint* UUnLive2DAnimBlueprint::GetPreviewAnimationBlueprint() const
 {

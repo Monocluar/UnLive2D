@@ -170,7 +170,6 @@ FBox FUnLive2DViewViewportClient::GetDesiredFocusBounds() const
 	{
 		return FUnLive2DViewportClient::GetDesiredFocusBounds();
 	}
-
 	/*FVector2D Size = UnLive2DBeingEditedLastFrame->DrawSize;
 
 	FVector2D Origin = Size  * UnLive2DBeingEditedLastFrame->Pivot; //原点坐标
@@ -181,7 +180,7 @@ FBox FUnLive2DViewViewportClient::GetDesiredFocusBounds() const
 
 	return FBox(FVector(0, MinPos.X, MinPos.Y), FVector(0, MaxPos.X, MaxPos.Y));*/
 
-	return FBox(AnimatedRenderComponent->Bounds.GetBox().Min / 4.f, AnimatedRenderComponent->Bounds.GetBox().Max / 4.f);
+	return FBox(AnimatedRenderComponent->CalcLocalBounds().GetBox().Min / 2.f, AnimatedRenderComponent->CalcLocalBounds().GetBox().Max / 2.f);
 }
 
 void FUnLive2DViewViewportClient::EventOnLeftMouseDown(FIntPoint MousePoint)

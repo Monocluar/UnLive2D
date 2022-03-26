@@ -1,4 +1,5 @@
 #include "UnLive2DMotion.h"
+#include "Misc/FileHelper.h"
 
 
 #if WITH_EDITOR
@@ -20,9 +21,10 @@ void UUnLive2DMotion::SetLive2DMotionData(FUnLive2DMotionData& InMotionData)
 	MotionData = InMotionData;
 }
 
+#endif
+
 const FUnLive2DMotionData* UUnLive2DMotion::GetMotionData()
 {
 	return &MotionData;
 }
 
-#endif

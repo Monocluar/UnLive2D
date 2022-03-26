@@ -4,6 +4,10 @@
 #include "UnLive2DAnimationBlueprintEditor.h"
 #include "Framework/Docking/LayoutExtender.h"
 #include "BlueprintEditorTabs.h"
+#include "BlueprintEditor.h"
+#include "ToolMenu.h"
+#include "UnLive2DTabSpawners.h"
+#include "SBlueprintEditorToolbar.h"
 
 FUnLive2DAnimBlueprintEditorMode::FUnLive2DAnimBlueprintEditorMode(const TSharedRef<FUnLive2DAnimationBlueprintEditor>& InAnimationBlueprintEditor)
 	: FBlueprintEditorApplicationMode(InAnimationBlueprintEditor, FUnLive2DAnimBlueprintEditorModes::AnimationBlueprintEditorMode, FUnLive2DAnimBlueprintEditorModes::GetLocalizedMode, false, false)
@@ -11,7 +15,7 @@ FUnLive2DAnimBlueprintEditorMode::FUnLive2DAnimBlueprintEditorMode(const TShared
 	//PreviewScenePtr = InAnimationBlueprintEditor->GetPreviewScene();
 	AnimBlueprintPtr =  CastChecked<UUnLive2DAnimBlueprint>(InAnimationBlueprintEditor->GetBlueprintObj());
 
-	TabLayout = FTabManager::NewLayout( "Stanalone_UnLive2DAnimBlueprintEditorMode_Layout_v1.0" )
+	TabLayout = FTabManager::NewLayout( "Stanalone_UnLive2DAnimBlueprintEditorMode_Layout_v1.2" )
 		->AddArea
 		(
 			{
@@ -54,8 +58,7 @@ FUnLive2DAnimBlueprintEditorMode::FUnLive2DAnimBlueprintEditorMode(const TShared
 										//	Left bottom - preview settings
 										FTabManager::NewStack()
 										->SetSizeCoefficient(0.5f)
-										->AddTab(UnLive2DAnimationBlueprintEditorTabs::CurveNamesTab, ETabState::ClosedTab)
-										->AddTab(UnLive2DAnimationBlueprintEditorTabs::SkeletonTreeTab, ETabState::ClosedTab)
+										//->AddTab(UnLive2DAnimationBlueprintEditorTabs::CurveNamesTab, ETabState::OpenedTab)
 										->AddTab(FBlueprintEditorTabs::MyBlueprintID, ETabState::OpenedTab)
 									}
 								)
@@ -96,23 +99,17 @@ FUnLive2DAnimBlueprintEditorMode::FUnLive2DAnimBlueprintEditorMode(const TShared
 								(
 									// Right top - selection details panel & overrides
 									FTabManager::NewStack()
-									->SetHideTabWell(false)
+									->SetHideTabWell(true)
 									->SetSizeCoefficient(0.5f)
 									->AddTab(FBlueprintEditorTabs::DetailsID, ETabState::OpenedTab)
-									->AddTab(UnLive2DAnimationBlueprintEditorTabs::AdvancedPreviewTab, ETabState::OpenedTab)
-									->AddTab(UnLive2DAnimationBlueprintEditorTabs::AssetOverridesTab, ETabState::ClosedTab)
-									->SetForegroundTab(FBlueprintEditorTabs::DetailsID)
 								)
 								->Split
 								(
 									// Right bottom - Asset browser & advanced preview settings
 									FTabManager::NewStack()
-									->SetHideTabWell(false)
+									->SetHideTabWell(true)
 									->SetSizeCoefficient(0.5f)
-									->AddTab(UnLive2DAnimationBlueprintEditorTabs::AnimBlueprintPreviewEditorTab, ETabState::OpenedTab)
 									->AddTab(UnLive2DAnimationBlueprintEditorTabs::AssetBrowserTab, ETabState::OpenedTab)
-									->AddTab(UnLive2DAnimationBlueprintEditorTabs::SlotNamesTab, ETabState::ClosedTab)
-									->SetForegroundTab(UnLive2DAnimationBlueprintEditorTabs::AnimBlueprintPreviewEditorTab)
 								)
 							}
 						)
@@ -122,6 +119,15 @@ FUnLive2DAnimBlueprintEditorMode::FUnLive2DAnimBlueprintEditorMode(const TShared
 		);
 
 	FUnLive2DManagerModule& MangerModule = FModuleManager::LoadModuleChecked<FUnLive2DManagerModule>("UnLive2DManager");
+
+	FUnLive2DAssetViewportArgs ViewportArgs;
+	ViewportArgs.BlueprintEditor = InAnimationBlueprintEditor;
+	ViewportArgs.OnUnLive2DViewportCreated = FOnUnLive2DViewportCreated::CreateSP(&InAnimationBlueprintEditor.Get(), &FUnLive2DAnimationBlueprintEditor::HandleViewportCreated);
+	ViewportArgs.ContextName = TEXT("UnLive2DAnimationBlueprintEditor.Viewport");
+
+	TabFactories.RegisterFactory(MakeShareable(new FUnLive2DAnimViewportSummoner(InAnimationBlueprintEditor, ViewportArgs)));
+	TabFactories.RegisterFactory(MakeShareable(new FUnLive2DMotionAssetBrowserSummoner(InAnimationBlueprintEditor, InAnimationBlueprintEditor)));
+
 	// setup toolbar - clear existing toolbar extender from the BP mode
 	//@TODO: Keep this in sync with BlueprintEditorModes.cpp
 	ToolbarExtender = MakeShareable(new FExtender);
@@ -130,7 +136,7 @@ FUnLive2DAnimBlueprintEditorMode::FUnLive2DAnimBlueprintEditorMode(const TShared
 		InAnimationBlueprintEditor->GetToolbarBuilder()->AddCompileToolbar(Toolbar);
 		InAnimationBlueprintEditor->GetToolbarBuilder()->AddScriptingToolbar(Toolbar);
 		InAnimationBlueprintEditor->GetToolbarBuilder()->AddBlueprintGlobalOptionsToolbar(Toolbar);
-		InAnimationBlueprintEditor->GetToolbarBuilder()->AddDebuggingToolbar(Toolbar);
+		//InAnimationBlueprintEditor->GetToolbarBuilder()->AddDebuggingToolbar(Toolbar);
 	}
 	MangerModule.OnRegisterTabs().Broadcast(TabFactories, InAnimationBlueprintEditor);
 	LayoutExtender = MakeShared<FLayoutExtender>();
@@ -158,4 +164,5 @@ void FUnLive2DAnimBlueprintEditorMode::PostActivateMode()
 
 	FBlueprintEditorApplicationMode::PostActivateMode();
 }
+
 

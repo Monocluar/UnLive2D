@@ -12,6 +12,7 @@
 #include "CubismConfig.h"
 #include "UnLive2D.h"
 #include "UnLive2DMotion.h"
+#include "Misc/FileHelper.h"
 
 using namespace Live2D::Cubism::Framework;
 

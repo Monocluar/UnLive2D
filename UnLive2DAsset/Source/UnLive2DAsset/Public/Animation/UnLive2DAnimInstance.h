@@ -22,5 +22,11 @@ public:
 
 	FORCEINLINE UUnLive2DRendererComponent* GetUnLive2DRendererComponent() const { return CastChecked<UUnLive2DRendererComponent>(GetOuter()); }
 
-private:
+public:
+#if WITH_EDITORONLY_DATA
+
+
+	// Called on the newly created CDO during anim blueprint compilation to allow subclasses a chance to replace animations (experimental)
+	virtual void ApplyAnimOverridesToCDO(FCompilerResultsLog& MessageLog) {}
+#endif
 };

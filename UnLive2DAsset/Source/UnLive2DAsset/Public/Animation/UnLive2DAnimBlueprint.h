@@ -8,6 +8,7 @@
 
 class UUnLive2DAnimBlueprintGeneratedClass;
 class UUnLive2DMotion;
+class URigVMController;
 
 USTRUCT()
 struct FUnLive2DAnimParentNodeAssetOverride
@@ -48,6 +49,11 @@ public:
 	UUnLive2DAnimBlueprintGeneratedClass* GetUnLive2DAnimBlueprintClass() const;
 
 public:
+	// 重新编译虚拟机
+	UFUNCTION(BlueprintCallable, Category = "UnLive2D Anim Blueprint")
+		void RecompileVM();
+
+public:
 	// 目标UnLive2D数据资源
 	UPROPERTY(AssetRegistrySearchable, EditAnywhere, AdvancedDisplay, Category=ClassOptions)
 		UUnLive2D* TargetUnLive2D;
@@ -60,9 +66,14 @@ protected:
 
 	virtual bool SupportedByDefaultBlueprintFactory() const override { return false; }
 	virtual bool IsValidForBytecodeOnlyRecompile() const override { return false; }
+	virtual void LoadModulesRequiredForCompilation() override {};
+	virtual void GetTypeActions(FBlueprintActionDatabaseRegistrar& ActionRegistrar) const override;
 	// End of UBlueprint interface
 
 #endif
+
+	void CleanupBoneHierarchyDeprecated();
+	void CreateMemberVariablesOnLoad();
 
 public:
 
@@ -75,5 +86,12 @@ public:
 		TArray<FUnLive2DAnimParentNodeAssetOverride> ParentAssetOverrides;
 #endif
 
+public:
 
+	UPROPERTY(BlueprintReadOnly, transient, Category = "VM")
+		URigVMController* Controller;
+
+private:
+
+	friend class FUnLive2DAnimBlueprintComilerContext;
 };

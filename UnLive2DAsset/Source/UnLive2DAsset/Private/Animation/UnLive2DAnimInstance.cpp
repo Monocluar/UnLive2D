@@ -1,4 +1,5 @@
 #include "Animation/UnLive2DAnimInstance.h"
+#include "Stats/StatsHierarchical.h"
 
 UUnLive2DAnimInstance::UUnLive2DAnimInstance(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)

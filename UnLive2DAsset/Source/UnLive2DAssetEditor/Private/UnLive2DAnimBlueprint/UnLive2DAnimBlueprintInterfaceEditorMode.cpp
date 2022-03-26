@@ -4,6 +4,8 @@
 #include "Framework/MultiBox/MultiBoxExtender.h"
 #include "UnLive2DManagerModule.h"
 #include "BlueprintEditorTabs.h"
+#include "UnLive2DTabSpawners.h"
+#include "SBlueprintEditorToolbar.h"
 
 FUnLive2DAnimBlueprintInterfaceEditorMode::FUnLive2DAnimBlueprintInterfaceEditorMode(const TSharedRef<FUnLive2DAnimationBlueprintEditor>& InAnimationBlueprintEditor)
 	: FBlueprintInterfaceApplicationMode(InAnimationBlueprintEditor, FUnLive2DAnimBlueprintEditorModes::AnimationBlueprintInterfaceEditorMode, FUnLive2DAnimBlueprintEditorModes::GetLocalizedMode)

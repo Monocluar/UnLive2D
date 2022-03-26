@@ -33,6 +33,11 @@ void FUnLive2DEditorStyle::Initialize()
 		StyleSet->Set(FName(TEXT("ClassIcon.UnLive2DAnimBlueprint")), new IMAGE_BRUSH("AnimInstance_16x", FVector2D(16, 16)));
 	}
 
+	{
+		StyleSet->Set("UnLive2DAnim.TabIcon", new IMAGE_BRUSH("Slate/UnLive2DAnimTab_16x", FVector2D(16, 16)));
+		StyleSet->Set("UnLive2DAnim.RigUnit", new IMAGE_BRUSH("Slate/UnLive2DAnimUnit_16x", FVector2D(16, 16)));
+	}
+
     FSlateStyleRegistry::RegisterSlateStyle(*StyleSet);
 }
 #undef IMAGE_BRUSH

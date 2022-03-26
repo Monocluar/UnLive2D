@@ -10,6 +10,8 @@
 #include "UnLive2DAssetModule.h"
 #include "ModelRenders.h"
 #include "PipelineStateCache.h"
+#include "GlobalShader.h"
+#include "ShaderParameterUtils.h"
 
 FName MaskTextureParameterName = "UnLive2DMask";
 FName MaskParmeterIsMeskName = "IsMask";

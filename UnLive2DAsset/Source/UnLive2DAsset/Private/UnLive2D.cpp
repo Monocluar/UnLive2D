@@ -6,6 +6,7 @@
 #include "UnLive2DAssetModule.h"
 #include "Materials/MaterialInterface.h"
 #include "Interfaces/IPluginManager.h"
+#include "UObject/ConstructorHelpers.h"
 
 #define LOCTEXT_NAMESPACE "UnLive2D"
 

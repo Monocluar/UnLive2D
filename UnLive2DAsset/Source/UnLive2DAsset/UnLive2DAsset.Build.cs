@@ -34,15 +34,24 @@ public class UnLive2DAsset : ModuleRules
                 "RHI",
                 "RenderCore",
                 "Projects",
-
-                "CubismSdkForNative"
+				"RigVM",
+				"CubismSdkForNative"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
 
-		if (Target.bBuildEditor == true)
-        {
 
+        if (Target.bBuildEditor == true)
+        {
+            PrivateDependencyModuleNames.AddRange(
+            new string[]{
+                "UnrealEd",
+                "RigVMDeveloper",
+				}
+            );
+
+            PrivateIncludePathModuleNames.Add("UnLive2DAssetEditor");
+            DynamicallyLoadedModuleNames.Add("UnLive2DAssetEditor");
         }
-	}
+    }
 }

@@ -1,18 +1,17 @@
-#include "UnLive2DMotionViewportClient.h"
+#include "UnLive2DAnimBlueprintViewportClient.h"
 #include "UnLive2DRendererComponent.h"
-#include "UnLive2DMotion.h"
 
-FUnLive2DMotionViewportClient::FUnLive2DMotionViewportClient(TWeakObjectPtr<UUnLive2DMotion> InUnLive2DMotionBegingEdited)
+FUnLive2DAnimBlueprintViewportClient::FUnLive2DAnimBlueprintViewportClient(TWeakObjectPtr<UUnLive2DAnimBlueprint> InUnLive2DAnimBlueprintEdited)
 {
-	UnLive2DMotionBeingEditedLastFrame = InUnLive2DMotionBegingEdited;
+	UnLive2DAnimBlueprintEditedLastFrame = InUnLive2DAnimBlueprintEdited;
 	PreviewScene = &OwnedPreviewScene;
 
 	SetRealtime(true);
 
-	if (InUnLive2DMotionBegingEdited.IsValid())
+	if (InUnLive2DAnimBlueprintEdited.IsValid())
 	{
 		AnimatedRenderComponent = NewObject<UUnLive2DRendererComponent>();
-		AnimatedRenderComponent->SetUnLive2D(InUnLive2DMotionBegingEdited->UnLive2D);
+		AnimatedRenderComponent->SetUnLive2D(InUnLive2DAnimBlueprintEdited->TargetUnLive2D);
 		PreviewScene->AddComponent(AnimatedRenderComponent.Get(), FTransform::Identity);
 	}
 
@@ -22,7 +21,7 @@ FUnLive2DMotionViewportClient::FUnLive2DMotionViewportClient(TWeakObjectPtr<UUnL
 	EngineShowFlags.SetCompositeEditorPrimitives(true);
 }
 
-FUnLive2DMotionViewportClient::~FUnLive2DMotionViewportClient()
+FUnLive2DAnimBlueprintViewportClient::~FUnLive2DAnimBlueprintViewportClient()
 {
 	if (AnimatedRenderComponent.IsValid())
 	{
@@ -30,7 +29,7 @@ FUnLive2DMotionViewportClient::~FUnLive2DMotionViewportClient()
 	}
 }
 
-void FUnLive2DMotionViewportClient::Tick(float DeltaSeconds)
+void FUnLive2DAnimBlueprintViewportClient::Tick(float DeltaSeconds)
 {
 	FUnLive2DViewportClient::Tick(DeltaSeconds);
 
@@ -40,11 +39,11 @@ void FUnLive2DMotionViewportClient::Tick(float DeltaSeconds)
 	}
 }
 
-FBox FUnLive2DMotionViewportClient::GetDesiredFocusBounds() const
+FBox FUnLive2DAnimBlueprintViewportClient::GetDesiredFocusBounds() const
 {
 	if (AnimatedRenderComponent.IsValid())
 	{
-		return FBox(AnimatedRenderComponent->CalcLocalBounds().GetBox().Min / 2.f, AnimatedRenderComponent->CalcLocalBounds().GetBox().Max / 2.f);
+		return AnimatedRenderComponent->CalcLocalBounds().GetBox();
 	}
 
 	return FUnLive2DViewportClient::GetDesiredFocusBounds();

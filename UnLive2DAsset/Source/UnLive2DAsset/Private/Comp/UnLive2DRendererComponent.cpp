@@ -8,6 +8,7 @@
 #include "CubismFramework.hpp"
 #include "Model/CubismModel.hpp"
 #include "Type/CubismBasicType.hpp"
+#include "Materials/MaterialInstanceDynamic.h"
 
 using namespace Csm;
 

@@ -22,6 +22,7 @@ public:
 	virtual void PostActivateMode() override;
 	// End of FApplicationMode interface
 
+
 private:
 	//TWeakPtr<FPreviewScene> PreviewScenePtr;
 
