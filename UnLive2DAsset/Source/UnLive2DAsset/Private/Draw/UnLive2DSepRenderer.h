@@ -11,8 +11,8 @@ class UUnLive2DRendererComponent;
 struct FUnLive2DRenderBuffers
 {
 public:
-	TMap<int32, FIndexBufferRHIRef> IndexBuffers; // 索引缓冲
-	TMap<int32, FVertexBufferRHIRef> VertexBuffers; // 顶点缓冲
+	TMap<int32, FBufferRHIRef> IndexBuffers; // 索引缓冲
+	TMap<int32, FBufferRHIRef> VertexBuffers; // 顶点缓冲
 	TMap<int32, int32> VertexCounts; // 顶点数
 };
 
@@ -54,10 +54,10 @@ public:
 	void UpdateMaskBufferRenderTarget(FRHICommandListImmediate& RHICmdList, Csm::CubismModel* tp_Model, ERHIFeatureLevel::Type FeatureLevel);
 
 	// 
-	void MaskFillVertexBuffer(Csm::CubismModel* tp_Model, const Csm::csmInt32 drawableIndex, FVertexBufferRHIRef ScratchVertexBufferRHI, FRHICommandListImmediate& RHICmdList);
+	void MaskFillVertexBuffer(Csm::CubismModel* tp_Model, const Csm::csmInt32 drawableIndex, FBufferRHIRef ScratchVertexBufferRHI, FRHICommandListImmediate& RHICmdList);
 
 	// 获取Live2D模型在遮罩矩阵中的矩阵
-	FMatrix GetUnLive2DPosToClipMartix(class CubismClippingContext* ClipContext, FVector4& ChanelFlag);
+	FMatrix44f GetUnLive2DPosToClipMartix(class CubismClippingContext* ClipContext, FVector4& ChanelFlag);
 
 	// 更新背景颜色
 	void SetDynamicMaterialTintColor(FLinearColor& NewColor);

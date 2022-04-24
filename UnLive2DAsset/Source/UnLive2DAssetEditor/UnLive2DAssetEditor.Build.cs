@@ -46,6 +46,7 @@ public class UnLive2DAssetEditor : ModuleRules
 				"KismetCompiler",
 				"RigVM",
 				"RigVMDeveloper",
+				"GraphEditor",
 				"UnLive2DManager",
 				// ... add private dependencies that you statically link with here ...	
 			}

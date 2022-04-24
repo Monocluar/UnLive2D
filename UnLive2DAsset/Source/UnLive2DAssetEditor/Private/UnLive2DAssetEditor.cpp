@@ -16,9 +16,7 @@
 #include "MessageLogInitializationOptions.h"
 #include "RigVMCore/RigVMFunction.h"
 #include "RigVMCore/RigVMRegistry.h"
-#include "Units/UnLive2DRigUnit.h"
 #include "RigVMCore/RigVMStruct.h"
-#include "AnimGraph/NodeSpawners/UnLive2DAnimUnitNodeSpawner.h"
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
 
@@ -31,13 +29,6 @@ void FUnLive2DAssetEditorModule::StartupModule()
 
 void FUnLive2DAssetEditorModule::ShutdownModule()
 {
-	IKismetCompilerInterface* KismetCompilerModule = FModuleManager::GetModulePtr<IKismetCompilerInterface>("KismetCompiler");
-	if (KismetCompilerModule)
-	{
-		KismetCompilerModule->GetCompilers().Remove(&UnLive2DAnimBlueprintComiler);
-	}
-	FMessageLogModule& MessageLogModule = FModuleManager::LoadModuleChecked<FMessageLogModule>("MessageLog");
-	MessageLogModule.UnregisterLogListing("UnLive2DAnimInstanceLog");
 
 	FUnLive2DEditorStyle::Shutdown();
 	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
@@ -61,55 +52,6 @@ void FUnLive2DAssetEditorModule::OnPostEngineInit()
 	AssetTools.RegisterAssetTypeActions(MakeShareable(new FUnLive2DMotionTypeAction(GameAssetCategory)));
 	AssetTools.RegisterAssetTypeActions(MakeShareable(new FUnLive2DAnimBlurprintTypeAction(GameAssetCategory)));
 
-	FKismetCompilerContext::RegisterCompilerForBP(UUnLive2DAnimBlueprint::StaticClass(), &FUnLive2DAssetEditorModule::GetUnLive2DAnimCompiler);
-	IKismetCompilerInterface& KismetCompilerModule = FModuleManager::LoadModuleChecked<IKismetCompilerInterface>("KismetCompiler");
-	KismetCompilerModule.GetCompilers().Add(&UnLive2DAnimBlueprintComiler);
-	
-	FMessageLogModule& MessageLogModule = FModuleManager::LoadModuleChecked<FMessageLogModule>("MessageLog");
-	FMessageLogInitializationOptions InitOptions;
-	InitOptions.bShowFilters = true;
-	InitOptions.bShowPages = false;
-	InitOptions.bAllowClear = true;
-	MessageLogModule.RegisterLogListing("UnLive2DAnimInstanceLog", LOCTEXT("UnLive2DAnimInstanceLog", "UUnLive2D Anim Instance Log"), InitOptions);
-}
-
-TSharedPtr<FKismetCompilerContext> FUnLive2DAssetEditorModule::GetUnLive2DAnimCompiler(UBlueprint* BP, FCompilerResultsLog& InMessageLog, const FKismetCompilerOptions& InCompileOptions)
-{
-	return TSharedPtr<FKismetCompilerContext>(new FUnLive2DAnimBlueprintComilerContext(BP, InMessageLog, InCompileOptions));
-}
-
-void FUnLive2DAssetEditorModule::GetTypeActions(class UUnLive2DAnimBlueprint* UnLive2DAnimBlue, FBlueprintActionDatabaseRegistrar& ActionRegistrar)
-{
-	UClass* ActionKey = UnLive2DAnimBlue->GetClass();
-	if (!ActionRegistrar.IsOpenForRegistration(ActionKey))
-	{
-		return;
-	}
-
-	for (const FRigVMFunction& Function : FRigVMRegistry::Get().GetFunctions())
-	{
-		UScriptStruct* Struct = Function.Struct;
-		if (!Struct->IsChildOf(FUnLive2DRigUnit::StaticStruct()))
-		{
-			continue;
-		}
-
-		FString CategoryMetadata, DisplayNameMetadata, MenuDescSuffixMetadata;
-		Struct->GetStringMetaDataHierarchical(FRigVMStruct::CategoryMetaName, &CategoryMetadata);
-		Struct->GetStringMetaDataHierarchical(FRigVMStruct::DisplayNameMetaName, &DisplayNameMetadata);
-		Struct->GetStringMetaDataHierarchical(FRigVMStruct::MenuDescSuffixMetaName, &MenuDescSuffixMetadata);
-		if (!MenuDescSuffixMetadata.IsEmpty())
-		{
-			MenuDescSuffixMetadata = TEXT(" ") + MenuDescSuffixMetadata;
-		}
-		FText NodeCategory = FText::FromString(CategoryMetadata);
-		FText MenuDesc = FText::FromString(DisplayNameMetadata + MenuDescSuffixMetadata);
-		FText ToolTip = Struct->GetToolTipText();
-
-		UUnLive2DAnimUnitNodeSpawner* NodeSpawner = UUnLive2DAnimUnitNodeSpawner::CreateFromStruct(Struct, MenuDesc, NodeCategory, ToolTip);
-		check(NodeSpawner != nullptr);
-		ActionRegistrar.AddBlueprintAction(ActionKey, NodeSpawner);
-	}
 }
 
 #undef LOCTEXT_NAMESPACE

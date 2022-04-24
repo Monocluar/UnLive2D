@@ -30,9 +30,6 @@ public:
 public:
 	FORCEINLINE TWeakPtr<Csm::ICubismModelSetting> GetModelSetting() const { return Live2DModelSetting; };
 
-    // 获取所有动画列表数据
-    FORCEINLINE TMap<FName, TArray<FName>>& GetAllMotionGroup() { return AllMotionGroup; };
-
 #if WITH_EDITOR
 	static FUnLive2DLoadData LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& LoadTexturePaths, TArray<struct FUnLive2DMotionData>& LoadMotionData);
 #endif
@@ -40,12 +37,6 @@ public:
 public:
     // 播放动画
     void PlayMotion(const FName& InName);
-
-    // 获取动画优先级
-    int32 GetPlayMotionPriority(const FName& InName);
-
-    // 获取动画组名称
-	FName GetPlayMotionGroupName(const FName& InName, int32& PriorityIndex);
 
 	// 拍打动画
 	bool OnTapMotion(const FVector2D& InTapMotion);
@@ -63,9 +54,6 @@ public:
 	float StartMotion(UUnLive2DMotion* InMotion);
 
 private:
-
-    // 加载动画列表数据
-    void PreloadMotionGroup(const Csm::csmChar* Group);
 
     // 释放动画系统
     void ReleaseMotions();
@@ -89,23 +77,6 @@ private:
 
     // 设置播放表情系统
     void SetExpression(const FName& ExpressionID);
-
-protected:
-
-    // 立体模块加载
-    FORCEINLINE void LoadCubismModel();
-
-    // 表情模块加载
-    FORCEINLINE void LoadExpressionModel();
-
-    // 物理模块加载
-    FORCEINLINE void LoadPhysicsModel();
-
-    // 姿态模块加载
-    FORCEINLINE void LoadPoseModel();
-
-    // 角色数据加载
-    FORCEINLINE void LoadUserDataModel();
 
 
 private:
@@ -135,8 +106,6 @@ private:
     Csm::csmVector<Csm::CubismIdHandle> LipSyncIds;
 
 private:
-
-    TMap<FName, TArray<FName>> AllMotionGroup;
 
     TSharedPtr<CubismPhysics::Options> PhysicsData;
 

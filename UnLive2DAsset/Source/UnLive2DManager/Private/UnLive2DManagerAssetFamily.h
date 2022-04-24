@@ -16,6 +16,7 @@ public:
 	FUnLive2DManagerAssetFamily(const UObject* InFromObject);
 	virtual ~FUnLive2DManagerAssetFamily() {}
 
+
 public:
 	static void FindCounterpartAssets(const UObject* InAsset, TWeakObjectPtr<const UUnLive2D>& OutUnLive2D);
 	static void FindCounterpartAssets(const UObject* InAsset, const UUnLive2D*& OutUnLive2D);
@@ -30,7 +31,11 @@ protected:
 	virtual UClass* GetAssetFamilyClass(UClass* InClass) const override;
 	virtual void RecordAssetOpened(const FAssetData& InAssetData) override;
 	DECLARE_DERIVED_EVENT(FUnLive2DManagerAssetFamily, IUnLive2DAssetFamily::FOnUnLive2DAssetOpened, FOnUnLive2DAssetOpened)
-	virtual FOnUnLive2DAssetOpened& GetOnAssetOpened() override { return OnAssetOpened;  }
+	virtual FOnUnLive2DAssetOpened& GetOnAssetOpened() override { return OnAssetOpened; }
+
+	virtual FSlateColor GetAssetTypeDisplayTint(UClass* InAssetClass) const override;
+
+	virtual const FSlateBrush* GetAssetTypeDisplayIcon(UClass* InAssetClass) const override;
 
 private:
 	TWeakObjectPtr<const UUnLive2D> UnLive2D;

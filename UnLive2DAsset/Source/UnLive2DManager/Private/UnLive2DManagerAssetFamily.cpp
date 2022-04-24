@@ -2,6 +2,7 @@
 #include "UnLive2D.h"
 #include "UnLive2DMotion.h"
 #include "Animation/UnLive2DAnimBlueprint.h"
+#include "AssetToolsModule.h"
 
 #define LOCTEXT_NAMESPACE "UnLive2DManagerAssetFamily"
 
@@ -38,6 +39,58 @@ FUnLive2DManagerAssetFamily::FUnLive2DManagerAssetFamily(const UObject* InFromOb
 
 		FindCounterpartAssets(InFromObject, UnLive2D);
 	}
+}
+
+FSlateColor FUnLive2DManagerAssetFamily::GetAssetTypeDisplayTint(UClass* InAssetClass) const
+{
+	UClass* UseAssetClass = nullptr;
+	if (InAssetClass == nullptr) return FSlateColor::UseForeground();
+
+	if (InAssetClass->IsChildOf<UUnLive2D>())
+	{
+		UseAssetClass = UUnLive2D::StaticClass();
+	}
+	else if (InAssetClass->IsChildOf<UUnLive2DMotion>())
+	{
+		UseAssetClass = UUnLive2DMotion::StaticClass();
+	}
+	else if (InAssetClass->IsChildOf<UUnLive2DAnimBlueprint>())
+	{
+		UseAssetClass = UUnLive2DAnimBlueprint::StaticClass();
+	}
+
+	if (UseAssetClass == nullptr) return FSlateColor::UseForeground();
+
+	static const FAssetToolsModule& AssetToolsModule = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools");
+
+	TWeakPtr<IAssetTypeActions> AssetTypeActions = AssetToolsModule.Get().GetAssetTypeActionsForClass(UseAssetClass);
+	if (AssetTypeActions.IsValid())
+	{
+		return AssetTypeActions.Pin()->GetTypeColor();
+	}
+
+	return FSlateColor::UseForeground();
+}
+
+const FSlateBrush* FUnLive2DManagerAssetFamily::GetAssetTypeDisplayIcon(UClass* InAssetClass) const
+{
+	if (InAssetClass)
+	{
+		if (InAssetClass->IsChildOf<UUnLive2D>())
+		{
+			return FAppStyle::Get().GetBrush("Persona.AssetClass.Skeleton");
+		}
+		else if (InAssetClass->IsChildOf<UUnLive2DMotion>())
+		{
+			return FAppStyle::Get().GetBrush("Persona.AssetClass.Animation");
+		}
+		else if (InAssetClass->IsChildOf<UUnLive2DAnimBlueprint>())
+		{
+			return FAppStyle::Get().GetBrush("Persona.AssetClass.Blueprint");
+		}
+	}
+
+	return nullptr;
 }
 
 void FUnLive2DManagerAssetFamily::FindCounterpartAssets(const UObject* InAsset, TWeakObjectPtr<const UUnLive2D>& OutUnLive2D)

@@ -4,11 +4,12 @@
 #include "CoreMinimal.h"
 #include "Stats/Stats.h"
 #include "Widgets/SWidget.h"
-#include "EdGraph/EdGraphPin.h"
-#include "BlueprintEditor.h"
-#include "Animation/UnLive2DAnimNodeBase.h"
+#include "EditorUndoClient.h"
+#include "WorkflowOrientedApp/WorkflowCentricApplication.h"
+#include "WorkflowOrientedApp/WorkflowTabManager.h"
 
 class UUnLive2DRendererComponent;
+class FDocumentTracker;
 
 struct FUnLive2DAnimBlueprintEditorModes
 {
@@ -42,13 +43,14 @@ namespace UnLive2DAnimationBlueprintEditorTabs
 	extern const FName ViewportTab;
 	extern const FName AssetBrowserTab;
 	extern const FName CurveNamesTab;
+	extern const FName GraphDocumentTab;
 };
 
-class FUnLive2DAnimationBlueprintEditor : public FBlueprintEditor
+class FUnLive2DAnimationBlueprintEditor : public FWorkflowCentricApplication ,  public FEditorUndoClient , public FGCObject /*public FNotifyHook, public FEditorUndoClient*/
 {
 protected:
 
-	typedef FBlueprintEditor Super;
+	typedef FWorkflowCentricApplication Super;
 
 public:
 
@@ -59,14 +61,6 @@ public:
 
 	virtual ~FUnLive2DAnimationBlueprintEditor();
 
-public:
-	/** 更新显示当前选择信息的检查器*/
-	void SetDetailObjects(const TArray<UObject*>& InObjects);
-	void SetDetailObject(UObject* Obj);
-
-	/** 处理常规对象选择 */
-	void HandleObjectsSelected(const TArray<UObject*>& InObjects);
-	void HandleObjectSelected(UObject* InObject);
 
 protected:
 	/** Undo Action**/
@@ -76,23 +70,13 @@ protected:
 	void RedoAction();
 
 protected:
-	/** FBlueprintEdi1tor interface */
-	virtual void CreateDefaultCommands() override;
-	virtual void OnCreateGraphEditorCommands(TSharedPtr<FUICommandList> GraphEditorCommandsList);
-	virtual bool CanSelectBone() const override { return true; }
-	virtual void CreateDefaultTabContents(const TArray<UBlueprint*>& InBlueprints) override;
-	virtual FGraphAppearanceInfo GetGraphAppearance(class UEdGraph* InGraph) const override;
-	virtual bool IsEditable(UEdGraph* InGraph) const override;
-	virtual FText GetGraphDecorationString(UEdGraph* InGraph) const override;
-
-	virtual void OnActiveTabChanged(TSharedPtr<SDockTab> PreviouslyActive, TSharedPtr<SDockTab> NewlyActivated) override;
-	virtual void OnSelectedNodesChangedImpl(const TSet<class UObject*>& NewSelection) override;
-	virtual void HandleSetObjectBeingDebugged(UObject* InObject) override;
+	
 
 protected:
 	// IToolkit Interface
 	virtual FName GetToolkitFName() const override;
 	virtual FText GetBaseToolkitName() const override;
+	virtual FText GetToolkitName() const override;
 	virtual FText GetToolkitToolTipText() const override;
 	virtual FString GetWorldCentricTabPrefix() const override;
 	virtual FLinearColor GetWorldCentricTabColorScale() const override;
@@ -103,18 +87,11 @@ protected:
 	virtual void PostRedo(bool bSuccess) override;
 	// End of FEditorUndoClient
 
-	/** 调用post compile来复制节点数据*/
+	/** 调用postcompile来复制节点数据*/
 	void OnPostCompile();
 
-	/** 用于使控件在预览和实例中保持同步的助手函数 */
-	FUnLive2DAnimNode_Base* FindAnimNode(class UUnLive2DAnimGraphNode_Base* AnimGraphNode) const;
 
 protected:
-
-	//~ Begin FTickableEditorObject Interface
-	virtual void Tick(float DeltaTime) override;
-	virtual TStatId GetStatId() const override;
-	//~ End FTickableEditorObject Interface
 
 	// IToolkit interface
 	virtual void RegisterTabSpawners(const TSharedRef<FTabManager>& TabManager) override;
@@ -122,13 +99,11 @@ protected:
 	// End of IToolkit interface
 
 public:
-
-	/** Returns a pointer to the Blueprint object we are currently editing, as long as we are editing exactly one */
-	virtual UBlueprint* GetBlueprintObj() const override;
-
-	//~ Begin FNotifyHook Interface
-	virtual void NotifyPostChange(const FPropertyChangedEvent& PropertyChangedEvent, FProperty* PropertyThatChanged) override;
-	//~ End FNotifyHook Interface
+	// FSerializableObject interface
+	virtual void AddReferencedObjects(FReferenceCollector& Collector) override;
+	// End of FSerializableObject interface
+public:
+	virtual class UUnLive2DAnimBlueprint* GetBlueprintObj() const;
 
 private:
 
@@ -141,20 +116,52 @@ public:
 
 private:
 
+	TSharedRef<SDockTab> SpawnTab_Viewport(const FSpawnTabArgs& Args);
+	TSharedRef<SDockTab> SpawnTab_AssetBrowser(const FSpawnTabArgs& Args);
+	TSharedRef<SDockTab> SpawnTab_GraphDocument(const FSpawnTabArgs& Args);
+
+	/** Create new graph editor widget */
+	TSharedRef<SGraphEditor> CreateGraphEditorWidget();
+
 	/** Extend menu */
 	void ExtendMenu();
 
 	/** Extend toolbar */
 	void ExtendToolbar();
 
-	/** Called immediately prior to a blueprint compilation */
-	void OnBlueprintPreCompile(UBlueprint* BlueprintToCompile);
+protected:
+
+	/** Called when the selection changes in the GraphEditor */
+	void OnSelectedNodesChanged(const TSet<class UObject*>& NewSelection);
+	
+	/**
+	 * Called when a node's title is committed for a rename
+	 *
+	 * @param	NewText				New title text
+	 * @param	CommitInfo			How text was committed
+	 * @param	NodeBeingChanged	The node being changed
+	 */
+	void OnNodeTitleCommitted(const FText& NewText, ETextCommit::Type CommitInfo, UEdGraphNode* NodeBeingChanged);
+
+	/** Plays a single specified node */
+	void PlaySingleNode(UEdGraphNode* Node);
+
+private:
+
+	void AssetBrowser_OnMotionDoubleClicked(const FAssetData& AssetData) const;
+
+	bool AssetBrowser_FilterMotionBasedOnParentClass(const FAssetData& AssetData) const;
 
 public:
 	/** Delegate called after an undo operation for child widgets to refresh */
 	FSimpleMulticastDelegate OnPostUndo;
 
 private:
+
+	TSharedPtr<FDocumentTracker> DocumentManager;
+
+	/** New Graph Editor */
+	TSharedPtr<SGraphEditor> UnLive2DAnimBlueprintGraphEditor;
 
 	TSharedPtr<class IUnLive2DToolkit> UnLive2DManagerToolkit;
 
@@ -164,13 +171,10 @@ private:
 	/** Toolbar extender */
 	TSharedPtr<FExtender> ToolbarExtender;
 
-	// 选择的动画蓝图
-	TWeakObjectPtr<class UUnLive2DAnimGraphNode_Base> SelectedAnimGraphNode;
-
-	/** The last pin type we added to a graph's inputs */
-	FEdGraphPinType LastGraphPinType;
-
 	UUnLive2DRendererComponent* DebuggedUnLive2DComponent;
 
 	UUnLive2DAnimBlueprint* UnLive2DAnimBlueprintEdited;
+
+	/** Command list for this editor */
+	TSharedPtr<FUICommandList> GraphEditorCommands;
 };

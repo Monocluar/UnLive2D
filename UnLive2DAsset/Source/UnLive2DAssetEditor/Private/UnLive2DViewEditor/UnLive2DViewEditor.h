@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "Toolkits/AssetEditorToolkit.h"
-#include "Toolkits/AssetEditorManager.h"
 #include "ITransportControl.h"
 #include "EditorUndoClient.h"
 #include "Framework/Commands/UICommandList.h"

@@ -1,67 +1,146 @@
 #include "Animation/UnLive2DAnimBlueprint.h"
-#include "Animation/UnLive2DAnimBlueprintGeneratedClass.h"
-#include "Animation/UnLive2DAnimInstance.h"
 
 #if WITH_EDITOR
-#include "UnLive2DAssetEditor.h"
+#include "EdGraph/EdGraph.h"
+#include "AnimBlueprintGraph/UnLive2DAnimBlueprintGraph.h"
 #endif
+#include "EngineUtils.h"
+#include "AnimBlueprintGraph/UnLive2DAnimBlueprintNode_Base.h"
+#include "AnimBlueprintGraph/UnLive2DAnimBlueprintNode_AssetReferencer.h"
+#include "Engine/Engine.h"
+#include "GameFramework/GameUserSettings.h"
+
+#if WITH_EDITOR
+TSharedPtr<class IUnLive2DAnimBlueprintAnimEditor> UUnLive2DAnimBlueprint::UnLive2DAnimBlueprintAnimEditor = nullptr;
+#endif // WITH_EDITOR
+
 
 UUnLive2DAnimBlueprint::UUnLive2DAnimBlueprint(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 }
 
-class UUnLive2DAnimBlueprintGeneratedClass* UUnLive2DAnimBlueprint::GetAnimBlueprintGeneratedClass() const
+void UUnLive2DAnimBlueprint::CacheAggregateValues()
 {
-	UUnLive2DAnimBlueprintGeneratedClass* Result = Cast<UUnLive2DAnimBlueprintGeneratedClass>(*GeneratedClass);
-	return Result;
+
 }
 
-UUnLive2DAnimBlueprintGeneratedClass* UUnLive2DAnimBlueprint::GetUnLive2DAnimBlueprintClass() const
-{
-	UUnLive2DAnimBlueprintGeneratedClass* Result = Cast<UUnLive2DAnimBlueprintGeneratedClass>(*SkeletonGeneratedClass);
-	return Result;
-}
-
-void UUnLive2DAnimBlueprint::RecompileVM()
+void UUnLive2DAnimBlueprint::EvaluateNodes(bool bAddToRoot)
 {
 
 }
 
 #if WITH_EDITOR
 
-UClass* UUnLive2DAnimBlueprint::GetBlueprintClass() const
+UEdGraph* UUnLive2DAnimBlueprint::GetGraph()
 {
-	return UUnLive2DAnimBlueprintGeneratedClass::StaticClass();
+	return UnLive2DAnimBlueprintGraph;
 }
 
-void UUnLive2DAnimBlueprint::GetTypeActions(FBlueprintActionDatabaseRegistrar& ActionRegistrar) const
+TArray<UUnLive2DAnimBlueprintNode_Base*>& UUnLive2DAnimBlueprint::GetGraphAllNodes()
 {
-	FUnLive2DAssetEditorModule::Get().GetTypeActions((UUnLive2DAnimBlueprint*)this, ActionRegistrar);
+	return AllNodes;
 }
 
-#endif
-
-void UUnLive2DAnimBlueprint::CleanupBoneHierarchyDeprecated()
+void UUnLive2DAnimBlueprint::SeUnLive2DAnimBlueprintAnimEditor(TSharedPtr<IUnLive2DAnimBlueprintAnimEditor> InUnLive2DAnimBlueprintGraphEditor)
 {
+	check(!UnLive2DAnimBlueprintAnimEditor.IsValid());
 
+	UnLive2DAnimBlueprintAnimEditor = InUnLive2DAnimBlueprintGraphEditor;
 }
 
-void UUnLive2DAnimBlueprint::CreateMemberVariablesOnLoad()
+TSharedPtr<IUnLive2DAnimBlueprintAnimEditor> UUnLive2DAnimBlueprint::GetUnLive2DAnimBlueprintAnimEditor()
 {
-
+	return UnLive2DAnimBlueprintAnimEditor;
 }
 
-UUnLive2DAnimBlueprint* UUnLive2DAnimBlueprint::GetPreviewAnimationBlueprint() const
+void UUnLive2DAnimBlueprint::PostInitProperties()
 {
-#if WITH_EDITORONLY_DATA
-	/*if (!PreviewAnimationBlueprint.IsValid())
+	Super::PostInitProperties();
+	if (!HasAnyFlags(RF_ClassDefaultObject | RF_NeedLoad))
 	{
-		PreviewAnimationBlueprint.LoadSynchronous();
+		CreateGraph();
 	}
-	return PreviewAnimationBlueprint.Get();*/
-	return nullptr;
-#else
-	return nullptr;
+
+}
+
+void UUnLive2DAnimBlueprint::AddReferencedObjects(UObject* InThis, FReferenceCollector& Collector)
+{
+	UUnLive2DAnimBlueprint* This = CastChecked<UUnLive2DAnimBlueprint>(InThis);
+
+	Collector.AddReferencedObject(This->UnLive2DAnimBlueprintGraph, This);
+
+	Super::AddReferencedObjects(InThis, Collector);
+}
+
+void UUnLive2DAnimBlueprint::CreateGraph()
+{
+	if (UnLive2DAnimBlueprintGraph != nullptr) return;
+
+	UnLive2DAnimBlueprintGraph = UnLive2DAnimBlueprintAnimEditor->CreateUnLive2DAnimBlueprintGraph(this);
+	UnLive2DAnimBlueprintGraph->bAllowDeletion = false;
+
+	const UEdGraphSchema* Schema = UnLive2DAnimBlueprintGraph->GetSchema();
+	Schema->CreateDefaultNodesForGraph(*UnLive2DAnimBlueprintGraph);
+}
+
+void UUnLive2DAnimBlueprint::PostLoad()
+{
+	Super::PostLoad();
+
+#if WITH_EDITOR
+	if (GIsEditor && !GetOutermost()->HasAnyPackageFlags(PKG_FilterEditorOnly))
+	{
+		if (ensure(UnLive2DAnimBlueprintGraph))
+		{
+			UUnLive2DAnimBlueprint::GetUnLive2DAnimBlueprintAnimEditor()->RemoveNullNodes(this);
+		}
+
+		for (UUnLive2DAnimBlueprintNode_Base* AnimBlueprintNode : AllNodes)
+		{
+			if (UUnLive2DAnimBlueprintNode_AssetReferencer* AssetReferencer = Cast<UUnLive2DAnimBlueprintNode_AssetReferencer>(AnimBlueprintNode))
+			{
+				AssetReferencer->LoadAsset();
+			}
+		}
+	}
+#endif
+	if (GEngine && *GEngine->GameUserSettingsClass)
+	{
+		EvaluateNodes(false);
+	}
+	else
+	{
+		//OnPostEngineInitHandle = FCoreDelegates::OnPostEngineInit.AddUObject(this, &USoundCue::OnPostEngineInit);
+	}
+
+	CacheAggregateValues();
+
+}
+
+void UUnLive2DAnimBlueprint::Serialize(FStructuredArchive::FRecord Record)
+{
+	FArchive& UnderlyingArchive = Record.GetUnderlyingArchive();
+
+	// 当我们保存或Cook时，更新数据
+	if (UnderlyingArchive.IsSaving() || UnderlyingArchive.IsCooking())
+	{
+		CacheAggregateValues();
+	}
+#if WITH_EDITOR
+	// 如果我们正在Cook，在序列化之前记录我们的Cook质量，然后撤销它。
+	if (UnderlyingArchive.IsCooking() && UnderlyingArchive.IsSaving() && UnderlyingArchive.CookingTarget())
+	{
+		Super::Serialize(Record);
+	}
+	else
+#endif
+	{
+		Super::Serialize(Record);
+	}
+#if WITH_EDITOR
+	Record << SA_VALUE(TEXT("UnLive2DAnimBlueprintGraph"), UnLive2DAnimBlueprintGraph);
 #endif
 }
+
+#endif

@@ -9,8 +9,11 @@
 #include "Model/CubismModel.hpp"
 #include "Type/CubismBasicType.hpp"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Math/Vector4.h"
 
 using namespace Csm;
+
+using namespace UE::Math;
 
 
 void DrawSepMask_Normal(UUnLive2DRendererComponent* UnLive2DRendererComponent, Csm::CubismModel* Live2DModel, const Csm::csmInt32 DrawableIndex, class CubismClippingContext* ClipContext, int32& ElementIndex)
@@ -41,15 +44,15 @@ void DrawSepMask_Normal(UUnLive2DRendererComponent* UnLive2DRendererComponent, C
 	const csmFloat32* VertexArray = const_cast<csmFloat32*>(Live2DModel->GetDrawableVertices(DrawableIndex)); // 顶点组
 
 	FVector4 ChanelFlag;
-	FMatrix MartixForDraw = UnLive2DRendererComponent->UnLive2DRander->GetUnLive2DPosToClipMartix(ClipContext, ChanelFlag);
+	FMatrix44f MartixForDraw = UnLive2DRendererComponent->UnLive2DRander->GetUnLive2DPosToClipMartix(ClipContext, ChanelFlag);
 
 	for (int32 VertexIndex = 0; VertexIndex < NumVertext; ++VertexIndex)
 	{
-		FVector4 Position = FVector4(VertexArray[VertexIndex * 2], VertexArray[VertexIndex * 2 + 1], 0, 1);
+		TVector4<float> Position = TVector4<float>(VertexArray[VertexIndex * 2], VertexArray[VertexIndex * 2 + 1], 0, 1);
 		float MaskVal = 1;
 		if (ClipContext != nullptr)
 		{
-			FVector4 ClipPosition = MartixForDraw.TransformFVector4(Position);
+			TVector4<float> ClipPosition = MartixForDraw.TransformFVector4(Position);
 			FVector2D MaskUV = FVector2D(ClipPosition.X, 1 + ClipPosition.Y);
 			MaskUV /= ClipPosition.W;
 

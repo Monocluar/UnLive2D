@@ -12,10 +12,10 @@ FVector UnLive2DAxisY(0.0f, 0.0f, 1.0f);
 FVector UnLive2DAxisZ(0.0f, 1.0f, 0.0f);*/
 
 FUnLive2DViewportClient::FUnLive2DViewportClient(const TWeakPtr<class SEditorViewport>& InEditorViewportWidget /*= nullptr*/)
-	: FEditorViewportClient(new FAssetEditorModeManager(), nullptr, InEditorViewportWidget)
+	: FEditorViewportClient(nullptr, nullptr, InEditorViewportWidget)
 	, CheckerboardTexture(nullptr)
 {
-	bOwnsModeTools = true;
+	//bOwnsModeTools = true;
 	ZoomPos = FVector2D::ZeroVector;
 	ZoomAmount = 1.0f;
 	
@@ -93,11 +93,11 @@ void FUnLive2DViewportClient::DestroyCheckerboardTexture()
 {
 	if (CheckerboardTexture)
 	{
-		if (CheckerboardTexture->Resource)
+		if (CheckerboardTexture->GetResource())
 		{
 			CheckerboardTexture->ReleaseResource();
 		}
-		CheckerboardTexture->MarkPendingKill();
+		CheckerboardTexture->MarkAsGarbage();
 		CheckerboardTexture = nullptr;
 	}
 }

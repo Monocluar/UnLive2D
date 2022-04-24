@@ -39,7 +39,7 @@ void MainVS(
 	OutPosition = mul(float4(InPosition, 0.0f, 1.0f), ProjectMatrix);
 	OutClipPosition = mul(float4(InPosition, 0.0f, 1.0f), ProjectMatrix);
     OutUV.x = InUV.x;
-	OutUV.y = 1.0 - +InUV.y;
+	OutUV.y = 1.0 - InUV.y;
 }
 
 Texture2D MainTexture;

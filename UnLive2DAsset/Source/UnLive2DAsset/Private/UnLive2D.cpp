@@ -39,16 +39,7 @@ void UUnLive2D::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEve
 	const FName PropertyName = (PropertyChangedEvent.Property != nullptr) ? PropertyChangedEvent.Property->GetFName() : NAME_None;
 	const FName MemberPropertyName = (PropertyChangedEvent.MemberProperty != nullptr) ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
 
-
-	if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(UUnLive2D, PlayMotionIndex))
-	{
-		if (Live2DMotionGroup.IsValidIndex(PlayMotionIndex))
-		{
-			UnLive2DRawModel->PlayMotion(Live2DMotionGroup[PlayMotionIndex]);
-		}
-
-	}
-	else if ( MemberPropertyName == GET_MEMBER_NAME_STRING_CHECKED(UUnLive2D, TintColorAndOpacity))
+	if ( MemberPropertyName == GET_MEMBER_NAME_STRING_CHECKED(UUnLive2D, TintColorAndOpacity))
 	{
 		if (OnUpDataUnLive2DProperty.IsBound())
 		{
@@ -102,12 +93,6 @@ void UUnLive2D::InitLive2D()
 	{
 		OnUpDataUnLive2D.Execute();
 	}
-
-	Live2DMotionGroup.Empty();
-	for (typename TMap<FName, TArray<FName>>::TConstIterator Iterator(UnLive2DRawModel->GetAllMotionGroup()); Iterator; ++Iterator)
-	{
-		Live2DMotionGroup.Append(Iterator.Value());
-;	}
 
 }
 

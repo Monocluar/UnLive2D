@@ -88,13 +88,13 @@ void FUnLive2DMotionViewEditor::InitUnLive2DMotionViewEditor(const EToolkitMode:
 		(
 			FTabManager::NewPrimaryArea()
 			->SetOrientation(Orient_Vertical)
-			->Split
+			/*->Split
 			(
 				FTabManager::NewStack()
 				->SetSizeCoefficient(0.1f)
 				->SetHideTabWell(true)
 				->AddTab(GetToolbarTabId(), ETabState::OpenedTab)
-			)
+			)*/
 			->Split
 			(
 				FTabManager::NewSplitter()
@@ -288,7 +288,7 @@ TSharedRef<SDockTab> FUnLive2DMotionViewEditor::SpawnTab_Viewport(const FSpawnTa
 TSharedRef<SDockTab> FUnLive2DMotionViewEditor::SpawnTab_Details(const FSpawnTabArgs& Args)
 {
 	return SNew(SDockTab)
-		.Icon(FEditorStyle::GetBrush("LevelEditor.Tabs.Details"))
+		//.Icon(FEditorStyle::GetBrush("LevelEditor.Tabs.Details"))
 		.Label(LOCTEXT("DetailsTab_Title", "Details"))
 		[
 			SNew(SUnLive2DMotionPropertiesTabBody, SharedThis(this))
@@ -298,7 +298,7 @@ TSharedRef<SDockTab> FUnLive2DMotionViewEditor::SpawnTab_Details(const FSpawnTab
 TSharedRef<SDockTab> FUnLive2DMotionViewEditor::SpawnTab_AssetBrowser(const FSpawnTabArgs& Args)
 {
 	return SNew(SDockTab)
-		.Icon(FEditorStyle::GetBrush("LevelEditor.Tabs.ContentBrowser"))
+		//.Icon(FEditorStyle::GetBrush("LevelEditor.Tabs.ContentBrowser"))
 		.Label(LOCTEXT("AssetBrowserTab", "AssetBrowser"))
 		[
 			//SNew(SUnLive2DMotionPropertiesTabBody, SharedThis(this))
