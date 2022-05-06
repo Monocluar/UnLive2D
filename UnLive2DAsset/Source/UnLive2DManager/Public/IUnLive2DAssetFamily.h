@@ -35,6 +35,12 @@ public:
 		FindAssetsOfType(AssetType::StaticClass(), OutAssets);
 	}
 
+	/** 获取为资源显示图标着色的颜色 */
+	virtual FSlateColor GetAssetTypeDisplayTint(UClass* InAssetClass) const = 0;
+
+	/** 获取表示此资产族的Slate笔刷 */
+	virtual const FSlateBrush* GetAssetTypeDisplayIcon(UClass* InAssetClass) const = 0;
+
 	/** 获取将显示给用户的资源的名称 */
 	virtual FText GetAssetTypeDisplayName(UClass* InAssetClass) const = 0;
 

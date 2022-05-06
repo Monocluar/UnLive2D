@@ -2,96 +2,108 @@
 
 #include "CoreMinimal.h"
 #include "UObject/ObjectMacros.h"
-#include "Engine/Blueprint.h"
-#include "UnLive2DMotion.h"
+#include "Interfaces/Interface_AssetUserData.h"
 #include "UnLive2DAnimBlueprint.generated.h"
 
-class UUnLive2DAnimBlueprintGeneratedClass;
-class UUnLive2DMotion;
-class URigVMController;
+class UUnLive2D;
+class UEdGraph;
+class UUnLive2DAnimBlueprintNode_Base;
 
-USTRUCT()
-struct FUnLive2DAnimParentNodeAssetOverride
+#if WITH_EDITOR
+class IUnLive2DAnimBlueprintAnimEditor
 {
-	GENERATED_USTRUCT_BODY()
-
 public:
+	virtual ~IUnLive2DAnimBlueprintAnimEditor(){}
 
-	UPROPERTY()
-		UUnLive2DMotion* NewAsset;
-	UPROPERTY()
-		FGuid ParentNodeGuid;
+	// 创建新的UnLive2D动画图组
+	virtual UEdGraph* CreateUnLive2DAnimBlueprintGraph(UUnLive2DAnimBlueprint* InAnimBlueprint) = 0;
 
-	FUnLive2DAnimParentNodeAssetOverride(FGuid InGuid, UUnLive2DMotion* InNewAsset)
-		: NewAsset(InNewAsset)
-		, ParentNodeGuid(InGuid)
-	{}
+	// 删除空节点
+	virtual void RemoveNullNodes(UUnLive2DAnimBlueprint* InAnimBlueprint) = 0;
 
-	FUnLive2DAnimParentNodeAssetOverride()
-		: NewAsset(NULL)
-	{}
+	// 给指定图表创建新的输入Pin
+	virtual void CreateInputPin(UEdGraphNode* AnimBlueprintNode) = 0;
 
-	bool operator ==(const FUnLive2DAnimParentNodeAssetOverride& Other)
-	{
-		return ParentNodeGuid == Other.ParentNodeGuid;
-	}
+	// 设置动画蓝图节点
+	virtual void SetupAnimBlueprintNode(UEdGraph* AnimBlueprintGraph, UUnLive2DAnimBlueprintNode_Base* InAnimBlueprintNode, bool bSelectNewNode) = 0;
+
+	/** 链接动画节点的图形节点。 */
+	virtual void LinkGraphNodesFromAnimBlueprintNodes(UUnLive2DAnimBlueprint* AnimBlueprint) = 0;
+
+	/** 从图形节点编译动画节点. */
+	virtual void CompileAnimBlueprintNodesFromGraphNodes(UUnLive2DAnimBlueprint* AnimBlueprint) = 0;
+
+	/** 重命名动画提示节点中的所有管脚 */
+	virtual void RenameNodePins(UUnLive2DAnimBlueprintNode_Base* AnimBlueprintNode) = 0;
 };
 
-UCLASS(BlueprintType)
-class UNLIVE2DASSET_API UUnLive2DAnimBlueprint : public UBlueprint
+#endif
+
+UCLASS(hidecategories=object, Blueprintable, BlueprintType)
+class UNLIVE2DASSET_API UUnLive2DAnimBlueprint :  public UObject/*, public IInterface_AssetUserData*/
 {
 	GENERATED_UCLASS_BODY()
 
-public:
-
-	UUnLive2DAnimBlueprintGeneratedClass* GetAnimBlueprintGeneratedClass() const;
-
-	UUnLive2DAnimBlueprintGeneratedClass* GetUnLive2DAnimBlueprintClass() const;
-
-public:
-	// 重新编译虚拟机
-	UFUNCTION(BlueprintCallable, Category = "UnLive2D Anim Blueprint")
-		void RecompileVM();
 
 public:
 	// 目标UnLive2D数据资源
 	UPROPERTY(AssetRegistrySearchable, EditAnywhere, AdvancedDisplay, Category=ClassOptions)
 		UUnLive2D* TargetUnLive2D;
 
-protected:
-
-#if WITH_EDITOR
-
-	virtual UClass* GetBlueprintClass() const override;
-
-	virtual bool SupportedByDefaultBlueprintFactory() const override { return false; }
-	virtual bool IsValidForBytecodeOnlyRecompile() const override { return false; }
-	virtual void LoadModulesRequiredForCompilation() override {};
-	virtual void GetTypeActions(FBlueprintActionDatabaseRegistrar& ActionRegistrar) const override;
-	// End of UBlueprint interface
-
-#endif
-
-	void CleanupBoneHierarchyDeprecated();
-	void CreateMemberVariablesOnLoad();
-
-public:
-
-	UUnLive2DAnimBlueprint* GetPreviewAnimationBlueprint() const;
-
-#if WITH_EDITORONLY_DATA
-public:
-	// 对包含父级中已被覆盖节点的资源的覆盖数组
 	UPROPERTY()
-		TArray<FUnLive2DAnimParentNodeAssetOverride> ParentAssetOverrides;
+		UUnLive2DAnimBlueprintNode_Base* FirstNode;
+
+protected:
+#if WITH_EDITORONLY_DATA
+
+	UPROPERTY()
+		TArray<UUnLive2DAnimBlueprintNode_Base*> AllNodes;
+
+	UPROPERTY()
+		UEdGraph* UnLive2DAnimBlueprintGraph;
+
 #endif
 
-public:
-
-	UPROPERTY(BlueprintReadOnly, transient, Category = "VM")
-		URigVMController* Controller;
+protected:
+	void CacheAggregateValues();
 
 private:
+	void EvaluateNodes(bool bAddToRoot);
 
-	friend class FUnLive2DAnimBlueprintComilerContext;
+public:
+#if WITH_EDITOR
+	/** Get the EdGraph of SoundNodes */
+	UEdGraph* GetGraph();
+
+	// 获取图表所有节点
+	TArray<UUnLive2DAnimBlueprintNode_Base*>& GetGraphAllNodes();
+
+	/** Sets the sound cue graph editor implementation.* */
+	static void SeUnLive2DAnimBlueprintAnimEditor(TSharedPtr<IUnLive2DAnimBlueprintAnimEditor> InUnLive2DAnimBlueprintGraphEditor);
+
+	/** Gets the sound cue graph editor implementation. */
+	static TSharedPtr<IUnLive2DAnimBlueprintAnimEditor> GetUnLive2DAnimBlueprintAnimEditor();
+#endif
+
+protected:
+#if WITH_EDITOR
+	virtual void PostInitProperties() override;
+	static void AddReferencedObjects(UObject* InThis, FReferenceCollector& Collector);
+
+	void CreateGraph();
+
+#endif
+	virtual void PostLoad() override;
+	virtual void Serialize(FStructuredArchive::FRecord Record) override;
+
+
+private:
+#if WITH_EDITOR
+
+	static TSharedPtr<class IUnLive2DAnimBlueprintAnimEditor> UnLive2DAnimBlueprintAnimEditor;
+#endif // WITH_EDITOR
+
+
+	//virtual void Serialize(FStructuredArchive::FRecord Record) override;
+
 };

@@ -14,8 +14,6 @@
 #include "Editor.h"
 #include "Kismet2/KismetEditorUtilities.h"
 #include "Animation/UnLive2DAnimBlueprint.h"
-#include "Animation/UnLive2DAnimInstance.h"
-#include "Animation/UnLive2DAnimBlueprintGeneratedClass.h"
 #include "ClassViewerFilter.h"
 #include "UnLive2D.h"
 #include "ClassViewerModule.h"
@@ -24,21 +22,6 @@
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
 
-static bool CanCreateAnimBlueprint(const FAssetData& UnLive2DAsset, UClass const* ParentClass)
-{
-	if (UnLive2DAsset.IsValid() && ParentClass != nullptr)
-	{
-		if (UUnLive2DAnimBlueprintGeneratedClass const* GeneratedParent = Cast<const UUnLive2DAnimBlueprintGeneratedClass>(ParentClass))
-		{
-			if (UnLive2DAsset.GetExportTextName() != FAssetData(GeneratedParent->GetTargetUnLive2D()).GetExportTextName())
-			{
-				return false;
-			}
-		}
-	}
-
-	return true;
-}
 
 class SUnLive2DBlueprintCreateDialog : public SCompoundWidget
 {
@@ -52,7 +35,6 @@ public:
 	void Construct(const FArguments& InArgs)
 	{
 		bOkClicked = false;
-		ParentClass = UUnLive2DAnimInstance::StaticClass();
 
 		ChildSlot
 		[
@@ -65,17 +47,6 @@ public:
 				.WidthOverride(500.0f)
 				[
 					SNew(SVerticalBox)
-					+ SVerticalBox::Slot()
-					.FillHeight(1.f)
-					[
-						SNew(SBorder)
-						.BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
-						.Content()
-						[
-							SAssignNew(ParentClassContainer, SVerticalBox)
-						]
-					]
-					
 					+ SVerticalBox::Slot()
 					.FillHeight(1.f)
 					.Padding(0.0f, 10.0f, 0.0f, 0.0f)
@@ -120,7 +91,6 @@ public:
 			]
 		];
 
-		MakeParentClassPicker();
 		MakeUnLive2DPicker();
 	}
 
@@ -164,7 +134,6 @@ private:
 			{
 				if (InFilterFuncs->IfInChildOfClassesSet(AllowedChildrenOfClasses, InClass) == EFilterReturn::Failed) return false;
 
-				return CanCreateAnimBlueprint(ShouldBeCompatibleWithUnLive2D, InClass);
 			}
 
 			return false;
@@ -184,36 +153,6 @@ private:
 		MakeUnLive2DPicker();
 	}
 
-	/** Creates the combo menu for the parent class */
-	void MakeParentClassPicker()
-	{
-		// Load the classviewer module to display a class picker
-		FClassViewerModule& ClassViewerModule = FModuleManager::LoadModuleChecked<FClassViewerModule>("ClassViewer");
-
-		// Fill in options
-		FClassViewerInitializationOptions Options;
-		Options.Mode = EClassViewerMode::ClassPicker;
-
-		TSharedPtr<FUnLive2DAnimBlueprintParentFilter> Filter = MakeShareable(new FUnLive2DAnimBlueprintParentFilter(TargetUnLive2D));
-		Options.ClassFilter = Filter;
-
-		// All child child classes of UUnLive2DAnimInstance are valid.
-		Filter->AllowedChildrenOfClasses.Add(UUnLive2DAnimInstance::StaticClass());
-
-		ParentClassContainer->ClearChildren();
-		ParentClassContainer->AddSlot()
-			.AutoHeight()
-			[
-				SNew(STextBlock)
-				.Text(LOCTEXT("ParentClass", "Parent Class:"))
-				.ShadowOffset(FVector2D(1.0f, 1.0f))
-			];
-
-		ParentClassContainer->AddSlot()
-			[
-				ClassViewerModule.CreateClassViewer(Options, FOnClassPicked::CreateSP(this, &SUnLive2DBlueprintCreateDialog::OnClassPicked))
-			];
-	}
 
 	/** Creates the combo menu for the target UnLive2D */
 	void MakeUnLive2DPicker()
@@ -223,7 +162,6 @@ private:
 		FAssetPickerConfig AssetPickerConfig;
 		AssetPickerConfig.Filter.ClassNames.Add(UUnLive2D::StaticClass()->GetFName());
 		AssetPickerConfig.OnAssetSelected = FOnAssetSelected::CreateSP(this, &SUnLive2DBlueprintCreateDialog::OnUnLive2DSelected);
-		AssetPickerConfig.OnShouldFilterAsset = FOnShouldFilterAsset::CreateSP(this, &SUnLive2DBlueprintCreateDialog::FilterUnLive2DBasedOnParentClass);
 		AssetPickerConfig.bAllowNullSelection = true;
 		AssetPickerConfig.InitialAssetViewType = EAssetViewType::Column;
 		AssetPickerConfig.InitialAssetSelection = TargetUnLive2D;
@@ -243,10 +181,6 @@ private:
 		];
 	}
 
-	bool FilterUnLive2DBasedOnParentClass(const FAssetData& AssetData)
-	{
-		return !CanCreateAnimBlueprint(AssetData, ParentClass.Get());
-	}
 
 	/** Handler for when a skeleton is selected */
 	void OnUnLive2DSelected(const FAssetData& AssetData)
@@ -268,8 +202,6 @@ private:
 	{
 		if (AnimBlueprintFactory.IsValid())
 		{
-			AnimBlueprintFactory->BlueprintType = BPTYPE_Normal;
-			AnimBlueprintFactory->ParentClass = ParentClass.Get();
 			AnimBlueprintFactory->TargetUnLive2D = Cast<UUnLive2D>(TargetUnLive2D.GetAsset());
 		}
 
@@ -277,12 +209,6 @@ private:
 		{
 			// if TargetSkeleton is not valid
 			FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("NeedValidUnLive2D", "必须为动画蓝图指定有效的Live2D数据."));
-			return FReply::Handled();
-		}
-
-		if ( !CanCreateAnimBlueprint(TargetUnLive2D, ParentClass.Get()))
-		{
-			FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("NeedCompatibleUnLive2D", "选定的骨架必须与选定的父类兼容."));
 			return FReply::Handled();
 		}
 
@@ -315,9 +241,6 @@ private:
 	/** A pointer to the window that is asking the user to select a parent class */
 	TWeakPtr<SWindow> PickerWindow;
 
-	/** The container for the Parent Class picker */
-	TSharedPtr<SVerticalBox> ParentClassContainer;
-
 	/** The container for the target skeleton picker*/
 	TSharedPtr<SVerticalBox> UnLive2DContainer;
 
@@ -337,7 +260,6 @@ UUnLive2DBlueprintFactory::UUnLive2DBlueprintFactory(const FObjectInitializer& O
 	bCreateNew = true;
 	bEditAfterNew = true;
 	SupportedClass = UUnLive2DAnimBlueprint::StaticClass();
-	ParentClass = UUnLive2DAnimInstance::StaticClass();
 }
 
 bool UUnLive2DBlueprintFactory::ConfigureProperties()
@@ -346,51 +268,23 @@ bool UUnLive2DBlueprintFactory::ConfigureProperties()
 	return Dialog->ConfigureProperties(this);
 }
 
-UObject* UUnLive2DBlueprintFactory::FactoryCreateNew(UClass* Class, UObject* InParent, FName Name, EObjectFlags Flags, UObject* Context, FFeedbackContext* Warn, FName CallingContext)
+UObject* UUnLive2DBlueprintFactory::FactoryCreateNew(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, UObject* Context, FFeedbackContext* Warn, FName CallingContext)
 {
 	// Make sure we are trying to factory a UnLive2D Anim Blueprint, then create and init one
-	check(Class->IsChildOf(UUnLive2DAnimBlueprint::StaticClass()));
+	check(InClass->IsChildOf(UUnLive2DAnimBlueprint::StaticClass()));
 
 	// If they selected an interface, we dont need a target UnLive2D
-	if (BlueprintType != BPTYPE_Interface && TargetUnLive2D == nullptr)
+	if (TargetUnLive2D == nullptr)
 	{
 		FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("NeedValidSkeleton", "必须为动画蓝图指定一个UnLive2D数据源"));
 		return nullptr;
 	}
 
-	if (BlueprintType != BPTYPE_Interface && (ParentClass == nullptr) || !FKismetEditorUtilities::CanCreateBlueprintOfClass(ParentClass) || !ParentClass->IsChildOf(UUnLive2DAnimInstance::StaticClass()))
-	{
-		FFormatNamedArguments Args;
-		Args.Add(TEXT("ClassName"), (ParentClass != nullptr) ? FText::FromString(ParentClass->GetName()) : LOCTEXT("Null", "(null)"));
-		FMessageDialog::Open(EAppMsgType::Ok, FText::Format(LOCTEXT("CannotCreateAnimBlueprint", "无法基于类创建动画蓝图'{ClassName}'."), Args));
-		return nullptr;
-	}
-	else
-	{
-		UClass* ClassToUse = ParentClass.Get();
-		UUnLive2DAnimBlueprint* NewBP = CastChecked<UUnLive2DAnimBlueprint>(FKismetEditorUtilities::CreateBlueprint(ClassToUse, InParent, Name, BlueprintType, UUnLive2DAnimBlueprint::StaticClass(), UUnLive2DAnimBlueprintGeneratedClass::StaticClass(), CallingContext));
+	UUnLive2DAnimBlueprint* NewBP = NewObject<UUnLive2DAnimBlueprint>(InParent, InClass, InName, Flags | RF_Transactional);
 
-		// Inherit any existing overrides in parent class
-		if (NewBP->ParentAssetOverrides.Num() > 0)
-		{
-			// We've inherited some overrides from the parent graph and need to recompile the blueprint.
-			FKismetEditorUtilities::CompileBlueprint(NewBP);
-		}
+	NewBP->TargetUnLive2D = TargetUnLive2D;
 
-		NewBP->TargetUnLive2D = TargetUnLive2D;
-
-		// Because the BP itself didn't have the skeleton set when the initial compile occured, it's not set on the generated classes either
-		if (UUnLive2DAnimBlueprintGeneratedClass* TypedNewClass = Cast<UUnLive2DAnimBlueprintGeneratedClass>(NewBP->GeneratedClass))
-		{
-			TypedNewClass->TargetUnLive2D = TargetUnLive2D;
-		}
-		if (UUnLive2DAnimBlueprintGeneratedClass* TypedNewClass_SKEL = Cast<UUnLive2DAnimBlueprintGeneratedClass>(NewBP->SkeletonGeneratedClass))
-		{
-			TypedNewClass_SKEL->TargetUnLive2D = TargetUnLive2D;
-		}
-
-		return NewBP;
-	}
+	return NewBP;
 }
 
 UObject* UUnLive2DBlueprintFactory::FactoryCreateNew(UClass* Class, UObject* InParent, FName Name, EObjectFlags Flags, UObject* Context, FFeedbackContext* Warn)

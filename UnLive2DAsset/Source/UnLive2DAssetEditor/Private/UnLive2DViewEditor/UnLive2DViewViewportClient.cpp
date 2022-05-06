@@ -7,6 +7,7 @@
 #include "UnLive2DAssetEditor.h"
 #include "DrawDebugHelpers.h"
 #include "UnLive2DRendererComponent.h"
+#include "CanvasTypes.h"
 
 struct HUnLive2DSelectableObjectHitProxy : public HHitProxy
 {

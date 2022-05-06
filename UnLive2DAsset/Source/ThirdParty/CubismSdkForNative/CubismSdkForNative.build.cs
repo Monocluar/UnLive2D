@@ -1,6 +1,5 @@
 
 using UnrealBuildTool;
-using Tools.DotNETCommon;
 using System.IO;
 
 public class CubismSdkForNative : ModuleRules
@@ -17,8 +16,8 @@ public class CubismSdkForNative : ModuleRules
 
 
         PublicIncludePaths.Add(Path.Combine(CubismLibPath, "include"));
-
-        if (Target.Platform == UnrealTargetPlatform.Win32)
+#if !UE_5_0_OR_LATER
+        if (Target.Platform == UnrealTargetPlatform.Win32) //UE5不支持Win32
         {
             Live2DDynLibName = "Live2DCubismCore.dll";
             Live2DDynamicLibPath = Path.Combine(CubismLibPath, "dll/windows/x86/", Live2DDynLibName);
@@ -31,7 +30,8 @@ public class CubismSdkForNative : ModuleRules
                 PublicAdditionalLibraries.Add(Path.Combine(CubismLibPath, "lib/windows/x86/142/", "Live2DCubismCore_MT.lib"));
             }
         }
-        else if (Target.Platform == UnrealTargetPlatform.Win64)
+#else
+        if (Target.Platform == UnrealTargetPlatform.Win64)
         {
 
             PublicDefinitions.Add("CSM_CORE_WIN32_DLL=0");
@@ -93,7 +93,7 @@ public class CubismSdkForNative : ModuleRules
                 }
             }
         }
-
+#endif
         if (Target.bBuildEditor)
         {
             PublicDelayLoadDLLs.Add(Live2DDynLibName);

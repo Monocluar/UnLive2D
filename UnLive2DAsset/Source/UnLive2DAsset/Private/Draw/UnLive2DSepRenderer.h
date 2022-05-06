@@ -5,14 +5,28 @@
 #include "Model/CubismModel.hpp"
 #include "Type/CubismBasicType.hpp"
 #include "CubismFramework.hpp"
+#include "Misc/EngineVersionComparison.h"
 
 class UUnLive2DRendererComponent;
+
+#if UE_VERSION_OLDER_THAN(5,0,0)
+typedef FMatrix FUnLiveMatrix;
+typedef FVector4 FUnLiveVector4;
+typedef FIndexBufferRHIRef FIndexUnLiveBufferRHIRef;
+typedef FVertexBufferRHIRef FVertexUnLiveBufferRHIRef;
+#else
+typedef FMatrix44f FUnLiveMatrix;
+typedef FVector4f FUnLiveVector4;
+typedef FBufferRHIRef FIndexUnLiveBufferRHIRef;
+typedef FBufferRHIRef FVertexUnLiveBufferRHIRef;
+#endif
+
 
 struct FUnLive2DRenderBuffers
 {
 public:
-	TMap<int32, FIndexBufferRHIRef> IndexBuffers; // 索引缓冲
-	TMap<int32, FVertexBufferRHIRef> VertexBuffers; // 顶点缓冲
+	TMap<int32, FIndexUnLiveBufferRHIRef> IndexBuffers; // 索引缓冲
+	TMap<int32, FVertexUnLiveBufferRHIRef> VertexBuffers; // 顶点缓冲
 	TMap<int32, int32> VertexCounts; // 顶点数
 };
 
@@ -54,10 +68,10 @@ public:
 	void UpdateMaskBufferRenderTarget(FRHICommandListImmediate& RHICmdList, Csm::CubismModel* tp_Model, ERHIFeatureLevel::Type FeatureLevel);
 
 	// 
-	void MaskFillVertexBuffer(Csm::CubismModel* tp_Model, const Csm::csmInt32 drawableIndex, FVertexBufferRHIRef ScratchVertexBufferRHI, FRHICommandListImmediate& RHICmdList);
+	void MaskFillVertexBuffer(Csm::CubismModel* tp_Model, const Csm::csmInt32 drawableIndex, FVertexUnLiveBufferRHIRef ScratchVertexBufferRHI, FRHICommandListImmediate& RHICmdList);
 
 	// 获取Live2D模型在遮罩矩阵中的矩阵
-	FMatrix GetUnLive2DPosToClipMartix(class CubismClippingContext* ClipContext, FVector4& ChanelFlag);
+	FUnLiveMatrix GetUnLive2DPosToClipMartix(class CubismClippingContext* ClipContext, FUnLiveVector4& ChanelFlag);
 
 	// 更新背景颜色
 	void SetDynamicMaterialTintColor(FLinearColor& NewColor);

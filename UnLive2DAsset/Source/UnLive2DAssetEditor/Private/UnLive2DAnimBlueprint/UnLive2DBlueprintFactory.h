@@ -18,12 +18,6 @@ class UUnLive2DBlueprintFactory : public UFactory
 	GENERATED_UCLASS_BODY()
 
 public:
-	// The type of blueprint that will be created
-	UPROPERTY(EditAnywhere, Category = UnLive2DBlueprintFactory)
-		TEnumAsByte<EBlueprintType> BlueprintType;
-
-	UPROPERTY(EditAnywhere, Category = UnLive2DBlueprintFactory, meta = (AllowAbstract = ""))
-		TSubclassOf<UUnLive2DAnimInstance> ParentClass;
 
 	UPROPERTY(EditAnywhere, Category = UnLive2DBlueprintFactory)
 		class UUnLive2D* TargetUnLive2D;

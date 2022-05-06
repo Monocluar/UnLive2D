@@ -3,6 +3,7 @@
 #include "AssetEditorModeManager.h"
 #include "ImageUtils.h"
 #include "CanvasTypes.h"
+#include "Misc/EngineVersionComparison.h"
 
 /*
 const FVector UnLive2DAxisX = FVector(1.0f, 0.0f, 0.0f);
@@ -12,10 +13,10 @@ FVector UnLive2DAxisY(0.0f, 0.0f, 1.0f);
 FVector UnLive2DAxisZ(0.0f, 1.0f, 0.0f);*/
 
 FUnLive2DViewportClient::FUnLive2DViewportClient(const TWeakPtr<class SEditorViewport>& InEditorViewportWidget /*= nullptr*/)
-	: FEditorViewportClient(new FAssetEditorModeManager(), nullptr, InEditorViewportWidget)
+	: FEditorViewportClient(nullptr, nullptr, InEditorViewportWidget)
 	, CheckerboardTexture(nullptr)
 {
-	bOwnsModeTools = true;
+	//bOwnsModeTools = true;
 	ZoomPos = FVector2D::ZeroVector;
 	ZoomAmount = 1.0f;
 	
@@ -93,11 +94,15 @@ void FUnLive2DViewportClient::DestroyCheckerboardTexture()
 {
 	if (CheckerboardTexture)
 	{
-		if (CheckerboardTexture->Resource)
+		if (CheckerboardTexture->GetResource())
 		{
 			CheckerboardTexture->ReleaseResource();
 		}
+#if UE_VERSION_OLDER_THAN(5,0,0)
 		CheckerboardTexture->MarkPendingKill();
+#else
+		CheckerboardTexture->MarkAsGarbage();
+#endif
 		CheckerboardTexture = nullptr;
 	}
 }

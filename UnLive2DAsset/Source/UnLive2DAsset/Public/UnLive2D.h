@@ -27,34 +27,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Live2D , meta = (ClampMin = 0.0f))
         float PlayRate;
 
-	// Live2D动画组
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = Live2D)
-		TArray<FName> Live2DMotionGroup;
-
-	// 播放动画
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Live2D)
-		int32 PlayMotionIndex = 0;
-
 	// 贴图资源
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Live2D)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, AssetRegistrySearchable, Category = Live2D)
 		TArray<TSoftObjectPtr<UTexture2D>> TextureAssets;
-
-public:
-	// Live2D颜色混合模式为CubismBlendMode_Normal使用的材质
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
-		UMaterialInterface* UnLive2DNormalMaterial;
-
-	// Live2D颜色混合模式为CubismBlendMode_Additive使用的材质
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
-		UMaterialInterface* UnLive2DAdditiveMaterial;
-
-	// Live2D颜色混合模式为CubismBlendMode_Multiplicative使用的材质
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
-		UMaterialInterface* UnLive2DMultiplyMaterial;
-
-	// 材质读取图片参数名
-	UPROPERTY(Category = Rendering, EditAnywhere, BlueprintReadWrite)
-		FName TextureParameterName;
 
 public:
 

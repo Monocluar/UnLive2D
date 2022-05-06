@@ -5,6 +5,7 @@
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "UnLive2DManagerModule.h"
 #include "WorkflowOrientedApp/WorkflowCentricApplication.h"
+#include "Misc/EngineVersionComparison.h"
 
 #define LOCTEXT_NAMESPACE "SUnLive2DAssetFamilyShortcutBar"
 
@@ -46,21 +47,51 @@ public:
 		TArray<FAssetData> Assets;
 		InAssetFamily->FindAssetsOfType(InAssetData.GetClass(), Assets);
 		bMultipleAssetsExist = Assets.Num() > 1;
+#if	UE_VERSION_OLDER_THAN(5,0,0)
 		AssetDirtyBrush = FEditorStyle::GetBrush("ContentBrowser.ContentDirty");
+#else
+		AssetDirtyBrush = FAppStyle::Get().GetBrush("Icons.DirtyBadge");
+#endif
 
 		{
 			ChildSlot
 			[
 				SAssignNew(CheckBox, SCheckBox)
+#if UE_VERSION_OLDER_THAN(5,0,0)
 				.Style(FEditorStyle::Get(), "ToolBar.ToggleButton")
-				.ForegroundColor(FSlateColor::UseForeground())
-				.Padding(0.0f)
+#else
+				.Style(FAppStyle::Get(), "SegmentedCombo.Left")
+#endif
+				//.ForegroundColor(FSlateColor::UseForeground())
 				.OnCheckStateChanged(this, &SUnLive2DAssetShortcut::HandleOpenAssetShortcut)
 				.IsChecked(this, &SUnLive2DAssetShortcut::GetCheckState)
 				.Visibility(this, &SUnLive2DAssetShortcut::GetButtonVisibility)
 				.ToolTipText(this, &SUnLive2DAssetShortcut::GetButtonTooltip)
+				.Padding(0.0f)
 				[
-					SNew(SHorizontalBox)
+					SNew(SOverlay)
+
+					+ SOverlay::Slot()
+					.VAlign(VAlign_Center)
+					.HAlign(HAlign_Center)
+					.Padding(FMargin(16.f, 4.f))
+					[
+						SNew(SImage)
+						.ColorAndOpacity(this, &SUnLive2DAssetShortcut::GetAssetTint)
+						.Image(this, &SUnLive2DAssetShortcut::GetDirtyImage)
+					]
+					
+					+ SOverlay::Slot()
+					.VAlign(VAlign_Bottom)
+					.HAlign(HAlign_Right)
+					.Padding(FMargin(2.f, 2.f))
+					[
+						SNew(SImage)
+						.ColorAndOpacity(FSlateColor::UseForeground())
+						.Image(this, &SUnLive2DAssetShortcut::GetDirtyImage)
+					]
+
+					/*SNew(SHorizontalBox)
 
 					+ SHorizontalBox::Slot()
 					.VAlign(VAlign_Center)
@@ -132,7 +163,7 @@ public:
 							.TextStyle(FEditorStyle::Get(), "Toolbar.Label")
 							.ShadowOffset(FVector2D::UnitVector)
 						]
-					]
+					]*/
 				]
 			];}
 
@@ -181,8 +212,15 @@ protected:
 			AssetThumbnail = MakeShareable(new FAssetThumbnail(AssetData, UnLive2DAssetShortcutConstants::ThumbnailSize, UnLive2DAssetShortcutConstants::ThumbnailSize, ThumbnailPoolPtr.Pin()));
 			AssetThumbnailSmall = MakeShareable(new FAssetThumbnail(AssetData, UnLive2DAssetShortcutConstants::ThumbnailSizeSmall, UnLive2DAssetShortcutConstants::ThumbnailSizeSmall, ThumbnailPoolPtr.Pin()));
 
-			ThumbnailBox->SetContent(AssetThumbnail->MakeThumbnailWidget());
-			ThumbnailSmallBox->SetContent(AssetThumbnailSmall->MakeThumbnailWidget());
+			if (ThumbnailBox)
+			{
+				ThumbnailBox->SetContent(AssetThumbnail->MakeThumbnailWidget());
+			}
+
+			if (ThumbnailSmallBox)
+			{
+				ThumbnailSmallBox->SetContent(AssetThumbnailSmall->MakeThumbnailWidget());
+			}
 		}
 	}
 
@@ -230,6 +268,21 @@ protected:
 	void HandleAssetOpened(UObject* InAsset)
 	{
 		RefreshAsset();
+	}
+
+	FSlateColor GetAssetTint() const
+	{
+		if (GetCheckState() == ECheckBoxState::Checked)
+		{
+			return FSlateColor::UseForeground();
+		}
+
+		return AssetFamily->GetAssetTypeDisplayTint(AssetData.GetClass());
+	}
+
+	const FSlateBrush* GetAssetIcon() const
+	{
+		return AssetFamily->GetAssetTypeDisplayIcon(AssetData.GetClass());	
 	}
 
 	void RefreshAsset()
@@ -295,7 +348,7 @@ protected:
 
 	EVisibility GetButtonVisibility() const
 	{
-		return AssetData.IsValid() || bMultipleAssetsExist ? EVisibility::Visible : EVisibility::Collapsed;
+		return AssetData.IsValid() && !bMultipleAssetsExist ? EVisibility::Visible : EVisibility::Collapsed;
 	}
 
 	EVisibility GetComboVisibility() const

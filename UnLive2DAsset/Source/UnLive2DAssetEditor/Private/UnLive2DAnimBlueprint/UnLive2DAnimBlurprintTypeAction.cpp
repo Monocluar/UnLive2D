@@ -16,7 +16,7 @@
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
 
 FUnLive2DAnimBlurprintTypeAction::FUnLive2DAnimBlurprintTypeAction(uint32 InAssetCategory)
-	: FAssetTypeActions_Blueprint()
+	: FAssetTypeActions_Base()
 	, AssetType(InAssetCategory)
 {
 
@@ -25,38 +25,6 @@ FUnLive2DAnimBlurprintTypeAction::FUnLive2DAnimBlurprintTypeAction(uint32 InAsse
 uint32 FUnLive2DAnimBlurprintTypeAction::GetCategories()
 {
 	return AssetType;
-}
-
-void FUnLive2DAnimBlurprintTypeAction::PerformAssetDiff(UObject* Asset1, UObject* Asset2, const struct FRevisionInfo& OldRevision, const struct FRevisionInfo& NewRevision) const
-{
-	UBlueprint* OldBlueprint = CastChecked<UBlueprint>(Asset1);
-	UBlueprint* NewBlueprint = CastChecked<UBlueprint>(Asset2);
-
-	// sometimes we're comparing different revisions of one single asset (other 
-	// times we're comparing two completely separate assets altogether)
-	bool bIsSingleAsset = (NewBlueprint->GetName() == OldBlueprint->GetName());
-
-	FText WindowTitle = NSLOCTEXT("AssetTypeActions", "NamelessAnimationBlueprintDiff", "Animation Blueprint Diff");
-	// if we're diffing one asset against itself 
-	if (bIsSingleAsset)
-	{
-		// identify the assumed single asset in the window's title
-		WindowTitle = FText::Format(NSLOCTEXT("AssetTypeActions", "AnimationBlueprintDiff", "{0} - Animation Blueprint Diff"), FText::FromString(NewBlueprint->GetName()));
-	}
-
-	SBlueprintDiff::CreateDiffWindow(WindowTitle, OldBlueprint, NewBlueprint, OldRevision, NewRevision);
-}
-
-class UThumbnailInfo* FUnLive2DAnimBlurprintTypeAction::GetThumbnailInfo(UObject* Asset) const
-{
-	UUnLive2DAnimBlueprint* AnimBlueprint = CastChecked<UUnLive2DAnimBlueprint>(Asset);
-	UThumbnailInfo* ThumbnailInfo = AnimBlueprint->ThumbnailInfo;
-	if (ThumbnailInfo == nullptr)
-	{
-		ThumbnailInfo = NewObject<USceneThumbnailInfo>(AnimBlueprint, NAME_None, RF_Transactional);
-		AnimBlueprint->ThumbnailInfo = ThumbnailInfo;
-	}
-	return ThumbnailInfo;
 }
 
 TSharedPtr<SWidget> FUnLive2DAnimBlurprintTypeAction::GetThumbnailOverlay(const FAssetData& AssetData) const
@@ -92,7 +60,7 @@ UClass* FUnLive2DAnimBlurprintTypeAction::GetSupportedClass() const
 
 void FUnLive2DAnimBlurprintTypeAction::GetActions(const TArray<UObject*>& InObjects, struct FToolMenuSection& Section)
 {
-	FAssetTypeActions_Blueprint::GetActions(InObjects, Section);
+	FAssetTypeActions_Base::GetActions(InObjects, Section);
 
 	TArray<TWeakObjectPtr<UUnLive2DAnimBlueprint>> AnimBlueprints = GetTypedWeakObjectPtrs<UUnLive2DAnimBlueprint>(InObjects);
 
@@ -107,14 +75,6 @@ void FUnLive2DAnimBlurprintTypeAction::GetActions(const TArray<UObject*>& InObje
 		)
 	);
 
-	/*Section.AddSubMenu(
-		"RetargetBlueprintSubmenu",
-		NSLOCTEXT("AssetTypeActions", "RetargetBlueprintSubmenu", "Retarget Anim Blueprints"),
-		NSLOCTEXT("AssetTypeActions", "RetargetBlueprintSubmenu_ToolTip", "Opens the retarget blueprints menu"),
-		FNewToolMenuDelegate::CreateSP(this, &FUnLive2DAnimBlurprintTypeAction::FillRetargetMenu, InObjects),
-		false,
-		FSlateIcon(FEditorStyle::GetStyleSetName(), "Persona.AssetActions.RetargetSkeleton")
-	);*/
 }
 
 void FUnLive2DAnimBlurprintTypeAction::OpenAssetEditor(const TArray<UObject*>& InObjects, TSharedPtr<class IToolkitHost> EditWithinLevelEditor /*= TSharedPtr<IToolkitHost>() */)
@@ -123,9 +83,9 @@ void FUnLive2DAnimBlurprintTypeAction::OpenAssetEditor(const TArray<UObject*>& I
 	for (auto ObjIt = InObjects.CreateConstIterator(); ObjIt; ++ObjIt)
 	{
 		UUnLive2DAnimBlueprint* AnimBlueprint = Cast<UUnLive2DAnimBlueprint>(*ObjIt);
-		if (AnimBlueprint != NULL && AnimBlueprint->SkeletonGeneratedClass && AnimBlueprint->GeneratedClass)
+		if (AnimBlueprint != NULL)
 		{
-			if (AnimBlueprint->BlueprintType != BPTYPE_Interface && !AnimBlueprint->TargetUnLive2D)
+			if (!AnimBlueprint->TargetUnLive2D)
 			{
 				FText ShouldRetargetMessage = LOCTEXT("ShouldRetarget_Message", "找不到动画蓝图的UnLive2D数据 '{BlueprintName}' 你想选一个新的吗?");
 				FFormatNamedArguments Arguments;
@@ -160,27 +120,6 @@ void FUnLive2DAnimBlurprintTypeAction::OpenAssetEditor(const TArray<UObject*>& I
 			FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("FailedToLoadCorruptAnimBlueprint", "无法加载动画蓝图，因为它已损坏."));
 		}
 	}
-}
-
-UFactory* FUnLive2DAnimBlurprintTypeAction::GetFactoryForBlueprintType(UBlueprint* InBlueprint) const
-{
-	UUnLive2DAnimBlueprint* AnimBlueprint = CastChecked<UUnLive2DAnimBlueprint>(InBlueprint);
-	if (InBlueprint->BlueprintType == BPTYPE_Interface)
-	{
-		return NewObject<UUnLive2DBlueprintFactory>();
-	}
-	else
-	{
-		UUnLive2DBlueprintFactory* AnimBlueprintFactory = NewObject<UUnLive2DBlueprintFactory>();
-		AnimBlueprintFactory->ParentClass = TSubclassOf<UUnLive2DAnimInstance>(*InBlueprint->GeneratedClass);
-		AnimBlueprintFactory->TargetUnLive2D = AnimBlueprint->TargetUnLive2D;
-		return AnimBlueprintFactory;
-	}
-}
-
-void FUnLive2DAnimBlurprintTypeAction::FillRetargetMenu(class UToolMenu* Menu, const TArray<UObject*> InObjects)
-{
-
 }
 
 void FUnLive2DAnimBlurprintTypeAction::ExecuteFindUnLive2D(TArray<TWeakObjectPtr<UUnLive2DAnimBlueprint>> Objects)

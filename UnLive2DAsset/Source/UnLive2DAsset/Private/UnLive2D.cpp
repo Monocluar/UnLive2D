@@ -4,9 +4,7 @@
 #include "Engine/TextureRenderTarget2D.h"
 
 #include "UnLive2DAssetModule.h"
-#include "Materials/MaterialInterface.h"
 #include "Interfaces/IPluginManager.h"
-#include "UObject/ConstructorHelpers.h"
 
 #define LOCTEXT_NAMESPACE "UnLive2D"
 
@@ -16,17 +14,6 @@ UUnLive2D::UUnLive2D(const FObjectInitializer& ObjectInitializer)
 	, PlayRate(1.f)
 	, TintColorAndOpacity(FLinearColor::White)
 {
-
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> NormalMaterial(TEXT("/UnLive2DAsset/UnLive2DPassNormalMaterial"));
-	UnLive2DNormalMaterial = NormalMaterial.Object;
-
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> AdditiveMaterial(TEXT("/UnLive2DAsset/UnLive2DPassAdditiveMaterial"));
-	UnLive2DAdditiveMaterial = AdditiveMaterial.Object;
-
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> MultiplyMaterial(TEXT("/UnLive2DAsset/UnLive2DPassMultiplyMaterial"));
-	UnLive2DMultiplyMaterial = MultiplyMaterial.Object;
-
-	TextureParameterName = TEXT("UnLive2D");
 
 	// 初始化Live2D库（只需要初始化一次）
 	UCubismBpLib::InitCubism();
@@ -39,16 +26,7 @@ void UUnLive2D::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEve
 	const FName PropertyName = (PropertyChangedEvent.Property != nullptr) ? PropertyChangedEvent.Property->GetFName() : NAME_None;
 	const FName MemberPropertyName = (PropertyChangedEvent.MemberProperty != nullptr) ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
 
-
-	if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(UUnLive2D, PlayMotionIndex))
-	{
-		if (Live2DMotionGroup.IsValidIndex(PlayMotionIndex))
-		{
-			UnLive2DRawModel->PlayMotion(Live2DMotionGroup[PlayMotionIndex]);
-		}
-
-	}
-	else if ( MemberPropertyName == GET_MEMBER_NAME_STRING_CHECKED(UUnLive2D, TintColorAndOpacity))
+	if ( MemberPropertyName == GET_MEMBER_NAME_STRING_CHECKED(UUnLive2D, TintColorAndOpacity))
 	{
 		if (OnUpDataUnLive2DProperty.IsBound())
 		{
@@ -102,12 +80,6 @@ void UUnLive2D::InitLive2D()
 	{
 		OnUpDataUnLive2D.Execute();
 	}
-
-	Live2DMotionGroup.Empty();
-	for (typename TMap<FName, TArray<FName>>::TConstIterator Iterator(UnLive2DRawModel->GetAllMotionGroup()); Iterator; ++Iterator)
-	{
-		Live2DMotionGroup.Append(Iterator.Value());
-;	}
 
 }
 

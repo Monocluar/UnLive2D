@@ -7,17 +7,15 @@ public class UnLive2DAssetEditor : ModuleRules
 	public UnLive2DAssetEditor(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-		
-		
-		PublicDependencyModuleNames.AddRange(
-			new string[]
-			{
-				"Core",
+
+        PublicDependencyModuleNames.AddRange(
+            new string[]
+            {
+                "Core",
 				// ... add other public dependencies that you statically link with here ...
 			}
-			);
-			
-		
+            );
+
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
@@ -46,11 +44,11 @@ public class UnLive2DAssetEditor : ModuleRules
 				"KismetCompiler",
 				"RigVM",
 				"RigVMDeveloper",
+				"GraphEditor",
 				"UnLive2DManager",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
 
-
-	}
+    }
 }

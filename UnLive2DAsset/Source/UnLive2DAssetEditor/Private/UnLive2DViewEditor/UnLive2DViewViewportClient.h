@@ -5,6 +5,7 @@
 
 class UUnLive2D;
 class UUnLive2DRendererComponent;
+class FCanvas;
 
 class FUnLive2DViewViewportClient : public FUnLive2DViewportClient
 {

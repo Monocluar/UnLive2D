@@ -9,8 +9,24 @@
 #include "Model/CubismModel.hpp"
 #include "Type/CubismBasicType.hpp"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Misc/EngineVersionComparison.h"
+#include "UObject/ConstructorHelpers.h"
+#include "Materials/MaterialInterface.h"
+
+#if !UE_VERSION_OLDER_THAN(5,0,0)
+#include "Math/Vector4.h"
+#endif
 
 using namespace Csm;
+
+#if UE_VERSION_OLDER_THAN(5,0,0)
+typedef FMatrix FUnLiveMatrix;
+typedef FVector4 FUnLiveVector4;
+#else
+using namespace UE::Math;
+typedef FMatrix44f FUnLiveMatrix;
+typedef FVector4f FUnLiveVector4;
+#endif
 
 
 void DrawSepMask_Normal(UUnLive2DRendererComponent* UnLive2DRendererComponent, Csm::CubismModel* Live2DModel, const Csm::csmInt32 DrawableIndex, class CubismClippingContext* ClipContext, int32& ElementIndex)
@@ -40,16 +56,28 @@ void DrawSepMask_Normal(UUnLive2DRendererComponent* UnLive2DRendererComponent, C
 	const csmFloat32* UVArray = reinterpret_cast<csmFloat32*>(const_cast<Live2D::Cubism::Core::csmVector2*>(Live2DModel->GetDrawableVertexUvs(DrawableIndex))); // 获取UV组
 	const csmFloat32* VertexArray = const_cast<csmFloat32*>(Live2DModel->GetDrawableVertices(DrawableIndex)); // 顶点组
 
-	FVector4 ChanelFlag;
-	FMatrix MartixForDraw = UnLive2DRendererComponent->UnLive2DRander->GetUnLive2DPosToClipMartix(ClipContext, ChanelFlag);
+	FUnLiveVector4 ChanelFlag;
+	FUnLiveMatrix MartixForDraw = UnLive2DRendererComponent->UnLive2DRander->GetUnLive2DPosToClipMartix(ClipContext, ChanelFlag);
 
 	for (int32 VertexIndex = 0; VertexIndex < NumVertext; ++VertexIndex)
 	{
+
+#if UE_VERSION_OLDER_THAN(5,0,0)
 		FVector4 Position = FVector4(VertexArray[VertexIndex * 2], VertexArray[VertexIndex * 2 + 1], 0, 1);
+#else
+		TVector4<float> Position = TVector4<float>(VertexArray[VertexIndex * 2], VertexArray[VertexIndex * 2 + 1], 0, 1);
+#endif
+
 		float MaskVal = 1;
 		if (ClipContext != nullptr)
 		{
-			FVector4 ClipPosition = MartixForDraw.TransformFVector4(Position);
+#if UE_VERSION_OLDER_THAN(5,0,0)
+			FVector4 ClipPosition;
+#else
+			TVector4<float> ClipPosition;
+#endif
+
+			ClipPosition = MartixForDraw.TransformFVector4(Position);
 			FVector2D MaskUV = FVector2D(ClipPosition.X, 1 + ClipPosition.Y);
 			MaskUV /= ClipPosition.W;
 
@@ -103,6 +131,16 @@ UUnLive2DRendererComponent::UUnLive2DRendererComponent(const FObjectInitializer&
 	bTickInEditor = true;
 	bAutoActivate = true;
 
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> NormalMaterial(TEXT("/UnLive2DAsset/UnLive2DPassNormalMaterial"));
+	UnLive2DNormalMaterial = NormalMaterial.Object;
+
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> AdditiveMaterial(TEXT("/UnLive2DAsset/UnLive2DPassAdditiveMaterial"));
+	UnLive2DAdditiveMaterial = AdditiveMaterial.Object;
+
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> MultiplyMaterial(TEXT("/UnLive2DAsset/UnLive2DPassMultiplyMaterial"));
+	UnLive2DMultiplyMaterial = MultiplyMaterial.Object;
+
+	TextureParameterName = TEXT("UnLive2D");
 }
 
 

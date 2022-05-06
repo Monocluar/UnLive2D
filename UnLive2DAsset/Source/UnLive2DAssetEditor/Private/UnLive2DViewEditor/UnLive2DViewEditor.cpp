@@ -85,13 +85,13 @@ void FUnLive2DViewEditor::InitUnLive2DViewEditor(const EToolkitMode::Type Mode, 
 		(
 			FTabManager::NewPrimaryArea()
 			->SetOrientation(Orient_Vertical)
-			->Split
+			/*->Split
 			(
 				FTabManager::NewStack()
 				->SetSizeCoefficient(0.1f)
 				->SetHideTabWell(true)
 				->AddTab(GetToolbarTabId(), ETabState::OpenedTab)
-			)
+			)*/
 			->Split
 			(
 				FTabManager::NewSplitter()
@@ -270,7 +270,7 @@ TSharedRef<SDockTab> FUnLive2DViewEditor::SpawnTab_Viewport(const FSpawnTabArgs&
 TSharedRef<SDockTab> FUnLive2DViewEditor::SpawnTab_Details(const FSpawnTabArgs& Args)
 {
 	return SNew(SDockTab)
-		.Icon(FEditorStyle::GetBrush("LevelEditor.Tabs.Details"))
+		//.Icon(FEditorStyle::GetBrush("LevelEditor.Tabs.Details"))
 		.Label(LOCTEXT("DetailsTab_Title", "Details"))
 		[
 			SNew(SUnLive2DPropertiesTabBody, SharedThis(this))

@@ -12,15 +12,17 @@
 #include "PipelineStateCache.h"
 #include "GlobalShader.h"
 #include "ShaderParameterUtils.h"
+#include "RHI.h"
+
 
 FName MaskTextureParameterName = "UnLive2DMask";
 FName MaskParmeterIsMeskName = "IsMask";
 FName MaskParmterIsInvertedMaskName = "IsInvertedMask";
 FName TintColorAndOpacityName = "TintColorAndOpacity";
 
-FMatrix ConvertCubismMatrix(Csm::CubismMatrix44& InCubismMartix)
+FUnLiveMatrix ConvertCubismMatrix(Csm::CubismMatrix44& InCubismMartix)
 {
-	FMatrix Matrix;
+	FUnLiveMatrix Matrix;
 
 	Matrix.M[0][0] = InCubismMartix.GetArray()[0];
 	Matrix.M[0][1] = InCubismMartix.GetArray()[1];
@@ -78,13 +80,13 @@ public:
 	void SetParameters(
 		FRHICommandListImmediate& RHICmdList,
 		const TShaderRHIParamRef ShaderRHI,
-		const FMatrix& InProjectMatrix,
-		const FVector4& InBaseColor,
-		const FVector4& InChannelFlag,
+		const FUnLiveMatrix& InProjectMatrix,
+		const FUnLiveVector4& InBaseColor,
+		const FUnLiveVector4& InChannelFlag,
 		FTextureRHIRef ShaderResourceTexture
 	)
 	{
-		SetShaderValue(RHICmdList, ShaderRHI, TestFloat, 1.0f);
+		SetShaderValue(RHICmdList, ShaderRHI, TestFloat, 1.f);
 		SetShaderValue(RHICmdList, ShaderRHI, ProjectMatrix, InProjectMatrix);
 		SetShaderValue(RHICmdList, ShaderRHI, BaseColor, InBaseColor);
 		SetShaderValue(RHICmdList, ShaderRHI, ChannelFlag, InChannelFlag);
@@ -314,7 +316,7 @@ UMaterialInstanceDynamic* FUnLive2DRenderState::GetMaterialInstanceDynamicToInde
 		{
 			return;
 		}
-		DynamicMat->SetTextureParameterValue(UnLive2D->TextureParameterName, Texture);
+		DynamicMat->SetTextureParameterValue(OwnerCompWeak->TextureParameterName, Texture);
 		DynamicMat->SetTextureParameterValue(MaskTextureParameterName, MaskBufferRenderTarget.Get());
 		DynamicMat->SetScalarParameterValue(MaskParmeterIsMeskName, IsMeskValue);
 		DynamicMat->SetScalarParameterValue(MaskParmterIsInvertedMaskName, InvertedMesk);
@@ -329,7 +331,7 @@ UMaterialInstanceDynamic* FUnLive2DRenderState::GetMaterialInstanceDynamicToInde
 		UMaterialInstanceDynamic*& FindMaterial = UnLive2DToNormalBlendMaterial.FindOrAdd(MapIndex);
 		if (FindMaterial == nullptr)
 		{
-			FindMaterial = UMaterialInstanceDynamic::Create(UnLive2D->UnLive2DNormalMaterial, OwnerCompWeak.Get());
+			FindMaterial = UMaterialInstanceDynamic::Create(OwnerCompWeak->UnLive2DNormalMaterial, OwnerCompWeak.Get());
 			SetMaterialInstanceDynamicParameter(FindMaterial);
 		}
 		Material = FindMaterial;
@@ -340,7 +342,7 @@ UMaterialInstanceDynamic* FUnLive2DRenderState::GetMaterialInstanceDynamicToInde
 		UMaterialInstanceDynamic*& FindMaterial = UnLive2DToAdditiveBlendMaterial.FindOrAdd(MapIndex);
 		if (FindMaterial == nullptr)
 		{
-			FindMaterial = UMaterialInstanceDynamic::Create(UnLive2D->UnLive2DAdditiveMaterial, OwnerCompWeak.Get());
+			FindMaterial = UMaterialInstanceDynamic::Create(OwnerCompWeak->UnLive2DAdditiveMaterial, OwnerCompWeak.Get());
 			SetMaterialInstanceDynamicParameter(FindMaterial);
 		}
 		Material = FindMaterial;
@@ -351,7 +353,7 @@ UMaterialInstanceDynamic* FUnLive2DRenderState::GetMaterialInstanceDynamicToInde
 		UMaterialInstanceDynamic*& FindMaterial = UnLive2DToMultiplyBlendMaterial.FindOrAdd(MapIndex);
 		if (FindMaterial == nullptr)
 		{
-			FindMaterial = UMaterialInstanceDynamic::Create(UnLive2D->UnLive2DMultiplyMaterial, OwnerCompWeak.Get());
+			FindMaterial = UMaterialInstanceDynamic::Create(OwnerCompWeak->UnLive2DMultiplyMaterial, OwnerCompWeak.Get());
 			SetMaterialInstanceDynamicParameter(FindMaterial);
 		}
 		Material = FindMaterial;
@@ -401,10 +403,16 @@ void FUnLive2DRenderState::InitRenderBuffers()
 			{
 				const Csm::csmInt32 VCount = UnLive2DModel->GetDrawableVertexCount(DrawIter);
 				if (VCount == 0) continue;
-				FRHIResourceCreateInfo CreateInfoVert;
+				FRHIResourceCreateInfo CreateInfoVert(TEXT(""));
 				void* DrawableData = nullptr;
-				FVertexBufferRHIRef ScratchVertexBufferRHI = RHICreateAndLockVertexBuffer(VCount * sizeof(FCubismVertex), BUF_Dynamic, CreateInfoVert, DrawableData);
+#if UE_VERSION_OLDER_THAN(5,0,0)
+				FVertexUnLiveBufferRHIRef ScratchVertexBufferRHI = RHICreateAndLockVertexBuffer(VCount * sizeof(FCubismVertex), BUF_Static, CreateInfoVert, DrawableData);
 				RHIUnlockVertexBuffer(ScratchVertexBufferRHI);
+#else
+				FBufferRHIRef ScratchVertexBufferRHI = FRHICommandListExecutor::GetImmediateCommandList().CreateAndLockVertexBuffer(VCount * sizeof(FCubismVertex),
+					BUF_Static, CreateInfoVert, DrawableData);
+				RHIUnlockBuffer(ScratchVertexBufferRHI);
+#endif
 
 				MaskRenderBuffers->VertexBuffers.Add(DrawIter, ScratchVertexBufferRHI);
 				MaskRenderBuffers->VertexCounts.Add(DrawIter, VCount);
@@ -417,11 +425,18 @@ void FUnLive2DRenderState::InitRenderBuffers()
 				if (IndexCount == 0) continue;
 
 				const csmUint16* IndexArray = const_cast<csmUint16*>(UnLive2DModel->GetDrawableVertexIndices(DrawIter));
-				FRHIResourceCreateInfo CreateInfoIndice;
-				FIndexBufferRHIRef IndexBufferRHI = RHICreateIndexBuffer(sizeof(uint16), sizeof(uint16) * IndexCount, BUF_Static, CreateInfoIndice);
+				FRHIResourceCreateInfo CreateInfoIndice(TEXT(""));
+				FIndexUnLiveBufferRHIRef IndexBufferRHI = RHICreateIndexBuffer(sizeof(uint16), sizeof(uint16) * IndexCount, BUF_Static, CreateInfoIndice);
+
+#if UE_VERSION_OLDER_THAN(5,0,0)
 				void* VoidPtr = RHILockIndexBuffer(IndexBufferRHI, 0, sizeof(uint16) * IndexCount, RLM_WriteOnly);
 				FMemory::Memcpy(VoidPtr, IndexArray, IndexCount * sizeof(uint16));
 				RHIUnlockIndexBuffer(IndexBufferRHI);
+#else
+				void* VoidPtr = RHILockBuffer(IndexBufferRHI, 0, sizeof(uint16) * IndexCount, RLM_WriteOnly);
+				FMemory::Memcpy(VoidPtr, IndexArray, IndexCount * sizeof(uint16));
+				RHIUnlockBuffer(IndexBufferRHI);
+#endif
 
 				MaskRenderBuffers->IndexBuffers.Add(DrawIter, IndexBufferRHI);
 			}
@@ -454,7 +469,7 @@ void FUnLive2DRenderState::UpdateRenderBuffers()
 	});
 }
 
-void UnLive2DFillMaskParameter(CubismClippingContext* clipContext, CubismClippingManager_UE* _clippingManager, FMatrix& ts_MartixForMask, FVector4& ts_BaseColor, FVector4& ts_ChanelFlag)
+void UnLive2DFillMaskParameter(CubismClippingContext* clipContext, CubismClippingManager_UE* _clippingManager, FUnLiveMatrix& ts_MartixForMask, FUnLiveVector4& ts_BaseColor, FUnLiveVector4& ts_ChanelFlag)
 {
 	// チャンネル
 	const csmInt32 channelNo = clipContext->_layoutChannelNo;
@@ -464,8 +479,8 @@ void UnLive2DFillMaskParameter(CubismClippingContext* clipContext, CubismClippin
 	csmRectF* rect = clipContext->_layoutBounds;
 
 	ts_MartixForMask = ConvertCubismMatrix(clipContext->_matrixForMask);
-	ts_BaseColor = FVector4(rect->X * 2.0f - 1.0f, rect->Y * 2.0f - 1.0f, rect->GetRight() * 2.0f - 1.0f, rect->GetBottom() * 2.0f - 1.0f);
-	ts_ChanelFlag = FVector4(colorChannel->R, colorChannel->G, colorChannel->B, colorChannel->A);
+	ts_BaseColor = FUnLiveVector4(rect->X * 2.0f - 1.0f, rect->Y * 2.0f - 1.0f, rect->GetRight() * 2.0f - 1.0f, rect->GetBottom() * 2.0f - 1.0f);
+	ts_ChanelFlag = FUnLiveVector4(colorChannel->R, colorChannel->G, colorChannel->B, colorChannel->A);
 }
 
 void FUnLive2DRenderState::UpdateMaskBufferRenderTarget(FRHICommandListImmediate& RHICmdList, Csm::CubismModel* tp_Model, ERHIFeatureLevel::Type FeatureLevel)
@@ -474,7 +489,7 @@ void FUnLive2DRenderState::UpdateMaskBufferRenderTarget(FRHICommandListImmediate
 
 	FRHITexture2D* RenderTargetTexture = MaskBufferRenderTarget->GetRenderTargetResource()->GetRenderTargetTexture();
 
-	RHICmdList.TransitionResource(ERHIAccess::EWritable, RenderTargetTexture);
+	RHICmdList.TransitionResource(ERHIAccess::WritableMask, RenderTargetTexture);
 
 	FRHIRenderPassInfo RPInfo(RenderTargetTexture, ERenderTargetActions::Clear_Store, RenderTargetTexture);
 	RHICmdList.BeginRenderPass(RPInfo, TEXT("DrawMask01"));
@@ -552,18 +567,26 @@ void FUnLive2DRenderState::UpdateMaskBufferRenderTarget(FRHICommandListImmediate
 				/** Drawable draw */
 				const csmInt32 td_NumVertext = tp_Model->GetDrawableVertexCount(clipDrawIndex);
 
-				FIndexBufferRHIRef IndexBufferRHI = MaskRenderBuffers->IndexBuffers.FindRef(clipDrawIndex);
-				FVertexBufferRHIRef ScratchVertexBufferRHI = MaskRenderBuffers->VertexBuffers.FindRef(clipDrawIndex);
+				FIndexUnLiveBufferRHIRef IndexBufferRHI = MaskRenderBuffers->IndexBuffers.FindRef(clipDrawIndex);
+				FVertexUnLiveBufferRHIRef ScratchVertexBufferRHI = MaskRenderBuffers->VertexBuffers.FindRef(clipDrawIndex);
+#if UE_VERSION_OLDER_THAN(5,0,0)
 				FTextureRHIRef tsr_TextureRHI = tp_Texture->Resource->TextureRHI;
+#else
+				FTextureRHIRef tsr_TextureRHI = tp_Texture->GetResource()->TextureRHI;
+#endif
 
 				MaskFillVertexBuffer(tp_Model, clipDrawIndex, ScratchVertexBufferRHI, RHICmdList);
 
 				////////////////////////////////////////////////////////////////////////////
+#if UE_VERSION_OLDER_THAN(5,0,0)
 				SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit);
+#else
+				SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit, 0);
+#endif
 
-				FMatrix ts_MartixForMask;
-				FVector4 ts_BaseColor;
-				FVector4 ts_ChanelFlag;
+				FUnLiveMatrix ts_MartixForMask;
+				FUnLiveVector4 ts_BaseColor;
+				FUnLiveVector4 ts_ChanelFlag;
 
 				UnLive2DFillMaskParameter(clipContext, UnLive2DClippingManager.Get(), ts_MartixForMask, ts_BaseColor, ts_ChanelFlag);
 
@@ -590,7 +613,7 @@ void FUnLive2DRenderState::UpdateMaskBufferRenderTarget(FRHICommandListImmediate
 	RHICmdList.EndRenderPass();
 }
 
-void FUnLive2DRenderState::MaskFillVertexBuffer(Csm::CubismModel* tp_Model, const Csm::csmInt32 drawableIndex, FVertexBufferRHIRef ScratchVertexBufferRHI, FRHICommandListImmediate& RHICmdList)
+void FUnLive2DRenderState::MaskFillVertexBuffer(Csm::CubismModel* tp_Model, const Csm::csmInt32 drawableIndex, FVertexUnLiveBufferRHIRef ScratchVertexBufferRHI, FRHICommandListImmediate& RHICmdList)
 {
 	const csmInt32 td_NumVertext = tp_Model->GetDrawableVertexCount(drawableIndex);
 	UE_LOG(LogUnLive2D, Verbose, TEXT("FillVertexBuffer: Vertext buffer info %d|%d >> (%u, %u)"), drawableIndex, td_NumVertext, ScratchVertexBufferRHI->GetSize(), ScratchVertexBufferRHI->GetUsage());
@@ -606,7 +629,11 @@ void FUnLive2DRenderState::MaskFillVertexBuffer(Csm::CubismModel* tp_Model, cons
 		check(varray);
 		check(uvarray);
 
+#if UE_VERSION_OLDER_THAN(5,0,0)
 		void* DrawableData = RHICmdList.LockVertexBuffer(ScratchVertexBufferRHI, 0, td_NumVertext * sizeof(FCubismVertex), RLM_WriteOnly);
+#else
+		void* DrawableData = RHICmdList.LockBuffer(ScratchVertexBufferRHI, 0, td_NumVertext * sizeof(FCubismVertex), RLM_WriteOnly);
+#endif
 		FCubismVertex* RESTRICT DestSamples = (FCubismVertex*)DrawableData;
 
 		for (int32 td_VertexIndex = 0; td_VertexIndex < td_NumVertext; ++td_VertexIndex)
@@ -617,20 +644,24 @@ void FUnLive2DRenderState::MaskFillVertexBuffer(Csm::CubismModel* tp_Model, cons
 			DestSamples[td_VertexIndex].UV.Y = uvarray[td_VertexIndex * 2 + 1];
 		}
 
+#if UE_VERSION_OLDER_THAN(5,0,0)
 		RHICmdList.UnlockVertexBuffer(ScratchVertexBufferRHI);
+#else
+		RHICmdList.UnlockBuffer(ScratchVertexBufferRHI);
+#endif
 	}
 }
 
-FMatrix FUnLive2DRenderState::GetUnLive2DPosToClipMartix(class CubismClippingContext* ClipContext, FVector4& ChanelFlag)
+FUnLiveMatrix FUnLive2DRenderState::GetUnLive2DPosToClipMartix(class CubismClippingContext* ClipContext, FUnLiveVector4& ChanelFlag)
 {
-	if (ClipContext == nullptr) return FMatrix();
+	if (ClipContext == nullptr) return FUnLiveMatrix();
 
 	const csmInt32 ChannelNo = ClipContext->_layoutChannelNo; // 通道
 
 	// 将通道转换为RGBA
 	Csm::Rendering::CubismRenderer::CubismTextureColor* ColorChannel = UnLive2DClippingManager->GetChannelFlagAsColor(ChannelNo);
 
-	ChanelFlag = FVector4(ColorChannel->R, ColorChannel->G, ColorChannel->B, ColorChannel->A);
+	ChanelFlag = FUnLiveVector4(ColorChannel->R, ColorChannel->G, ColorChannel->B, ColorChannel->A);
 
 	return ConvertCubismMatrix(ClipContext->_matrixForDraw);
 }

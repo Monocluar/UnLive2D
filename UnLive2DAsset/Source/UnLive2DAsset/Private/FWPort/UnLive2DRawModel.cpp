@@ -174,18 +174,6 @@ bool FUnLive2DRawModel::LoadAsset(const FUnLive2DLoadData& InData)
 		_model->SaveParameters();
 	}
 
-	AllMotionGroup.Empty();
-	// 动画系统
-	for (csmInt32 i = 0; i < Live2DModelSetting->GetMotionGroupCount(); i++)
-	{
-		const csmChar* Group = Live2DModelSetting->GetMotionGroupName(i);
-		if (Group)
-		{
-			AllMotionGroup.Add(Group, TArray<FName>());
-		}
-		PreloadMotionGroup(Group);
-
-	}
 	_motionManager->StopAllMotions();
 
 	return true;
@@ -448,72 +436,6 @@ FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& I
 	return LoadData;
 }
 #endif
-
-void FUnLive2DRawModel::PlayMotion(const FName& InName)
-{
-	if (!OwnerLive2D.IsValid()) return;
-
-	int32 PriorityIndex = -1;
-	FName GroupName = GetPlayMotionGroupName(InName, PriorityIndex);
-	StartMotion(TCHAR_TO_UTF8(*GroupName.ToString()), PriorityIndex, GetPlayMotionPriority(GroupName));
-}
-
-int32 FUnLive2DRawModel::GetPlayMotionPriority(const FName& PriorityName)
-{
-	if (PriorityName == "TapBody")
-	{
-		return PriorityForce;
-	}
-	else if (PriorityName == "Normal")
-	{
-		return PriorityNormal;
-	}
-	else if (PriorityName == "Idle")
-	{
-		return PriorityIdle;
-	}
-
-	return 0;
-}
-
-FName FUnLive2DRawModel::GetPlayMotionGroupName(const FName& InName, int32& PriorityIndex)
-{
-	FName PriorityName;
-	for (TMap<FName, TArray<FName>>::TConstIterator Iterator(AllMotionGroup); Iterator; ++Iterator)
-	{
-		PriorityIndex = -1;
-		for (const FName& Item : Iterator.Value())
-		{
-			PriorityIndex++;
-			if (InName == Item)
-			{
-				PriorityName = Iterator.Key();
-				return PriorityName;
-			}
-		}
-
-	}
-
-	return PriorityName;
-}
-
-void FUnLive2DRawModel::PreloadMotionGroup(const Csm::csmChar* Group)
-{
-	const csmInt32 Count = Live2DModelSetting->GetMotionCount(Group);
-
-	TArray<FName>* FindPtr = AllMotionGroup.Find(Group);
-
-	for (csmInt32 i = 0; i < Count; i++)
-	{
-		csmString Name = Utils::CubismString::GetFormatedString("%s_%d", Group, i);
-		csmString Path = Live2DModelSetting->GetMotionFileName(Group, i);
-
-		if (FindPtr)
-		{
-			FindPtr->Add(Path.GetRawString());
-		}
-	}
-}
 
 void FUnLive2DRawModel::ReleaseMotions()
 {
