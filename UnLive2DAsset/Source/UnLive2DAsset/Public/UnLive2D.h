@@ -31,6 +31,7 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, AssetRegistrySearchable, Category = Live2D)
 		TArray<TSoftObjectPtr<UTexture2D>> TextureAssets;
 
+
 public:
 
 	// 渲染设置数据
@@ -67,9 +68,9 @@ public:
 	void LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& TexturePaths, TArray<FUnLive2DMotionData>& LoadMotionData);
 #endif
 
-    FORCEINLINE TWeakPtr<FUnLive2DRawModel> GetUnLive2DRawModel() {return UnLive2DRawModel; }
+    FORCEINLINE TWeakPtr<FUnLive2DRawModel> GetUnLive2DRawModel() const {return UnLive2DRawModel; }
 
-    FORCEINLINE const FModelConfig& GetModelConfigData() {return ModelConfigData; }
+    FORCEINLINE const FModelConfig& GetModelConfigData() { return ModelConfigData; }
 
 	const FUnLive2DLoadData* GetUnLive2DLoadData();
 

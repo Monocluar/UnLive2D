@@ -56,12 +56,36 @@ public:
 		{
 			ChildSlot
 			[
-				SAssignNew(CheckBox, SCheckBox)
-#if UE_VERSION_OLDER_THAN(5,0,0)
+				CreateSwithUI()
+			];}
+
+		EnableToolTipForceField(true);
+		DirtyStateTimerHandle = RegisterActiveTimer(1.0f / 10.0f, FWidgetActiveTimerDelegate::CreateSP(this, &SUnLive2DAssetShortcut::HandleRefreshDirtyState));
+	}
+
+	~SUnLive2DAssetShortcut()
+	{
+		if (FModuleManager::Get().IsModuleLoaded(TEXT("AssetRegistry")))
+		{
+			FAssetRegistryModule& AssetRegistryModule = FModuleManager::GetModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
+			AssetRegistryModule.Get().OnFilesLoaded().RemoveAll(this);
+			AssetRegistryModule.Get().OnAssetAdded().RemoveAll(this);
+			AssetRegistryModule.Get().OnAssetRemoved().RemoveAll(this);
+			AssetRegistryModule.Get().OnAssetRenamed().RemoveAll(this);
+		}
+
+		AssetFamily->GetOnAssetOpened().RemoveAll(this);
+		GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->OnAssetEditorRequestedOpen().RemoveAll(this);
+		UnRegisterActiveTimer(DirtyStateTimerHandle.ToSharedRef());
+	}
+
+protected:
+
+	TSharedRef<SWidget> CreateSwithUI()
+	{
+#if	UE_VERSION_OLDER_THAN(5,0,0)
+		return SAssignNew(CheckBox, SCheckBox)
 				.Style(FEditorStyle::Get(), "ToolBar.ToggleButton")
-#else
-				.Style(FAppStyle::Get(), "SegmentedCombo.Left")
-#endif
 				//.ForegroundColor(FSlateColor::UseForeground())
 				.OnCheckStateChanged(this, &SUnLive2DAssetShortcut::HandleOpenAssetShortcut)
 				.IsChecked(this, &SUnLive2DAssetShortcut::GetCheckState)
@@ -69,29 +93,7 @@ public:
 				.ToolTipText(this, &SUnLive2DAssetShortcut::GetButtonTooltip)
 				.Padding(0.0f)
 				[
-					SNew(SOverlay)
-
-					+ SOverlay::Slot()
-					.VAlign(VAlign_Center)
-					.HAlign(HAlign_Center)
-					.Padding(FMargin(16.f, 4.f))
-					[
-						SNew(SImage)
-						.ColorAndOpacity(this, &SUnLive2DAssetShortcut::GetAssetTint)
-						.Image(this, &SUnLive2DAssetShortcut::GetDirtyImage)
-					]
-					
-					+ SOverlay::Slot()
-					.VAlign(VAlign_Bottom)
-					.HAlign(HAlign_Right)
-					.Padding(FMargin(2.f, 2.f))
-					[
-						SNew(SImage)
-						.ColorAndOpacity(FSlateColor::UseForeground())
-						.Image(this, &SUnLive2DAssetShortcut::GetDirtyImage)
-					]
-
-					/*SNew(SHorizontalBox)
+					SNew(SHorizontalBox)
 
 					+ SHorizontalBox::Slot()
 					.VAlign(VAlign_Center)
@@ -163,28 +165,40 @@ public:
 							.TextStyle(FEditorStyle::Get(), "Toolbar.Label")
 							.ShadowOffset(FVector2D::UnitVector)
 						]
-					]*/
+					]
+				];
+#else
+	return SAssignNew(CheckBox, SCheckBox)
+			.Style(FAppStyle::Get(), "SegmentedCombo.Left")
+			.OnCheckStateChanged(this, &SUnLive2DAssetShortcut::HandleOpenAssetShortcut)
+			.IsChecked(this, &SUnLive2DAssetShortcut::GetCheckState)
+			.Visibility(this, &SUnLive2DAssetShortcut::GetButtonVisibility)
+			.ToolTipText(this, &SUnLive2DAssetShortcut::GetButtonTooltip)
+			.Padding(0.0f)
+			[
+				SNew(SOverlay)
+
+				+ SOverlay::Slot()
+				.VAlign(VAlign_Center)
+				.HAlign(HAlign_Center)
+				.Padding(FMargin(16.f, 4.f))
+				[
+					SNew(SImage)
+					.ColorAndOpacity(this, &SUnLive2DAssetShortcut::GetAssetTint)
+					.Image(this, &SUnLive2DAssetShortcut::GetAssetIcon)
 				]
-			];}
 
-		EnableToolTipForceField(true);
-		DirtyStateTimerHandle = RegisterActiveTimer(1.0f / 10.0f, FWidgetActiveTimerDelegate::CreateSP(this, &SUnLive2DAssetShortcut::HandleRefreshDirtyState));
-	}
-
-	~SUnLive2DAssetShortcut()
-	{
-		if (FModuleManager::Get().IsModuleLoaded(TEXT("AssetRegistry")))
-		{
-			FAssetRegistryModule& AssetRegistryModule = FModuleManager::GetModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
-			AssetRegistryModule.Get().OnFilesLoaded().RemoveAll(this);
-			AssetRegistryModule.Get().OnAssetAdded().RemoveAll(this);
-			AssetRegistryModule.Get().OnAssetRemoved().RemoveAll(this);
-			AssetRegistryModule.Get().OnAssetRenamed().RemoveAll(this);
-		}
-
-		AssetFamily->GetOnAssetOpened().RemoveAll(this);
-		GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->OnAssetEditorRequestedOpen().RemoveAll(this);
-		UnRegisterActiveTimer(DirtyStateTimerHandle.ToSharedRef());
+				+ SOverlay::Slot()
+				.VAlign(VAlign_Bottom)
+				.HAlign(HAlign_Right)
+				.Padding(FMargin(2.f, 2.f))
+				[
+					SNew(SImage)
+					.ColorAndOpacity(FSlateColor::UseForeground())
+					.Image(this, &SUnLive2DAssetShortcut::GetDirtyImage)
+				]
+			];
+#endif
 	}
 
 protected:

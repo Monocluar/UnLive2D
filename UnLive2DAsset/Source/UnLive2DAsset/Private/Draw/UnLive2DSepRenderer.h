@@ -8,6 +8,7 @@
 #include "Misc/EngineVersionComparison.h"
 
 class UUnLive2DRendererComponent;
+class SUnLive2DViewUI;
 
 #if UE_VERSION_OLDER_THAN(5,0,0)
 typedef FMatrix FUnLiveMatrix;
@@ -38,10 +39,14 @@ public:
 
 	FUnLive2DRenderState(UUnLive2DRendererComponent* InComp);
 
+	FUnLive2DRenderState(TSharedRef<SUnLive2DViewUI> InViewUI);
+
 	~FUnLive2DRenderState();
 
 public:
 	void InitRender(TWeakObjectPtr<class UUnLive2D> InNewUnLive2D);
+
+	void InitRender(const UUnLive2D* InNewUnLive2D);
 
 	void NoLowPreciseMask(bool InVal) { bNoLowPreciseMask = InVal; }
 	bool GetUseHighPreciseMask() const;
@@ -53,10 +58,10 @@ public:
 	void UnLoadTextures();
 
 	// 获取图片
-	class UTexture2D* GetRandererStatesTexturesTextureIndex(Csm::CubismModel* Live2DModel, const Csm::csmInt32& DrawableIndex) const;
+	class UTexture2D* GetRandererStatesTexturesTextureIndex(const Csm::CubismModel* Live2DModel, const Csm::csmInt32& DrawableIndex) const;
 
 	// 获取当前的动态材质
-	UMaterialInstanceDynamic* GetMaterialInstanceDynamicToIndex(Csm::CubismModel* Live2DModel, const Csm::csmInt32 DrawableIndex, bool bIsMesk);
+	UMaterialInstanceDynamic* GetMaterialInstanceDynamicToIndex(const Csm::CubismModel* Live2DModel, const Csm::csmInt32 DrawableIndex, bool bIsMesk);
 
 	// 根据绘制索引ID获取当前的遮罩
 	class CubismClippingContext* GetClipContextInDrawableIndex(const Csm::csmUint32 DrawableIndex) const;
@@ -81,6 +86,12 @@ protected:
 	// 初始化渲染
 	void InitRenderBuffers();
 
+	const UUnLive2D* GetUnLive2D() const;
+
+	FORCEINLINE UMaterialInstanceDynamic* GetUnLive2DMaterial(Rendering::CubismRenderer::CubismBlendMode InMode) const;
+
+	FORCEINLINE FName GetDMaterialTextureParameterName() const;
+
 private:
 
 	// 渲染图片组
@@ -101,5 +112,7 @@ private:
 	TMap<int32, UMaterialInstanceDynamic*> UnLive2DToMultiplyBlendMaterial; // CubismBlendMode_Multiplicative乘积动态材质
 
 	TSharedPtr<FUnLive2DRenderBuffers> MaskRenderBuffers;
+
+	TWeakPtr<SUnLive2DViewUI> OwnerViewUIWeak;
 
 };

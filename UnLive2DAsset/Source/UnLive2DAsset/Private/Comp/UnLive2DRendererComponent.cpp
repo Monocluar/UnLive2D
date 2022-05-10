@@ -59,6 +59,15 @@ void DrawSepMask_Normal(UUnLive2DRendererComponent* UnLive2DRendererComponent, C
 	FUnLiveVector4 ChanelFlag;
 	FUnLiveMatrix MartixForDraw = UnLive2DRendererComponent->UnLive2DRander->GetUnLive2DPosToClipMartix(ClipContext, ChanelFlag);
 
+	Live2DVertexs.SetNum(NumVertext);
+	FVector* VertexPtr = (FVector*)Live2DVertexs.GetData();
+
+	Live2DUVs.SetNum(NumVertext);
+	FVector2D* UVPtr = (FVector2D*)Live2DUVs.GetData();
+
+	Live2DColors.SetNum(NumVertext);
+	FColor* ColorsPtr = (FColor*)Live2DColors.GetData();
+
 	for (int32 VertexIndex = 0; VertexIndex < NumVertext; ++VertexIndex)
 	{
 
@@ -87,9 +96,9 @@ void DrawSepMask_Normal(UUnLive2DRendererComponent* UnLive2DRendererComponent, C
 
 		}
 
-		Live2DVertexs.Add(FVector(Position.X * 100, DepthOffset, Position.Y * 100));
-		Live2DUVs.Add(FVector2D(UVArray[VertexIndex * 2], 1 - UVArray[VertexIndex * 2 + 1])); // UE UV坐标与Live2D的Y坐标是相反的
-		Live2DColors.Add(FColor(255, 255, 255, Opacity * 255));
+		VertexPtr[VertexIndex] = FVector(Position.X * 100, DepthOffset, Position.Y * 100);
+		UVPtr[VertexIndex] = FVector2D(UVArray[VertexIndex * 2], 1 - UVArray[VertexIndex * 2 + 1]);// UE UV坐标与Live2D的Y坐标是相反的
+		ColorsPtr[VertexIndex] = FColor(255, 255, 255, Opacity * 255);
 		//Live2DDrakColors.Add(0.f, 0.f, 0.f);
 	}
 
@@ -99,9 +108,13 @@ void DrawSepMask_Normal(UUnLive2DRendererComponent* UnLive2DRendererComponent, C
 
 	const csmUint16* IndicesArray = const_cast<csmUint16*>(Live2DModel->GetDrawableVertexIndices(DrawableIndex)); //顶点索引
 
+	Live2DIndices.SetNum(VertexIndexCount);
+
+	int32* IndexPtr = (int32* )Live2DIndices.GetData();
+
 	for (int32 VertexIndex = 0; VertexIndex < VertexIndexCount; ++VertexIndex)
 	{
-		Live2DIndices.Add(IndicesArray[VertexIndex]);
+		IndexPtr[VertexIndex] = (int32)IndicesArray[VertexIndex];
 	}
 
 	UnLive2DRendererComponent->SetMaterial(ElementIndex, DynamicMat);

@@ -42,6 +42,7 @@ public:
 	TSharedPtr<struct FUnLive2DRenderState> UnLive2DRander;
 
 
+
 public:
 	// Live2D颜色混合模式为CubismBlendMode_Normal使用的材质
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
