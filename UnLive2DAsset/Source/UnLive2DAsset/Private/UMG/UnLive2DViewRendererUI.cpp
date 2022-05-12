@@ -1,4 +1,8 @@
-#include "Classes/UnLive2DViewRendererUI.h"
+#include "UnLive2DViewRendererUI.h"
+#include "Slate/SUnLive2DViewUI.h"
+#include "UObject/ConstructorHelpers.h"
+#include "Materials/MaterialInterface.h"
+#include "UnLive2D.h"
 
 
 #define LOCTEXT_NAMESPACE "UnLive2D"

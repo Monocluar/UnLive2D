@@ -355,7 +355,7 @@ UMaterialInstanceDynamic* FUnLive2DRenderState::GetMaterialInstanceDynamicToInde
 		UMaterialInstanceDynamic*& FindMaterial = UnLive2DToNormalBlendMaterial.FindOrAdd(MapIndex);
 		if (FindMaterial == nullptr)
 		{
-			FindMaterial = GetUnLive2DMaterial(BlendMode);
+			FindMaterial = GetUnLive2DMaterial((int32)BlendMode);
 			SetMaterialInstanceDynamicParameter(FindMaterial);
 		}
 		Material = FindMaterial;
@@ -366,7 +366,7 @@ UMaterialInstanceDynamic* FUnLive2DRenderState::GetMaterialInstanceDynamicToInde
 		UMaterialInstanceDynamic*& FindMaterial = UnLive2DToAdditiveBlendMaterial.FindOrAdd(MapIndex);
 		if (FindMaterial == nullptr)
 		{
-			FindMaterial = GetUnLive2DMaterial(BlendMode);
+			FindMaterial = GetUnLive2DMaterial((int32)BlendMode);
 			SetMaterialInstanceDynamicParameter(FindMaterial);
 		}
 		Material = FindMaterial;
@@ -377,7 +377,7 @@ UMaterialInstanceDynamic* FUnLive2DRenderState::GetMaterialInstanceDynamicToInde
 		UMaterialInstanceDynamic*& FindMaterial = UnLive2DToMultiplyBlendMaterial.FindOrAdd(MapIndex);
 		if (FindMaterial == nullptr)
 		{
-			FindMaterial = GetUnLive2DMaterial(BlendMode);
+			FindMaterial = GetUnLive2DMaterial((int32)BlendMode);
 			SetMaterialInstanceDynamicParameter(FindMaterial);
 		}
 		Material = FindMaterial;
@@ -482,8 +482,9 @@ const UUnLive2D* FUnLive2DRenderState::GetUnLive2D() const
 	return nullptr;
 }
 
-UMaterialInstanceDynamic* FUnLive2DRenderState::GetUnLive2DMaterial(Rendering::CubismRenderer::CubismBlendMode InMode) const
+UMaterialInstanceDynamic* FUnLive2DRenderState::GetUnLive2DMaterial(int32 InModeIndex) const
 {
+	Rendering::CubismRenderer::CubismBlendMode InMode = (Rendering::CubismRenderer::CubismBlendMode )InModeIndex;
 	if (!OwnerCompWeak.IsValid() && !OwnerViewUIWeak.IsValid()) return nullptr;
 	switch (InMode)
 	{

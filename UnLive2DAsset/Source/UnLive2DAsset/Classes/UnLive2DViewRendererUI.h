@@ -8,6 +8,7 @@
 #include "UnLive2DViewRendererUI.generated.h"
 
 class SUnLive2DViewUI;
+class UUnLive2D;
 
 UCLASS()
 class UNLIVE2DASSET_API UUnLive2DViewRendererUI : public UWidget
@@ -17,7 +18,7 @@ class UNLIVE2DASSET_API UUnLive2DViewRendererUI : public UWidget
 
 public:
 	// UnLive2D资源
-	UPROPERTY(Category = Live2D, EditAnywhere)
+	UPROPERTY(Category = Live2D, EditAnywhere, BlueprintReadOnly)
 		UUnLive2D* SourceUnLive2D;
 
 public:

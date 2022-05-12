@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "Misc/Attribute.h"
 #include "Widgets/SLeafWidget.h"
+#include "UnLive2DViewRendererUI.h"
 
 class UUnLive2D;
 
@@ -31,12 +32,13 @@ protected:
 
 	void UpDateMesh(int32 LayerId, FSlateWindowElementList &OutDrawElements, const FGeometry &AllottedGeometry, int32 DrawableIndex, class CubismClippingContext* ClipContext, int32& ElementIndex);
 
-	virtual void Tick(float DeltaTime) const;
+	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
 
 protected:
 	// SWidget overrides
 	virtual int32 OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyCullingRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const override;
 
+	virtual FVector2D ComputeDesiredSize(float) const override;
 public:
 
 	TWeakObjectPtr<class UUnLive2DViewRendererUI> OwnerWidget;
@@ -47,16 +49,4 @@ protected:
 
 	// UnLive2D 渲染模块
 	TSharedPtr<struct FUnLive2DRenderState> UnLive2DRenderPtr;
-
-private:
-
-	/** 重置时间记录 */
-	void ConstructSequence();
-
-private:
-	/** The sequence to drive the spinning animation */
-	FCurveSequence Sequence;
-	FCurveHandle Curve;
-
-	float LastTime;
 };

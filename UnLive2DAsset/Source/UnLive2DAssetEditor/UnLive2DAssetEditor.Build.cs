@@ -40,8 +40,8 @@ public class UnLive2DAssetEditor : ModuleRules
 				"BlueprintGraph",
 				"ContentBrowser",
 				"ToolMenus",
-				"MessageLog",
-				"KismetCompiler",
+                "MessageLog",
+                "KismetCompiler",
 				"RigVM",
 				"RigVMDeveloper",
 				"GraphEditor",
@@ -49,6 +49,5 @@ public class UnLive2DAssetEditor : ModuleRules
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
-
     }
 }

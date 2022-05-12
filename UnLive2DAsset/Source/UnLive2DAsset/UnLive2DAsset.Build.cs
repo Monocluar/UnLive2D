@@ -8,7 +8,7 @@ public class UnLive2DAsset : ModuleRules
 {
 	public UnLive2DAsset(ReadOnlyTargetRules Target) : base(Target)
 	{
-		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+        PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
         bUseUnity = false;
 
@@ -17,7 +17,7 @@ public class UnLive2DAsset : ModuleRules
         PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
-				"Core",
+                "Core",
                 "ProceduralMeshComponent",
 				// ... add other public dependencies that you statically link with here ...
 			}
@@ -26,16 +26,17 @@ public class UnLive2DAsset : ModuleRules
 		
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
-			{
-				"CoreUObject",
-				"Engine",
-				"Slate",
-				"SlateCore",
+            {
+                "CoreUObject",
+                "Engine",
+                "UMG",
+                "Slate",
+                "SlateCore",
                 "RHI",
                 "RenderCore",
                 "Projects",
 				"RigVM",
-				"CubismSdkForNative"
+                "CubismSdkForNative"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

@@ -32,9 +32,7 @@ struct FUnLive2DSlateMaterialBrush : public FSlateBrush
 
 void SUnLive2DViewUI::Construct(const FArguments& InArgs)
 {
-	LastTime = 0.f;
 	OwnerWidget = InArgs._OwnerWidget;
-	ConstructSequence();
 }
 
 void SUnLive2DViewUI::SetUnLive2D(const UUnLive2D* InUnLive2D)
@@ -42,7 +40,6 @@ void SUnLive2DViewUI::SetUnLive2D(const UUnLive2D* InUnLive2D)
 	UnLive2DWeak = InUnLive2D;
 
 	InitUnLive2D();
-	ConstructSequence();
 }
 
 const UUnLive2D* SUnLive2DViewUI::GetUnLive2D() const
@@ -90,7 +87,7 @@ void SUnLive2DViewUI::UpDateMesh(int32 LayerId, FSlateWindowElementList& OutDraw
 	Live2DVertexData.SetNumUninitialized(NumVertext);
 	FSlateVertex* VertexDataPtr = (FSlateVertex*)Live2DVertexData.GetData();
 
-	float MinXPos, MinYPos, MaxXPos, MaxYPos = 0.f; // 记录正方形边缘大小
+	float MinXPos = 0.f, MinYPos = 0.f, MaxXPos = 0.f, MaxYPos = 0.f; // 记录正方形边缘大小
 	for (int32 VertexIndex = 0; VertexIndex < NumVertext; ++VertexIndex)
 	{
 
@@ -175,13 +172,14 @@ void SUnLive2DViewUI::UpDateMesh(int32 LayerId, FSlateWindowElementList& OutDraw
 	ElementIndex++;
 }
 
-void SUnLive2DViewUI::Tick(float DeltaTime) const
+void SUnLive2DViewUI::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
 {
+	SLeafWidget::Tick(AllottedGeometry, InCurrentTime, InDeltaTime);
 	if (!UnLive2DWeak.IsValid()) return;
 
 	if (FUnLive2DRawModel* RawModel = UnLive2DWeak->GetUnLive2DRawModel().Pin().Get())
 	{
-		RawModel->OnUpDate(DeltaTime * UnLive2DWeak->PlayRate);
+		RawModel->OnUpDate(InDeltaTime * UnLive2DWeak->PlayRate);
 	}
 }
 
@@ -189,15 +187,8 @@ int32 SUnLive2DViewUI::OnPaint(const FPaintArgs& Args, const FGeometry& Allotted
 {
 	if (UnLive2DRenderPtr.IsValid() && UnLive2DWeak.IsValid())
 	{
-		float CurveTime = Curve.GetLerp();
-
-		float DeltaTime = CurveTime - LastTime;
-
-		Tick(DeltaTime);
 
 		SUnLive2DViewUI* ThisPtr = const_cast<SUnLive2DViewUI*>(this);
-
-		ThisPtr->LastTime = CurveTime;
 
 		// 限幅掩码・缓冲前处理方式的情况
 		UnLive2DRenderPtr->UpdateRenderBuffers();
@@ -241,10 +232,7 @@ int32 SUnLive2DViewUI::OnPaint(const FPaintArgs& Args, const FGeometry& Allotted
 	return LayerId;
 }
 
-void SUnLive2DViewUI::ConstructSequence()
+FVector2D SUnLive2DViewUI::ComputeDesiredSize(float) const
 {
-	Sequence = FCurveSequence();
-	Curve = Sequence.AddCurve(0.f, FMath::Max(1.f, 1.e-8f));
-	Sequence.Play(this->AsShared(), true);
+	return FVector2D(64.f, 64.f);
 }
-

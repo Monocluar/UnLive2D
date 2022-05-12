@@ -88,7 +88,7 @@ protected:
 
 	const UUnLive2D* GetUnLive2D() const;
 
-	FORCEINLINE UMaterialInstanceDynamic* GetUnLive2DMaterial(Rendering::CubismRenderer::CubismBlendMode InMode) const;
+	FORCEINLINE UMaterialInstanceDynamic* GetUnLive2DMaterial(int32 InModeIndex) const;
 
 	FORCEINLINE FName GetDMaterialTextureParameterName() const;
 
