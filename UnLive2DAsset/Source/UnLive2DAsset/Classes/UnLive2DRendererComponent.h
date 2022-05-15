@@ -39,7 +39,7 @@ public:
 	UPROPERTY(Category = Live2D, EditAnywhere)
 		UUnLive2D* SourceUnLive2D;
 
-	TSharedPtr<struct FUnLive2DRenderState> UnLive2DRander;
+	TSharedPtr<class FUnLive2DRenderState> UnLive2DRander;
 
 
 

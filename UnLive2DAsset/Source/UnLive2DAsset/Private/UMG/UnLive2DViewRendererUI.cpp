@@ -11,16 +11,16 @@ UUnLive2DViewRendererUI::UUnLive2DViewRendererUI(const FObjectInitializer& Objec
 	: Super(ObjectInitializer)
 {
 
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> NormalMaterial(TEXT("/UnLive2DAsset/UnLive2DPassNormalMaterial"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> NormalMaterial(TEXT("/UnLive2DAsset/Slate/UnLive2DSlateThrough_Normal"));
 	UnLive2DNormalMaterial = NormalMaterial.Object;
 
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> AdditiveMaterial(TEXT("/UnLive2DAsset/UnLive2DPassAdditiveMaterial"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> AdditiveMaterial(TEXT("/UnLive2DAsset/Slate/UnLive2DSlateThrough_Additive"));
 	UnLive2DAdditiveMaterial = AdditiveMaterial.Object;
 
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> MultiplyMaterial(TEXT("/UnLive2DAsset/UnLive2DPassMultiplyMaterial"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> MultiplyMaterial(TEXT("/UnLive2DAsset/Slate/UnLive2DSlateThrough_Multiply"));
 	UnLive2DMultiplyMaterial = MultiplyMaterial.Object;
 
-	TextureParameterName = FName(TEXT("SpriteTexture"));
+	TextureParameterName = FName(TEXT("UnLive2D"));
 }
 
 #if WITH_EDITOR
@@ -51,7 +51,11 @@ void UUnLive2DViewRendererUI::SynchronizeProperties()
 void UUnLive2DViewRendererUI::ReleaseSlateResources(bool bReleaseChildren)
 {
 	Super::ReleaseSlateResources(bReleaseChildren);
-	MySlateWidget.Reset();
+
+	if (GetWorld() && !GetWorld()->IsEditorWorld())
+	{
+		MySlateWidget.Reset();
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

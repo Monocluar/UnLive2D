@@ -163,8 +163,6 @@ FUnLive2DRenderState::FUnLive2DRenderState(TSharedRef<SUnLive2DViewUI> InViewUI)
 FUnLive2DRenderState::~FUnLive2DRenderState()
 {
 	UnLoadTextures();
-
-	MaskRenderBuffers.Reset();
 	UnLive2DClippingManager.Reset();
 	UnLive2DToNormalBlendMaterial.Empty();
 	UnLive2DToAdditiveBlendMaterial.Empty();
@@ -404,9 +402,6 @@ CubismClippingContext* FUnLive2DRenderState::GetClipContextInDrawableIndex(const
 void FUnLive2DRenderState::InitRenderBuffers()
 {
 	check(IsInGameThread());
-
-	MaskRenderBuffers = MakeShared<FUnLive2DRenderBuffers>();
-
 	ENQUEUE_RENDER_COMMAND(UnLiveRenderInit)([this](FRHICommandListImmediate& RHICmdList)
 	{
 		check(IsInRenderingThread()); // 如果不是渲染线程请弄成渲染线程
@@ -419,7 +414,7 @@ void FUnLive2DRenderState::InitRenderBuffers()
 
 		if (UnLive2DModel == nullptr) return;
 
-		if (!MaskRenderBuffers.IsValid()) return;
+		MaskRenderBuffers.Clear();
 
 		for (Csm::csmInt32 DrawIter = 0; DrawIter < DrawableCount; ++DrawIter)
 		{
@@ -438,8 +433,8 @@ void FUnLive2DRenderState::InitRenderBuffers()
 				RHIUnlockBuffer(ScratchVertexBufferRHI);
 #endif
 
-				MaskRenderBuffers->VertexBuffers.Add(DrawIter, ScratchVertexBufferRHI);
-				MaskRenderBuffers->VertexCounts.Add(DrawIter, VCount);
+				MaskRenderBuffers.VertexBuffers.Add(DrawIter, ScratchVertexBufferRHI);
+				MaskRenderBuffers.VertexCounts.Add(DrawIter, VCount);
 			}
 			
 			{
@@ -461,10 +456,11 @@ void FUnLive2DRenderState::InitRenderBuffers()
 				FMemory::Memcpy(VoidPtr, IndexArray, IndexCount * sizeof(uint16));
 				RHIUnlockBuffer(IndexBufferRHI);
 #endif
-
-				MaskRenderBuffers->IndexBuffers.Add(DrawIter, IndexBufferRHI);
+				
+				MaskRenderBuffers.IndexBuffers.Add(DrawIter, IndexBufferRHI);
 			}
 		}
+
 	});
 }
 
@@ -552,10 +548,20 @@ void FUnLive2DRenderState::UpdateRenderBuffers()
 	check(IsInGameThread());
 
 	Csm::CubismModel* UnLive2DModel = GetUnLive2D()->GetUnLive2DRawModel().Pin()->GetModel();
+	UWorld* SelfWorld = nullptr;
 
-	if (OwnerCompWeak->GetWorld() == nullptr) return;
+	if (OwnerCompWeak.IsValid())
+	{
+		SelfWorld = OwnerCompWeak->GetWorld();
+	}
+	else if (OwnerViewUIWeak.IsValid() && OwnerViewUIWeak.Pin()->OwnerWidget.IsValid())
+	{
+		SelfWorld = OwnerViewUIWeak.Pin()->OwnerWidget->GetWorld();
+	}
 
-	ERHIFeatureLevel::Type FeatureLevel = OwnerCompWeak->GetWorld()->Scene->GetFeatureLevel();
+	if (SelfWorld == nullptr) return;
+
+	ERHIFeatureLevel::Type FeatureLevel = SelfWorld->Scene->GetFeatureLevel();
 
 	ENQUEUE_RENDER_COMMAND(UpdateRender)([=](FRHICommandListImmediate& RHICmdList)
 	{
@@ -670,8 +676,8 @@ void FUnLive2DRenderState::UpdateMaskBufferRenderTarget(FRHICommandListImmediate
 				/** Drawable draw */
 				const csmInt32 td_NumVertext = tp_Model->GetDrawableVertexCount(clipDrawIndex);
 
-				FIndexUnLiveBufferRHIRef IndexBufferRHI = MaskRenderBuffers->IndexBuffers.FindRef(clipDrawIndex);
-				FVertexUnLiveBufferRHIRef ScratchVertexBufferRHI = MaskRenderBuffers->VertexBuffers.FindRef(clipDrawIndex);
+				FIndexUnLiveBufferRHIRef IndexBufferRHI = MaskRenderBuffers.IndexBuffers.FindRef(clipDrawIndex);
+				FVertexUnLiveBufferRHIRef ScratchVertexBufferRHI = MaskRenderBuffers.VertexBuffers.FindRef(clipDrawIndex);
 #if UE_VERSION_OLDER_THAN(5,0,0)
 				FTextureRHIRef tsr_TextureRHI = tp_Texture->Resource->TextureRHI;
 #else
@@ -721,7 +727,7 @@ void FUnLive2DRenderState::MaskFillVertexBuffer(Csm::CubismModel* tp_Model, cons
 	const csmInt32 td_NumVertext = tp_Model->GetDrawableVertexCount(drawableIndex);
 	UE_LOG(LogUnLive2D, Verbose, TEXT("FillVertexBuffer: Vertext buffer info %d|%d >> (%u, %u)"), drawableIndex, td_NumVertext, ScratchVertexBufferRHI->GetSize(), ScratchVertexBufferRHI->GetUsage());
 
-	if (MaskRenderBuffers->VertexCounts.Find(drawableIndex) == nullptr) return;
+	if (MaskRenderBuffers.VertexCounts.Find(drawableIndex) == nullptr) return;
 
 	//check(td_NumVertext == tp_States->VertexCount[drawableIndex]);
 	{

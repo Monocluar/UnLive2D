@@ -33,6 +33,13 @@ struct FUnLive2DSlateMaterialBrush : public FSlateBrush
 void SUnLive2DViewUI::Construct(const FArguments& InArgs)
 {
 	OwnerWidget = InArgs._OwnerWidget;
+
+	InitUnLive2D();
+}
+
+SUnLive2DViewUI::~SUnLive2DViewUI()
+{
+	UnLive2DRenderPtr.Reset();
 }
 
 void SUnLive2DViewUI::SetUnLive2D(const UUnLive2D* InUnLive2D)
@@ -64,9 +71,9 @@ void SUnLive2DViewUI::UpDateMesh(int32 LayerId, FSlateWindowElementList& OutDraw
 	TArray<FSlateVertex> Live2DVertexData;
 	TArray<SlateIndex> Live2DIndexData;
 
-	TArray<FVector2D> Live2DUV1; // 遮罩缓冲的UV坐标
-	TArray<FVector2D> Live2DUV2; // ChannelFlag XY
-	TArray<FVector2D> Live2DUV3; // ChannelFlag ZW
+	//TArray<FVector2D> Live2DUV1; // 遮罩缓冲的UV坐标
+	//TArray<FVector2D> Live2DUV2; // ChannelFlag XY
+	//TArray<FVector2D> Live2DUV3; // ChannelFlag ZW
 
 	const Csm::CubismModel* UnLive2DModel = UnLive2DWeak->GetUnLive2DRawModel().Pin()->GetModel();
 
@@ -87,7 +94,7 @@ void SUnLive2DViewUI::UpDateMesh(int32 LayerId, FSlateWindowElementList& OutDraw
 	Live2DVertexData.SetNumUninitialized(NumVertext);
 	FSlateVertex* VertexDataPtr = (FSlateVertex*)Live2DVertexData.GetData();
 
-	float MinXPos = 0.f, MinYPos = 0.f, MaxXPos = 0.f, MaxYPos = 0.f; // 记录正方形边缘大小
+
 	for (int32 VertexIndex = 0; VertexIndex < NumVertext; ++VertexIndex)
 	{
 
@@ -96,14 +103,11 @@ void SUnLive2DViewUI::UpDateMesh(int32 LayerId, FSlateWindowElementList& OutDraw
 #else
 		TVector4<float> Position = TVector4<float>(VertexArray[VertexIndex * 2], VertexArray[VertexIndex * 2 + 1], 0, 1);
 #endif
-		MinXPos = FMath::Min(Position.X, MinXPos);
-		MinYPos = FMath::Min(Position.Y, MinYPos);
-		MaxXPos = FMath::Max(Position.X, MaxXPos);
-		MaxYPos = FMath::Max(Position.Y, MaxYPos);
 
 		FSlateVertex* VertexIndexData = &VertexDataPtr[VertexIndex];
 
 		float MaskVal = 1;
+		FVector2D UV = FVector2D(UVArray[VertexIndex * 2], 1 - UVArray[VertexIndex * 2 + 1]); // UE UV坐标与Live2D的Y坐标是相反的
 		if (ClipContext != nullptr)
 		{
 #if UE_VERSION_OLDER_THAN(5,0,0)
@@ -116,23 +120,27 @@ void SUnLive2DViewUI::UpDateMesh(int32 LayerId, FSlateWindowElementList& OutDraw
 			FVector2D MaskUV = FVector2D(ClipPosition.X, 1 + ClipPosition.Y);
 			MaskUV /= ClipPosition.W;
 
-			Live2DUV1.Add(MaskUV);
-			Live2DUV2.Add(FVector2D(ChanelFlag.X, ChanelFlag.Y));
-			Live2DUV3.Add(FVector2D(ChanelFlag.Z, ChanelFlag.W));
+			//Live2DUV1.Add(MaskUV);
+			//Live2DUV2.Add(FVector2D(ChanelFlag.X, ChanelFlag.Y));
+			//Live2DUV3.Add(FVector2D(ChanelFlag.Z, ChanelFlag.W));
+			VertexIndexData->Color = FColor(255 * ChanelFlag.X, 255 * ChanelFlag.Y, 255 * ChanelFlag.Z, Opacity * 255);
+			VertexIndexData->SetTexCoords(FVector4(UV, MaskUV));
 
+		}
+		else
+		{
+			VertexIndexData->SetTexCoords(FVector4(UV, UV));
+			VertexIndexData->Color = FColor(255, 255, 255, Opacity * 255);
 		}
 
 		Live2DVertexs.Add(FVector2D(Position.X, Position.Y));
-		FVector2D UV = FVector2D(UVArray[VertexIndex * 2], 1 - UVArray[VertexIndex * 2 + 1]); // UE UV坐标与Live2D的Y坐标是相反的
 
-		VertexIndexData->Color = FColor(255, 255, 255, Opacity * 255);
-		VertexIndexData->SetTexCoords(FVector4(UV, UV));
 		VertexIndexData->MaterialTexCoords = UV;
 		VertexIndexData->PixelSize[0] = 1;
 		VertexIndexData->PixelSize[1] = 1;
 	}
 
-	FVector2D BoundsSize = FVector2D(MaxXPos - MinXPos, MaxYPos - MinYPos);
+	FVector2D BoundsSize = FVector2D(UnLive2DModel->GetCanvasWidth(), UnLive2DModel->GetCanvasHeight());
 
 	const csmInt32 VertexIndexCount = UnLive2DModel->GetDrawableVertexIndexCount(DrawableIndex); // 获得Drawable的顶点索引个数
 
@@ -158,7 +166,7 @@ void SUnLive2DViewUI::UpDateMesh(int32 LayerId, FSlateWindowElementList& OutDraw
 	for (int32 i = 0; i < Live2DVertexData.Num(); i++)
 	{
 		FSlateVertex* VertexIndexData = &VertexDataPtr[i];
-		VertexIndexData->SetPosition(Transform.TransformPoint(Live2DVertexs[i] + FVector2D(MinXPos - BoundsSize.X / 2.f, MinYPos - BoundsSize.Y / 2.f) * SetupScale + (WidgetSize / 2)));
+		VertexIndexData->SetPosition(Transform.TransformPoint(Live2DVertexs[i] * SetupScale * FVector2D(1.f, -1.f) + (WidgetSize / 2) ));
 	}
 
 	if (DynamicMat)

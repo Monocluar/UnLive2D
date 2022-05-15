@@ -51,7 +51,7 @@ public:
      * @param Model       ->  模型实例
      * @param Renderer    ->  渲染实例
      */
-    void SetupClippingContext(CubismModel* Model, struct FUnLive2DRenderState* Renderer);
+    void SetupClippingContext(CubismModel* Model, class FUnLive2DRenderState* Renderer);
 
     /**
      * 如果正在制作，则返回相应的剪裁实例，

@@ -91,14 +91,18 @@ void DrawSepMask_Normal(UUnLive2DRendererComponent* UnLive2DRendererComponent, C
 			MaskUV /= ClipPosition.W;
 
 			Live2DUV1.Add(MaskUV);
-			Live2DUV2.Add(FVector2D(ChanelFlag.X, ChanelFlag.Y));
-			Live2DUV3.Add(FVector2D(ChanelFlag.Z, ChanelFlag.W));
+			//Live2DUV2.Add(FVector2D(ChanelFlag.X, ChanelFlag.Y));
+			//Live2DUV3.Add(FVector2D(ChanelFlag.Z, ChanelFlag.W));
+			ColorsPtr[VertexIndex] = FColor(ChanelFlag.X * 255, ChanelFlag.Y * 255, ChanelFlag.Z * 255, Opacity * 255);
 
+		}
+		else
+		{
+			ColorsPtr[VertexIndex] = FColor(255, 255, 255, Opacity * 255);
 		}
 
 		VertexPtr[VertexIndex] = FVector(Position.X * 100, DepthOffset, Position.Y * 100);
 		UVPtr[VertexIndex] = FVector2D(UVArray[VertexIndex * 2], 1 - UVArray[VertexIndex * 2 + 1]);// UE UV坐标与Live2D的Y坐标是相反的
-		ColorsPtr[VertexIndex] = FColor(255, 255, 255, Opacity * 255);
 		//Live2DDrakColors.Add(0.f, 0.f, 0.f);
 	}
 
@@ -144,13 +148,13 @@ UUnLive2DRendererComponent::UUnLive2DRendererComponent(const FObjectInitializer&
 	bTickInEditor = true;
 	bAutoActivate = true;
 
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> NormalMaterial(TEXT("/UnLive2DAsset/UnLive2DPassNormalMaterial"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> NormalMaterial(TEXT("/UnLive2DAsset/Mesh/UnLive2DPassNormalMaterial"));
 	UnLive2DNormalMaterial = NormalMaterial.Object;
 
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> AdditiveMaterial(TEXT("/UnLive2DAsset/UnLive2DPassAdditiveMaterial"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> AdditiveMaterial(TEXT("/UnLive2DAsset/Mesh/UnLive2DPassAdditiveMaterial"));
 	UnLive2DAdditiveMaterial = AdditiveMaterial.Object;
 
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> MultiplyMaterial(TEXT("/UnLive2DAsset/UnLive2DPassMultiplyMaterial"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> MultiplyMaterial(TEXT("/UnLive2DAsset/Mesh/UnLive2DPassMultiplyMaterial"));
 	UnLive2DMultiplyMaterial = MultiplyMaterial.Object;
 
 	TextureParameterName = TEXT("UnLive2D");

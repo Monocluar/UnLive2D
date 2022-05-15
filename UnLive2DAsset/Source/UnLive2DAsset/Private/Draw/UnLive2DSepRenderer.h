@@ -29,9 +29,17 @@ public:
 	TMap<int32, FIndexUnLiveBufferRHIRef> IndexBuffers; // 索引缓冲
 	TMap<int32, FVertexUnLiveBufferRHIRef> VertexBuffers; // 顶点缓冲
 	TMap<int32, int32> VertexCounts; // 顶点数
+
+public:
+	void Clear()
+	{
+		IndexBuffers.Empty();
+		VertexBuffers.Empty();
+		VertexCounts.Empty();
+	}
 };
 
-struct FUnLive2DRenderState
+class FUnLive2DRenderState
 {
 public:
 
@@ -44,6 +52,7 @@ public:
 	~FUnLive2DRenderState();
 
 public:
+
 	void InitRender(TWeakObjectPtr<class UUnLive2D> InNewUnLive2D);
 
 	void InitRender(const UUnLive2D* InNewUnLive2D);
@@ -111,8 +120,7 @@ private:
 	TMap<int32, UMaterialInstanceDynamic*> UnLive2DToAdditiveBlendMaterial; // CubismBlendMode_Additive叠加动态材质
 	TMap<int32, UMaterialInstanceDynamic*> UnLive2DToMultiplyBlendMaterial; // CubismBlendMode_Multiplicative乘积动态材质
 
-	TSharedPtr<FUnLive2DRenderBuffers> MaskRenderBuffers;
+	mutable FUnLive2DRenderBuffers MaskRenderBuffers;
 
 	TWeakPtr<SUnLive2DViewUI> OwnerViewUIWeak;
-
 };

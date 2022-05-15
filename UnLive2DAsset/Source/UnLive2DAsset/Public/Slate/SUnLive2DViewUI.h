@@ -20,6 +20,8 @@ public:
 public:
 	void Construct( const FArguments& InArgs );
 
+	virtual ~SUnLive2DViewUI();
+
 public:
 
 	void SetUnLive2D(const UUnLive2D* InUnLive2D);
@@ -48,5 +50,6 @@ protected:
 	TWeakObjectPtr<const UUnLive2D> UnLive2DWeak;
 
 	// UnLive2D 渲染模块
-	TSharedPtr<struct FUnLive2DRenderState> UnLive2DRenderPtr;
+	TSharedPtr<class FUnLive2DRenderState> UnLive2DRenderPtr;
+
 };

@@ -117,7 +117,7 @@ CubismClippingContext* CubismClippingManager_UE::FindSameClip(const csmInt32* dr
     return NULL; //見つからなかった
 }
 
-void CubismClippingManager_UE::SetupClippingContext(CubismModel* InModel, struct FUnLive2DRenderState* Renderer)
+void CubismClippingManager_UE::SetupClippingContext(CubismModel* InModel, class FUnLive2DRenderState* Renderer)
 {
 	_currentFrameNo++;
 
