@@ -81,7 +81,7 @@ void SUnLive2DViewUI::UpDateMesh(int32 LayerId, FSlateWindowElementList& OutDraw
 
 	UMaterialInstanceDynamic* DynamicMat = UnLive2DRenderPtr->GetMaterialInstanceDynamicToIndex(UnLive2DModel, DrawableIndex, ClipContext != nullptr); // 获取当前动态材质
 
-	if (DynamicMat == nullptr) return;
+	if (!IsValid(DynamicMat)) return;
 
 	const csmInt32 NumVertext = UnLive2DModel->GetDrawableVertexCount(DrawableIndex); // 获得Drawable顶点的个数
 
@@ -124,18 +124,31 @@ void SUnLive2DViewUI::UpDateMesh(int32 LayerId, FSlateWindowElementList& OutDraw
 			//Live2DUV2.Add(FVector2D(ChanelFlag.X, ChanelFlag.Y));
 			//Live2DUV3.Add(FVector2D(ChanelFlag.Z, ChanelFlag.W));
 			VertexIndexData->Color = FColor(255 * ChanelFlag.X, 255 * ChanelFlag.Y, 255 * ChanelFlag.Z, Opacity * 255);
+
+#if UE_VERSION_OLDER_THAN(5,0,0)
 			VertexIndexData->SetTexCoords(FVector4(UV, MaskUV));
+#else
+			VertexIndexData->SetTexCoords(FVector4f(UV.X, UV.Y, MaskUV.X, MaskUV.Y));
+#endif
 
 		}
 		else
 		{
-			VertexIndexData->SetTexCoords(FVector4(UV, UV));
+#if UE_VERSION_OLDER_THAN(5,0,0)
+			VertexIndexData->SetTexCoords(FVector4(UV, UV)));
+#else
+			VertexIndexData->SetTexCoords(FVector4f(UV.X, UV.Y, UV.X, UV.Y));
+#endif
 			VertexIndexData->Color = FColor(255, 255, 255, Opacity * 255);
 		}
 
 		Live2DVertexs.Add(FVector2D(Position.X, Position.Y));
 
+#if UE_VERSION_OLDER_THAN(5,0,0)
 		VertexIndexData->MaterialTexCoords = UV;
+#else
+		VertexIndexData->MaterialTexCoords = FVector2f(UV.X, UV.Y);
+#endif
 		VertexIndexData->PixelSize[0] = 1;
 		VertexIndexData->PixelSize[1] = 1;
 	}
@@ -166,10 +179,17 @@ void SUnLive2DViewUI::UpDateMesh(int32 LayerId, FSlateWindowElementList& OutDraw
 	for (int32 i = 0; i < Live2DVertexData.Num(); i++)
 	{
 		FSlateVertex* VertexIndexData = &VertexDataPtr[i];
-		VertexIndexData->SetPosition(Transform.TransformPoint(Live2DVertexs[i] * SetupScale * FVector2D(1.f, -1.f) + (WidgetSize / 2) ));
+
+		FVector2D NewPos = Transform.TransformPoint(Live2DVertexs[i] * SetupScale * FVector2D(1.f, -1.f) + (WidgetSize / 2));
+
+#if UE_VERSION_OLDER_THAN(5,0,0)
+		VertexIndexData->SetPosition(NewPos);
+#else
+		VertexIndexData->SetPosition(FVector2f(NewPos.X, NewPos.Y));
+#endif
 	}
 
-	if (DynamicMat)
+	if (IsValid(DynamicMat))
 	{
 		TSharedPtr<FSlateBrush> Brush = MakeShareable(new FUnLive2DSlateMaterialBrush(DynamicMat, FVector2D(64.f, 64.f)));
 		FSlateResourceHandle RenderingResourceHandle = FSlateApplication::Get().GetRenderer()->GetResourceHandle(*Brush);

@@ -16,6 +16,8 @@ public:
 
 	FUnLive2DViewEditor();
 
+
+
 public:
 	// 初始化编辑器
 	void InitUnLive2DViewEditor(const EToolkitMode::Type Mode, const TSharedPtr< IToolkitHost >& InitToolkitHost, UUnLive2D* InitUnLive2D);
@@ -49,6 +51,7 @@ public:
 public:
 	// FSerializableObject interface
 	virtual void AddReferencedObjects(FReferenceCollector& Collector) override;
+	virtual FString GetReferencerName() const override;
 	// End of FSerializableObject interface
 
 public:

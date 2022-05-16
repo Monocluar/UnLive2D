@@ -60,6 +60,11 @@ FUnLive2DViewEditor::FUnLive2DViewEditor()
 {
 }
 
+FString FUnLive2DViewEditor::GetReferencerName() const
+{
+	return TEXT("FUnLive2DViewEditor");
+}
+
 void FUnLive2DViewEditor::InitUnLive2DViewEditor(const EToolkitMode::Type Mode, const TSharedPtr< IToolkitHost >& InitToolkitHost, UUnLive2D* InitUnLive2D)
 {
 	//GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->CloseOtherEditors(InitUnLive2D, this);
