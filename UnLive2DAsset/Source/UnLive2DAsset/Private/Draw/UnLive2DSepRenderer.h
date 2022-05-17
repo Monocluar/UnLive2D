@@ -39,7 +39,7 @@ public:
 	}
 };
 
-class FUnLive2DRenderState
+class FUnLive2DRenderState : public TSharedFromThis<FUnLive2DRenderState>	
 {
 public:
 

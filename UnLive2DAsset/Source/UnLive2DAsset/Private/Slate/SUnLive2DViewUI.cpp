@@ -46,7 +46,15 @@ void SUnLive2DViewUI::SetUnLive2D(const UUnLive2D* InUnLive2D)
 {
 	UnLive2DWeak = InUnLive2D;
 
-	InitUnLive2D();
+	if (UnLive2DRenderPtr.IsValid())
+	{
+		UnLive2DRenderPtr->InitRender(InUnLive2D);
+	}
+	else
+	{
+		InitUnLive2D();
+	}
+	
 }
 
 const UUnLive2D* SUnLive2DViewUI::GetUnLive2D() const
@@ -135,7 +143,7 @@ void SUnLive2DViewUI::UpDateMesh(int32 LayerId, FSlateWindowElementList& OutDraw
 		else
 		{
 #if UE_VERSION_OLDER_THAN(5,0,0)
-			VertexIndexData->SetTexCoords(FVector4(UV, UV)));
+			VertexIndexData->SetTexCoords(FVector4(UV, UV));
 #else
 			VertexIndexData->SetTexCoords(FVector4f(UV.X, UV.Y, UV.X, UV.Y));
 #endif

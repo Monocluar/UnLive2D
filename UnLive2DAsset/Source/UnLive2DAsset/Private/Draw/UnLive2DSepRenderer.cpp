@@ -402,19 +402,21 @@ CubismClippingContext* FUnLive2DRenderState::GetClipContextInDrawableIndex(const
 void FUnLive2DRenderState::InitRenderBuffers()
 {
 	check(IsInGameThread());
-	ENQUEUE_RENDER_COMMAND(UnLiveRenderInit)([this](FRHICommandListImmediate& RHICmdList)
+
+	ENQUEUE_RENDER_COMMAND(UnLiveRenderInit)([ThisSharedPtr = AsShared()](FRHICommandListImmediate& RHICmdList)
 	{
 		check(IsInRenderingThread()); // 如果不是渲染线程请弄成渲染线程
 
-		if (!OwnerCompWeak.IsValid() && !OwnerViewUIWeak.IsValid()) return;
 
-		Csm::CubismModel* UnLive2DModel = GetUnLive2D()->GetUnLive2DRawModel().Pin()->GetModel();
+		if (!ThisSharedPtr->OwnerCompWeak.IsValid() && !ThisSharedPtr->OwnerViewUIWeak.IsValid()) return;
+
+		Csm::CubismModel* UnLive2DModel = ThisSharedPtr->GetUnLive2D()->GetUnLive2DRawModel().Pin()->GetModel();
 
 		Csm::csmInt32 DrawableCount = UnLive2DModel->GetDrawableCount();
 
 		if (UnLive2DModel == nullptr) return;
 
-		MaskRenderBuffers.Clear();
+		ThisSharedPtr->MaskRenderBuffers.Clear();
 
 		for (Csm::csmInt32 DrawIter = 0; DrawIter < DrawableCount; ++DrawIter)
 		{
@@ -433,8 +435,8 @@ void FUnLive2DRenderState::InitRenderBuffers()
 				RHIUnlockBuffer(ScratchVertexBufferRHI);
 #endif
 
-				MaskRenderBuffers.VertexBuffers.Add(DrawIter, ScratchVertexBufferRHI);
-				MaskRenderBuffers.VertexCounts.Add(DrawIter, VCount);
+				ThisSharedPtr->MaskRenderBuffers.VertexBuffers.Add(DrawIter, ScratchVertexBufferRHI);
+				ThisSharedPtr->MaskRenderBuffers.VertexCounts.Add(DrawIter, VCount);
 			}
 			
 			{
@@ -457,7 +459,7 @@ void FUnLive2DRenderState::InitRenderBuffers()
 				RHIUnlockBuffer(IndexBufferRHI);
 #endif
 				
-				MaskRenderBuffers.IndexBuffers.Add(DrawIter, IndexBufferRHI);
+				ThisSharedPtr->MaskRenderBuffers.IndexBuffers.Add(DrawIter, IndexBufferRHI);
 			}
 		}
 
