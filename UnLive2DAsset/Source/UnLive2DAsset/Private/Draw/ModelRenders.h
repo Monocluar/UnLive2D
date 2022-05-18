@@ -1,7 +1,6 @@
 #include "CubismFramework.hpp"
 #include "Model/CubismModel.hpp"
 #include "Type/CubismBasicType.hpp"
-#include "RHIResources.h"
 #include "RenderResource.h"
 #include "RHICommandList.h"
 #include "RHIDefinitions.h"

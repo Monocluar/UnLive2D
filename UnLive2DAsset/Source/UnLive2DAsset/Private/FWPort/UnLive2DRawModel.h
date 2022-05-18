@@ -1,16 +1,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
-
 #include "CubismFramework.hpp"
 #include "Model/CubismUserModel.hpp"
 #include "Motion/CubismMotionQueueManager.hpp"
+#include "UObject/WeakObjectPtrTemplates.h"
+#include "UnLive2D.h"
 
 using namespace Live2D::Cubism::Framework;
 class UUnLive2DMotion;
 
 // Live2D 模型基础类
-class FUnLive2DRawModel : public Csm::CubismUserModel
+class FUnLive2DRawModel : public CubismUserModel
 {
 public:
     FUnLive2DRawModel(class UUnLive2D* Owner);
@@ -109,7 +110,7 @@ private:
 
     TSharedPtr<CubismPhysics::Options> PhysicsData;
 
-    TWeakObjectPtr<class UUnLive2D> OwnerLive2D;
+    TWeakObjectPtr<UUnLive2D> OwnerLive2D;
 
 #if WITH_EDITOR
 private:

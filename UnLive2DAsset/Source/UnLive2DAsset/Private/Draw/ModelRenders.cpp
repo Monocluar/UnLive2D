@@ -1,4 +1,5 @@
 #include "ModelRenders.h"
+#include "PipelineStateCache.h"
 
 void FCubismVertexDeclaration::InitRHI()
 {

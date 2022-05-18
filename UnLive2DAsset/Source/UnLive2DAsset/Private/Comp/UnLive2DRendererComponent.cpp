@@ -12,6 +12,7 @@
 #include "Misc/EngineVersionComparison.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Materials/MaterialInterface.h"
+#include "Framework/Application/SlateApplication.h"
 
 #if !UE_VERSION_OLDER_THAN(5,0,0)
 #include "Math/Vector4.h"

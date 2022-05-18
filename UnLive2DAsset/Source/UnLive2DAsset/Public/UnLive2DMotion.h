@@ -32,7 +32,7 @@ public:
 
 protected:
 	// 动作数据
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Animation)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, AssetRegistrySearchable, Category = Animation)
 		FUnLive2DMotionData MotionData;
 
 };

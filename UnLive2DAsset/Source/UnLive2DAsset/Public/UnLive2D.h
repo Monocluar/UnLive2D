@@ -44,7 +44,7 @@ public:
 
 public:
 	// 播放动画
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "Anim")
 		virtual void  PlayMotion(UUnLive2DMotion* InMotion);
 
 public:
@@ -56,7 +56,7 @@ public:
 
 protected:
 	/** 动画播放完成 */
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Anim")
 		void OnMotionPlayeEnd();
 
 public:

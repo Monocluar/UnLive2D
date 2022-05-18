@@ -9,17 +9,14 @@
 USTRUCT(BlueprintType)
 struct FModelConfig
 {
-	GENERATED_USTRUCT_BODY()
-
-public:
-	FModelConfig(){};
+	GENERATED_BODY()
 
 public:
 
 	/**
 	 * 如果可能，我们将尝试在单个纹理中渲染所有遮罩
 	 */
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Model")
 	bool bTryLowPreciseMask = true;
 
 };
@@ -36,23 +33,23 @@ enum class EUnLive2DMotionGroup : uint8
 USTRUCT(BlueprintType)
 struct FUnLive2DMotionData
 {
-	GENERATED_USTRUCT_BODY()
+	GENERATED_BODY()
 
 public:
 	// 动作开始时淡入淡出处理时间
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Anim Data")
 		float FadeInTime;
 
 	// 动作结束时淡入淡出处理时间
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Anim Data")
 		float FadeOutTime;
 
 	// 动作组名称
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Anim Data")
 		EUnLive2DMotionGroup MotionGroupType;
 
 	// 该动作组ID
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Anim Data")
 		int32 MotionCount;
 
 	// 动作数据
@@ -60,8 +57,6 @@ public:
 		TArray<uint8> MotionByteData;
 
 public:
-	FUnLive2DMotionData()
-	{}
 
 	FString GetMotionName() const
 	{

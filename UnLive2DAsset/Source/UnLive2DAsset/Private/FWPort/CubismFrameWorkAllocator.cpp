@@ -1,4 +1,5 @@
 #include "CubismFrameWorkAllocator.h"
+#include "HAL/UnrealMemory.h"
 
 using namespace Csm;
 

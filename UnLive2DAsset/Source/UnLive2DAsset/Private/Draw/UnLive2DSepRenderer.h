@@ -6,8 +6,11 @@
 #include "Type/CubismBasicType.hpp"
 #include "CubismFramework.hpp"
 #include "Misc/EngineVersionComparison.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Engine/TextureRenderTarget2D.h"
+#include "UnLive2DRendererComponent.h"
+#include "Templates/SharedPointer.h"
 
-class UUnLive2DRendererComponent;
 class SUnLive2DViewUI;
 
 #if UE_VERSION_OLDER_THAN(5,0,0)

@@ -28,7 +28,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ImportSetting)
 		float FadeOutTime;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Category = ImportSetting)
 		FName AssetPath;
 
 public:

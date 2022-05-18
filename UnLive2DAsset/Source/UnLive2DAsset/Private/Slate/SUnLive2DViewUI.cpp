@@ -7,6 +7,7 @@
 #include "Styling/SlateBrush.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "UnLive2DViewRendererUI.h"
+#include "Framework/Application/SlateApplication.h"
 
 #if UE_VERSION_OLDER_THAN(5,0,0)
 typedef FMatrix FUnLiveMatrix;

@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "Misc/Attribute.h"
 #include "Widgets/SLeafWidget.h"
+#include "Widgets/DeclarativeSyntaxSupport.h"
 #include "UnLive2DViewRendererUI.h"
 
 class UUnLive2D;

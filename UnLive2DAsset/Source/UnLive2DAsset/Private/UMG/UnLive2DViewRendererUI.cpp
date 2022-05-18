@@ -3,6 +3,7 @@
 #include "UObject/ConstructorHelpers.h"
 #include "Materials/MaterialInterface.h"
 #include "UnLive2D.h"
+#include "Engine/World.h"
 
 
 #define LOCTEXT_NAMESPACE "UnLive2D"
