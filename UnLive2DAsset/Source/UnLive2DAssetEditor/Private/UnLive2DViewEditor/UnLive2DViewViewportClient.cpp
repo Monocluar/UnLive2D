@@ -9,16 +9,6 @@
 #include "UnLive2DRendererComponent.h"
 #include "CanvasTypes.h"
 
-struct HUnLive2DSelectableObjectHitProxy : public HHitProxy
-{
-	DECLARE_HIT_PROXY(UNLIVE2DASSETEDITOR_API);
-
-
-	virtual bool AlwaysAllowsTranslucentPrimitives() const override { return true; }
-	virtual EMouseCursor::Type GetMouseCursor() override { return EMouseCursor::GrabHand; }
-};
-
-IMPLEMENT_HIT_PROXY(HUnLive2DSelectableObjectHitProxy, HHitProxy);
 
 FUnLive2DViewViewportClient::FUnLive2DViewViewportClient(TWeakObjectPtr<UUnLive2D> InUnLive2DBeingEdited)
 {

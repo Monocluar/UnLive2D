@@ -39,14 +39,14 @@ private:
 
 namespace UnLive2DAnimationBlueprintEditorTabs
 {
-	extern const FName DetailsTab;
 	extern const FName ViewportTab;
 	extern const FName AssetBrowserTab;
 	extern const FName CurveNamesTab;
 	extern const FName GraphDocumentTab;
+	extern const FName PropertiesTab;
 };
 
-class FUnLive2DAnimationBlueprintEditor : public FWorkflowCentricApplication ,  public FEditorUndoClient , public FGCObject /*public FNotifyHook, public FEditorUndoClient*/
+class FUnLive2DAnimationBlueprintEditor : public FWorkflowCentricApplication ,  public FEditorUndoClient , public FGCObject, public FNotifyHook/*, public FEditorUndoClient*/
 {
 protected:
 
@@ -68,9 +68,6 @@ protected:
 
 	/** Redo Action **/
 	void RedoAction();
-
-protected:
-	
 
 protected:
 	// IToolkit Interface
@@ -103,25 +100,35 @@ public:
 	virtual void AddReferencedObjects(FReferenceCollector& Collector) override;
 	// End of FSerializableObject interface
 public:
+
 	virtual class UUnLive2DAnimBlueprint* GetBlueprintObj() const;
+	// 将当前选定的节点指定给属性控件
+	virtual void SetSelection(TArray<UObject*> SelectedObjects);
+	// 获取当前选定的节点集
+	virtual FGraphPanelSelectionSet GetSelectedNodes() const;
 
 private:
 
 	void BindCommands();
 
-public:
+	/** 将内容浏览器同步到当前选定的节点 */
+	void SyncInBrowser();
+	/** 是否可以将内容浏览器同步到当前选择的节点 */
+	bool CanSyncInBrowser() const;
 
-	/** Handle the viewport being created */
-	void HandleViewportCreated(const TSharedRef<class SCompoundWidget>& InPersonaViewport);
 
 private:
 
 	TSharedRef<SDockTab> SpawnTab_Viewport(const FSpawnTabArgs& Args);
 	TSharedRef<SDockTab> SpawnTab_AssetBrowser(const FSpawnTabArgs& Args);
 	TSharedRef<SDockTab> SpawnTab_GraphDocument(const FSpawnTabArgs& Args);
+	TSharedRef<SDockTab> SpawnTab_Properties(const FSpawnTabArgs& Args);
 
 	/** Create new graph editor widget */
 	TSharedRef<SGraphEditor> CreateGraphEditorWidget();
+
+	// 创建选项卡指向的所有内部小部件
+	void CreateInternalWidgets();
 
 	/** Extend menu */
 	void ExtendMenu();
@@ -177,4 +184,7 @@ private:
 
 	/** Command list for this editor */
 	TSharedPtr<FUICommandList> GraphEditorCommands;
+
+	/** Properties tab */
+	TSharedPtr<class IDetailsView> UnLive2DAnimProperties;
 };

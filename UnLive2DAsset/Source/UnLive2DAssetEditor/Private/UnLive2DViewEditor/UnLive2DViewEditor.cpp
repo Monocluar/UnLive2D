@@ -67,7 +67,7 @@ FString FUnLive2DViewEditor::GetReferencerName() const
 
 void FUnLive2DViewEditor::InitUnLive2DViewEditor(const EToolkitMode::Type Mode, const TSharedPtr< IToolkitHost >& InitToolkitHost, UUnLive2D* InitUnLive2D)
 {
-	//GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->CloseOtherEditors(InitUnLive2D, this);
+	//GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->CloseOtherEditors(InitUnLive2D, this); // 关闭其他的Live2D编辑器
 
 	UnLive2DBeingEdited = InitUnLive2D;
 

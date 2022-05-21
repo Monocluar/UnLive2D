@@ -19,6 +19,9 @@ public:
 	UPROPERTY(AssetRegistrySearchable, Category = Animation, VisibleAnywhere)
 		UUnLive2D* UnLive2D;
 
+	// 正常速率播放一次动画需要时间
+	UPROPERTY(Category = Developer, AssetRegistrySearchable, VisibleAnywhere, BlueprintReadOnly)
+		float Duration;
 public:
 
 #if WITH_EDITOR

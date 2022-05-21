@@ -24,7 +24,7 @@ public:
 	// 获取所有输入引脚
 	UNLIVE2DASSETEDITOR_API void GetInputPins(TArray<class UEdGraphPin*>& OutInputPins);
 	// 通过索引获取单个输入引脚
-	UNLIVE2DASSETEDITOR_API UEdGraphPin* GetGetInputPin(int32 InputIndex);
+	UNLIVE2DASSETEDITOR_API UEdGraphPin* GetInputPin(int32 InputIndex);
 	/** 获取输入引脚数 */
 	UNLIVE2DASSETEDITOR_API int32 GetInputCount() const;
 

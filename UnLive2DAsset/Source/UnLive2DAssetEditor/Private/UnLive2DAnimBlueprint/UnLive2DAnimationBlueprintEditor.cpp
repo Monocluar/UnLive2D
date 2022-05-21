@@ -16,6 +16,10 @@
 #include "ContentBrowserModule.h"
 #include "IContentBrowserSingleton.h"
 #include "UnLive2DEditorStyle.h"
+#include "AnimBlueprintGraph/UnLive2DAnimBlueprintGraphNode_Root.h"
+#include "AnimBlueprintGraph/UnLive2DAnimBlueprintGraphNode.h"
+#include "AnimBlueprintGraph/UnLive2DAnimBlueprintNode_Base.h"
+#include "AnimBlueprintGraph/UnLive2DAnimBlueprintNode_MotionPlayer.h"
 
 const FName FUnLive2DAnimBlueprintEditorModes::AnimationBlueprintEditorMode("GraphName");
 const FName FUnLive2DAnimBlueprintEditorModes::AnimationBlueprintInterfaceEditorMode("Interface");
@@ -24,11 +28,11 @@ const FName FUnLive2DAnimBlueprintEditorModes::AnimationBlueprintInterfaceEditor
 
 namespace UnLive2DAnimationBlueprintEditorTabs
 {
-	const FName DetailsTab(TEXT("DetailsTab"));
 	const FName ViewportTab(TEXT("Viewport"));
 	const FName AssetBrowserTab(TEXT("SequenceBrowser"));
 	const FName CurveNamesTab(TEXT("AnimCurveViewerTab"));
 	const FName GraphDocumentTab(TEXT("GraphDocumentTab"));
+	const FName PropertiesTab(TEXT("PropertiesTab"));
 };
 
 FUnLive2DAnimationBlueprintEditor::FUnLive2DAnimationBlueprintEditor()
@@ -52,6 +56,24 @@ void FUnLive2DAnimationBlueprintEditor::UndoAction()
 void FUnLive2DAnimationBlueprintEditor::RedoAction()
 {
 	GEditor->RedoTransaction();
+}
+
+void FUnLive2DAnimationBlueprintEditor::SetSelection(TArray<UObject*> SelectedObjects)
+{
+	if (UnLive2DAnimProperties.IsValid())
+	{
+		UnLive2DAnimProperties->SetObjects(SelectedObjects);
+	}
+}
+
+FGraphPanelSelectionSet FUnLive2DAnimationBlueprintEditor::GetSelectedNodes() const
+{
+	FGraphPanelSelectionSet CurrentSelection;
+	if (UnLive2DAnimBlueprintGraphEditor.IsValid())
+	{
+		CurrentSelection = UnLive2DAnimBlueprintGraphEditor->GetSelectedNodes();
+	}
+	return CurrentSelection;
 }
 
 FName FUnLive2DAnimationBlueprintEditor::GetToolkitFName() const
@@ -135,6 +157,11 @@ void FUnLive2DAnimationBlueprintEditor::RegisterTabSpawners(const TSharedRef<FTa
 		.SetDisplayName(LOCTEXT("AnimationBlueprintTitle", "Animation Blueprint"))
 		.SetGroup(WorkspaceMenuCategoryRef)
 		.SetIcon(FSlateIcon(FUnLive2DEditorStyle::GetStyleSetName(), "ClassIcon.UnLive2DAnimBlueprint"));
+
+	InTabManager->RegisterTabSpawner(UnLive2DAnimationBlueprintEditorTabs::PropertiesTab, FOnSpawnTab::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::SpawnTab_Properties))
+		.SetDisplayName(LOCTEXT("DetailsTab", "Details"))
+		.SetGroup(WorkspaceMenuCategoryRef)
+		.SetIcon(FSlateIcon(FEditorStyle::GetStyleSetName(), "LevelEditor.Tabs.Details"));
 }
 
 void FUnLive2DAnimationBlueprintEditor::UnregisterTabSpawners(const TSharedRef<FTabManager>& InTabManager)
@@ -143,6 +170,8 @@ void FUnLive2DAnimationBlueprintEditor::UnregisterTabSpawners(const TSharedRef<F
 
 	InTabManager->UnregisterTabSpawner(UnLive2DAnimationBlueprintEditorTabs::ViewportTab);
 	InTabManager->UnregisterTabSpawner(UnLive2DAnimationBlueprintEditorTabs::AssetBrowserTab);
+	InTabManager->UnregisterTabSpawner(UnLive2DAnimationBlueprintEditorTabs::GraphDocumentTab);
+	InTabManager->UnregisterTabSpawner(UnLive2DAnimationBlueprintEditorTabs::PropertiesTab);
 }
 
 
@@ -161,9 +190,48 @@ void FUnLive2DAnimationBlueprintEditor::BindCommands()
 	
 }
 
-void FUnLive2DAnimationBlueprintEditor::HandleViewportCreated(const TSharedRef<class SCompoundWidget>& InPersonaViewport)
+void FUnLive2DAnimationBlueprintEditor::SyncInBrowser()
 {
+	TArray<UObject*> ObjectsToSync;
+	const FGraphPanelSelectionSet SelectedNodes = GetSelectedNodes();
 
+	for (FGraphPanelSelectionSet::TConstIterator NodeIt(SelectedNodes); NodeIt; ++NodeIt)
+	{
+		UUnLive2DAnimBlueprintGraphNode* SelectedNode = Cast<UUnLive2DAnimBlueprintGraphNode>(*NodeIt);
+
+		if (SelectedNode == nullptr) continue;
+
+		UUnLive2DAnimBlueprintNode_MotionPlayer* SelectedMotion = Cast<UUnLive2DAnimBlueprintNode_MotionPlayer>(SelectedNode->AnimBlueprintNode);
+		if (SelectedMotion && SelectedMotion->GetUnLive2DMotion())
+		{
+			ObjectsToSync.Add(SelectedMotion->GetUnLive2DMotion());
+		}
+	}
+
+	if (ObjectsToSync.Num() > 0)
+	{
+		GEditor->SyncBrowserToObjects(ObjectsToSync);
+	}
+}
+
+bool FUnLive2DAnimationBlueprintEditor::CanSyncInBrowser() const
+{
+	const FGraphPanelSelectionSet SelectedNodes = GetSelectedNodes();
+
+	for (FGraphPanelSelectionSet::TConstIterator NodeIt(SelectedNodes); NodeIt; ++NodeIt)
+	{
+		UUnLive2DAnimBlueprintGraphNode* SelectedNode = Cast<UUnLive2DAnimBlueprintGraphNode>(*NodeIt);
+
+		if (SelectedNode == nullptr) continue;
+
+		UUnLive2DAnimBlueprintNode_MotionPlayer* SelectedMotion = Cast<UUnLive2DAnimBlueprintNode_MotionPlayer>(SelectedNode->AnimBlueprintNode);
+		if (SelectedMotion && SelectedMotion->GetUnLive2DMotion())
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 TSharedRef<SDockTab> FUnLive2DAnimationBlueprintEditor::SpawnTab_Viewport(const FSpawnTabArgs& Args)
@@ -206,11 +274,22 @@ TSharedRef<SDockTab> FUnLive2DAnimationBlueprintEditor::SpawnTab_GraphDocument(c
 	return SpawnedTab;
 }
 
+TSharedRef<SDockTab> FUnLive2DAnimationBlueprintEditor::SpawnTab_Properties(const FSpawnTabArgs& Args)
+{
+	return SNew(SDockTab)
+		.Icon(FEditorStyle::GetBrush("LevelEditor.Tabs.Details"))
+		.Label(LOCTEXT("SoundCueDetailsTitle", "Details"))
+		[
+			UnLive2DAnimProperties.ToSharedRef()
+		];
+}
+
 TSharedRef<SGraphEditor> FUnLive2DAnimationBlueprintEditor::CreateGraphEditorWidget()
 {
 	if (!GraphEditorCommands.IsValid())
 	{
 		GraphEditorCommands = MakeShareable(new FUICommandList);
+
 	}
 
 	FGraphAppearanceInfo AppearanceInfo;
@@ -229,6 +308,19 @@ TSharedRef<SGraphEditor> FUnLive2DAnimationBlueprintEditor::CreateGraphEditorWid
 		.GraphEvents(InEvents)
 		.AutoExpandActionMenu(true)
 		.ShowGraphStateOverlay(false);
+}
+
+void FUnLive2DAnimationBlueprintEditor::CreateInternalWidgets()
+{
+	UnLive2DAnimBlueprintGraphEditor = CreateGraphEditorWidget();
+
+	FDetailsViewArgs Args;
+	Args.bHideSelectionTip = true;
+	Args.NotifyHook = this;
+
+	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
+	UnLive2DAnimProperties = PropertyModule.CreateDetailView(Args);
+	UnLive2DAnimProperties->SetObject(UnLive2DAnimBlueprintEdited);
 }
 
 void FUnLive2DAnimationBlueprintEditor::ExtendMenu()
@@ -275,7 +367,30 @@ void FUnLive2DAnimationBlueprintEditor::ExtendToolbar()
 
 void FUnLive2DAnimationBlueprintEditor::OnSelectedNodesChanged(const TSet<class UObject*>& NewSelection)
 {
+	TArray<UObject*> Selection;
 
+	if (NewSelection.Num())
+	{
+		for (TSet<class UObject*>::TConstIterator SetIt(NewSelection); SetIt; ++SetIt)
+		{
+			if (Cast<UUnLive2DAnimBlueprintGraphNode_Root>(*SetIt))
+			{
+				Selection.Add(GetBlueprintObj());
+			}
+			else if (UUnLive2DAnimBlueprintGraphNode* GraphNode =  Cast<UUnLive2DAnimBlueprintGraphNode>(*SetIt))
+			{
+				Selection.Add(GraphNode->AnimBlueprintNode);
+			}
+			else
+			{
+				Selection.Add(*SetIt);
+			}
+		}
+	}
+	else
+	{
+		Selection.Add(GetBlueprintObj());
+	}
 }
 
 void FUnLive2DAnimationBlueprintEditor::OnNodeTitleCommitted(const FText& NewText, ETextCommit::Type CommitInfo, UEdGraphNode* NodeBeingChanged)
@@ -343,8 +458,7 @@ void FUnLive2DAnimationBlueprintEditor::InitUnLive2DAnimationBlueprintEditor(con
 	TArray<UObject*> AnimBlueprints;
 	AnimBlueprints.Add(InAnimBlueprint);
 
-
-	UnLive2DAnimBlueprintGraphEditor = CreateGraphEditorWidget();
+	CreateInternalWidgets();
 
 	BindCommands();
 
@@ -429,14 +543,14 @@ void FUnLive2DAnimationBlueprintEditor::InitUnLive2DAnimationBlueprintEditor(con
 							FTabManager::NewSplitter()
 							->SetSizeCoefficient(0.2f)
 							->SetOrientation(Orient_Vertical)
-							/*->Split
+							->Split
 							(
 								// Right top - selection details panel & overrides
 								FTabManager::NewStack()
 								->SetHideTabWell(true)
 								->SetSizeCoefficient(0.5f)
-								->AddTab(FBlueprintEditorTabs::DetailsID, ETabState::OpenedTab)
-							)*/
+								->AddTab(UnLive2DAnimationBlueprintEditorTabs::PropertiesTab, ETabState::OpenedTab)
+							)
 							->Split
 							(
 								// Right bottom - Asset browser & advanced preview settings

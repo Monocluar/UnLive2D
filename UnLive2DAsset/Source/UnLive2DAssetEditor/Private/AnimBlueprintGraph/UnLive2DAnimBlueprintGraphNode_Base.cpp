@@ -35,7 +35,7 @@ void UUnLive2DAnimBlueprintGraphNode_Base::GetInputPins(TArray<class UEdGraphPin
 	}
 }
 
-UEdGraphPin* UUnLive2DAnimBlueprintGraphNode_Base::GetGetInputPin(int32 InputIndex)
+UEdGraphPin* UUnLive2DAnimBlueprintGraphNode_Base::GetInputPin(int32 InputIndex)
 {
 	check(InputIndex >= 0 && InputIndex < GetInputCount());
 
@@ -72,7 +72,34 @@ int32 UUnLive2DAnimBlueprintGraphNode_Base::GetInputCount() const
 
 void UUnLive2DAnimBlueprintGraphNode_Base::InsertNewNode(UEdGraphPin* FromPin, UEdGraphPin* NewLinkPin, TSet<UEdGraphNode*>& OutNodeList)
 {
+	const UUnLive2DAnimBlueprintGraphSchema* Schema = CastChecked<UUnLive2DAnimBlueprintGraphSchema>(GetSchema());
 
+	// 我们正在创建的pin已经有一个需要断开的连接。我们希望在两者之间“插入”新节点，以便新节点的输出也连接起来
+	UEdGraphPin* OldLinkedPin = FromPin->LinkedTo[0];
+	check(OldLinkedPin);
+
+	FromPin->BreakAllPinLinks();
+
+	for (int32 OutpinPinIdx = 0; OutpinPinIdx < Pins.Num(); OutpinPinIdx++)
+	{
+		UEdGraphPin* OutputExecPin = Pins[OutpinPinIdx];
+		check(OutputExecPin);
+		if (ECanCreateConnectionResponse::CONNECT_RESPONSE_MAKE == Schema->CanCreateConnection(OldLinkedPin, OutputExecPin).Response)
+		{
+			if (Schema->TryCreateConnection(OldLinkedPin, OutputExecPin))
+			{
+				OutNodeList.Add(OldLinkedPin->GetOwningNode());
+				OutNodeList.Add(this);
+			}
+			break;
+		}
+	}
+
+	if (Schema->TryCreateConnection(FromPin, NewLinkPin))
+	{
+		OutNodeList.Add(FromPin->GetOwningNode());
+		OutNodeList.Add(this);
+	}
 }
 
 void UUnLive2DAnimBlueprintGraphNode_Base::AllocateDefaultPins()

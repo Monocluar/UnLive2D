@@ -16,6 +16,8 @@ public:
 
 	virtual void ClearAssetReferences() PURE_VIRTUAL(UUnLive2DAnimBlueprintNode_AssetReferencer::ClearAssetReferences, );
 
+	bool ShouldHardReferenceAsset(const class ITargetPlatform* TargetPlatform) const;
+
 #if WITH_EDITOR
 	virtual void PostEditImport() override;
 #endif

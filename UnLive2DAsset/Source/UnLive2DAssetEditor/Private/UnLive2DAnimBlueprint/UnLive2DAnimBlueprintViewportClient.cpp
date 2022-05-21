@@ -1,5 +1,6 @@
 #include "UnLive2DAnimBlueprintViewportClient.h"
 #include "UnLive2DRendererComponent.h"
+#include "Animation/UnLive2DAnimBlueprint.h"
 
 FUnLive2DAnimBlueprintViewportClient::FUnLive2DAnimBlueprintViewportClient(TWeakObjectPtr<UUnLive2DAnimBlueprint> InUnLive2DAnimBlueprintEdited)
 {

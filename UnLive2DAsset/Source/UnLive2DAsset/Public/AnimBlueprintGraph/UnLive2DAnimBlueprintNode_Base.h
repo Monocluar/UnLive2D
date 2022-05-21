@@ -5,6 +5,7 @@
 #include "Math/RandomStream.h"
 #include "UObject/ObjectMacros.h"
 #include "UObject/Object.h"
+#include "Animation/ActiveUnLive2DAnimBlueprint.h"
 #include "UnLive2DAnimBlueprintNode_Base.generated.h"
 
 
@@ -23,10 +24,11 @@ public:
 	/** Node's Graph representation, used to get position. */
 	UPROPERTY()
 		UEdGraphNode* GraphNode;
+
+	class UEdGraphNode* GetGraphNode() const;
 #endif
 
 #if WITH_EDITOR
-	class UEdGraphNode* GetGraphNode() const;
 
 	virtual void SetChildNodes(TArray<UUnLive2DAnimBlueprintNode_Base*>& InChildNodes);
 
@@ -41,6 +43,9 @@ public:
 	/** Called as PIE ends */
 	virtual void OnEndPIE(const bool bIsSimulating) {};
 #endif
+	// 用于创建唯一字符串以标识唯一节点
+	static UPTRINT GetNodeUnLive2DAnimInstanceHash(const UPTRINT ParentWaveInstanceHash, const UUnLive2DAnimBlueprintNode_Base* ChildNode, const uint32 ChildIndex);
+	static UPTRINT GetNodeUnLive2DAnimInstanceHash(const UPTRINT ParentWaveInstanceHash, const UPTRINT ChildNodeHash, const uint32 ChildIndex);
 
 public:
 	
@@ -56,7 +61,28 @@ public:
 		return 0;
 	}
 
+	//由Live2D动画编辑器为允许子节点的节点调用。默认行为是连接单个接头。Dervied类可以重写，例如添加多个连接器。
+	virtual void CreateStartingConnectors();
+	virtual void InsertChildNode(int32 Index);
+	virtual void RemoveChildNode(int32 Index);
 
+	// 该动画节点播放时间
+	virtual float GetDuration();
+
+	// 返回节点中是否有延迟节点
+	virtual bool HasDelayNode() const;
+
+	// 返回声音是否具有sequencer节点。
+	virtual bool HasConcatenatorNode() const;
+
+	// 分析节点
+	//virtual void ParseNodes(const UPTRINT NodeAnimInstanceHash, FActiveUnLive2DAnimBlueprint& ActiveLive2DAnim, )
+
+	// 返回激活的节点
+	virtual void GetAllNodes(TArray<UUnLive2DAnimBlueprintNode_Base*>& AnimBluepintNodes);
+
+	// 该实例可以同时播放多少个动画
+	virtual int32 GetNumSounds(const UPTRINT NodeAnimInstanceHash, FActiveUnLive2DAnimBlueprint& ActiveLive2DAnim) const;
 protected:
 
 	/** 此实例要使用的随机数流 of UUnLive2DAnimBlueprintNode_Base */
