@@ -6,6 +6,7 @@
 #include "SSingleObjectDetailsPanel.h"
 #include "UnLive2DManagerModule.h"
 #include "IUnLive2DAssetFamily.h"
+#include "Misc/EngineVersionComparison.h"
 
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
@@ -90,13 +91,15 @@ void FUnLive2DViewEditor::InitUnLive2DViewEditor(const EToolkitMode::Type Mode, 
 		(
 			FTabManager::NewPrimaryArea()
 			->SetOrientation(Orient_Vertical)
-			/*->Split
+#if UE_VERSION_OLDER_THAN(5,0,0)
+			->Split
 			(
 				FTabManager::NewStack()
 				->SetSizeCoefficient(0.1f)
 				->SetHideTabWell(true)
 				->AddTab(GetToolbarTabId(), ETabState::OpenedTab)
-			)*/
+			)
+#endif
 			->Split
 			(
 				FTabManager::NewSplitter()

@@ -16,7 +16,7 @@ class UTexture2D;
 class UUnLive2DMotion;
 
 
-UCLASS(Blueprintable, BlueprintType, Category = UnLive2D)
+UCLASS(Blueprintable, BlueprintType, Category = UnLive2D, hidecategories=Object)
 class UNLIVE2DASSET_API UUnLive2D : public UObject
 {
     GENERATED_UCLASS_BODY()

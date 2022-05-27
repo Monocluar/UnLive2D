@@ -65,6 +65,7 @@ protected:
 	virtual void OnBeginPIE(const bool bIsSimulating) override;
 	void UpdatePIEHiddenNodes();
 #endif //WITH_EDITOR
+	virtual void CreateStartingConnectors() override;
 
 private:
 	// 确定要在此随机节点上使用的分支数量，以便我们可以剔除其余的分支。

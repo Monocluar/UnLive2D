@@ -9,8 +9,8 @@
 
 class UUnLive2D;
 
-UCLASS(Blueprintable, BlueprintType, Category = UnLive2DMotion)
-class UNLIVE2DASSET_API UUnLive2DMotion : public UObject
+UCLASS(Blueprintable, BlueprintType, Category = UnLive2DMotion, hidecategories=Object)
+class UNLIVE2DASSET_API UUnLive2DMotion : public UObject,  public IInterface_AssetUserData
 {
 	GENERATED_BODY()
 
@@ -22,6 +22,11 @@ public:
 	// 正常速率播放一次动画需要时间
 	UPROPERTY(Category = Developer, AssetRegistrySearchable, VisibleAnywhere, BlueprintReadOnly)
 		float Duration;
+
+
+	// 与资产一起存储的用户数据数组
+	UPROPERTY(EditAnywhere, AdvancedDisplay, Instanced, Category = Live2D)
+		TArray<UAssetUserData*> AssetUserData;
 public:
 
 #if WITH_EDITOR
@@ -37,5 +42,14 @@ protected:
 	// 动作数据
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, AssetRegistrySearchable, Category = Animation)
 		FUnLive2DMotionData MotionData;
+
+protected:
+
+	//~ Begin IInterface_AssetUserData Interface
+	virtual void AddAssetUserData(UAssetUserData* InUserData) override;
+	virtual void RemoveUserDataOfClass(TSubclassOf<UAssetUserData> InUserDataClass) override;
+	virtual UAssetUserData* GetAssetUserDataOfClass(TSubclassOf<UAssetUserData> InUserDataClass) override;
+	virtual const TArray<UAssetUserData*>* GetAssetUserDataArray() const override;
+	//~ End IInterface_AssetUserData Interface
 
 };

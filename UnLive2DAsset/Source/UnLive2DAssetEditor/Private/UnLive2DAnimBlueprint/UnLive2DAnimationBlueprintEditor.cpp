@@ -20,6 +20,11 @@
 #include "AnimBlueprintGraph/UnLive2DAnimBlueprintGraphNode.h"
 #include "AnimBlueprintGraph/UnLive2DAnimBlueprintNode_Base.h"
 #include "AnimBlueprintGraph/UnLive2DAnimBlueprintNode_MotionPlayer.h"
+#include "EdGraphUtilities.h"
+#include "HAL/PlatformApplicationMisc.h"
+#include "SNodePanel.h"
+#include "Kismet2/BlueprintEditorUtils.h"
+#include "Misc/EngineVersionComparison.h"
 
 const FName FUnLive2DAnimBlueprintEditorModes::AnimationBlueprintEditorMode("GraphName");
 const FName FUnLive2DAnimBlueprintEditorModes::AnimationBlueprintInterfaceEditorMode("Interface");
@@ -66,6 +71,15 @@ void FUnLive2DAnimationBlueprintEditor::SetSelection(TArray<UObject*> SelectedOb
 	}
 }
 
+int32 FUnLive2DAnimationBlueprintEditor::GetNumberOfSelectedNodes() const
+{
+	if (UnLive2DAnimBlueprintGraphEditor.IsValid())
+	{
+		return UnLive2DAnimBlueprintGraphEditor->GetSelectedNodes().Num();
+	}
+	return 0;
+}
+
 FGraphPanelSelectionSet FUnLive2DAnimationBlueprintEditor::GetSelectedNodes() const
 {
 	FGraphPanelSelectionSet CurrentSelection;
@@ -74,6 +88,84 @@ FGraphPanelSelectionSet FUnLive2DAnimationBlueprintEditor::GetSelectedNodes() co
 		CurrentSelection = UnLive2DAnimBlueprintGraphEditor->GetSelectedNodes();
 	}
 	return CurrentSelection;
+}
+
+bool FUnLive2DAnimationBlueprintEditor::CanPasteNodes() const
+{
+	FString ClipboardContent;
+	FPlatformApplicationMisc::ClipboardPaste(ClipboardContent);
+
+	return FEdGraphUtilities::CanImportNodesFromText(UnLive2DAnimBlueprintEdited->GetGraph(), ClipboardContent);
+}
+
+void FUnLive2DAnimationBlueprintEditor::PasteNodesHere(const FVector2D& Location)
+{
+	const FScopedTransaction Transaction(LOCTEXT("UnLive2DAnimationBlueprintEditorPaste", "Paste Animation Blueprint Node"));
+	UnLive2DAnimBlueprintEdited->GetGraph()->Modify();
+	UnLive2DAnimBlueprintEdited->Modify();
+
+	// 清除选择集
+	UnLive2DAnimBlueprintGraphEditor->ClearSelectionSet();
+
+	// 抓取要粘贴的文本
+	FString TextToImport;
+	FPlatformApplicationMisc::ClipboardPaste(TextToImport);
+
+	// 导入节点
+	TSet<UEdGraphNode*> PastedNodes;
+	FEdGraphUtilities::ImportNodesFromText(UnLive2DAnimBlueprintEdited->GetGraph(), TextToImport, /*out*/ PastedNodes);
+
+	// 节点的平均位置，以便在保持彼此相对距离的同时移动节点
+	FVector2D AvgNodePosition(0.0f, 0.0f);
+
+	for (TSet<UEdGraphNode*>::TIterator It(PastedNodes); It; ++It)
+	{
+		UEdGraphNode* Node = *It;
+		AvgNodePosition.X += Node->NodePosX;
+		AvgNodePosition.Y += Node->NodePosY;
+	}
+
+	if (PastedNodes.Num() > 0)
+	{
+		float InvNumNodes = 1.0f / float(PastedNodes.Num());
+		AvgNodePosition.X *= InvNumNodes;
+		AvgNodePosition.Y *= InvNumNodes;
+	}
+
+
+	for (TSet<UEdGraphNode*>::TIterator It(PastedNodes); It; ++It)
+	{
+		UEdGraphNode* Node = *It;
+
+		if (UUnLive2DAnimBlueprintGraphNode* AnimBlueprintGraphNode = Cast<UUnLive2DAnimBlueprintGraphNode>(Node))
+		{
+			UnLive2DAnimBlueprintEdited->GetGraphAllNodes().Add(AnimBlueprintGraphNode->AnimBlueprintNode);
+		}
+
+		// Select the newly pasted stuff
+		UnLive2DAnimBlueprintGraphEditor->SetNodeSelection(Node, true);
+
+		Node->NodePosX = (Node->NodePosX - AvgNodePosition.X) + Location.X;
+		Node->NodePosY = (Node->NodePosY - AvgNodePosition.Y) + Location.Y;
+
+		Node->SnapToGrid(SNodePanel::GetSnapGridSize());
+
+		// Give new node a different Guid from the old one
+		Node->CreateNewGuid();
+	}
+	// 刷新节点
+	UnLive2DAnimBlueprintEdited->CompileUnLive2DAnimNodesFromGraphNodes();
+
+	// 更新图表UI
+	UnLive2DAnimBlueprintGraphEditor->NotifyGraphChanged();
+
+	UnLive2DAnimBlueprintEdited->PostEditChange();
+	UnLive2DAnimBlueprintEdited->MarkPackageDirty();
+}
+
+bool FUnLive2DAnimationBlueprintEditor::GetBoundsForSelectedNodes(class FSlateRect& Rect, float Padding)
+{
+	return UnLive2DAnimBlueprintGraphEditor->GetBoundsForSelectedNodes( Rect, Padding);
 }
 
 FName FUnLive2DAnimationBlueprintEditor::GetToolkitFName() const
@@ -133,6 +225,14 @@ void FUnLive2DAnimationBlueprintEditor::OnPostCompile()
 	
 }
 
+
+void FUnLive2DAnimationBlueprintEditor::NotifyPostChange(const FPropertyChangedEvent& PropertyChangedEvent, FProperty* PropertyThatChanged)
+{
+	if (UnLive2DAnimBlueprintGraphEditor.IsValid() && PropertyChangedEvent.ChangeType != EPropertyChangeType::Interactive)
+	{
+		UnLive2DAnimBlueprintGraphEditor->NotifyGraphChanged();
+	}
+}
 
 void FUnLive2DAnimationBlueprintEditor::RegisterTabSpawners(const TSharedRef<FTabManager>& InTabManager)
 {
@@ -290,6 +390,10 @@ TSharedRef<SGraphEditor> FUnLive2DAnimationBlueprintEditor::CreateGraphEditorWid
 	{
 		GraphEditorCommands = MakeShareable(new FUICommandList);
 
+		GraphEditorCommands->MapAction(FGenericCommands::Get().Delete,
+			FExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::DeleteSelectedNodes),
+			FCanExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::CanDeleteNodes)
+		);
 	}
 
 	FGraphAppearanceInfo AppearanceInfo;
@@ -365,6 +469,61 @@ void FUnLive2DAnimationBlueprintEditor::ExtendToolbar()
 	}));
 }
 
+void FUnLive2DAnimationBlueprintEditor::DeleteSelectedNodes()
+{
+	const FScopedTransaction Transaction( NSLOCTEXT("UnrealEd", "SoundCueEditorDeleteSelectedNode", "Delete Selected Sound Cue Node") );
+
+	UnLive2DAnimBlueprintGraphEditor->GetCurrentGraph()->Modify();
+
+	const FGraphPanelSelectionSet SelectedNodes = GetSelectedNodes();
+
+	UnLive2DAnimBlueprintGraphEditor->ClearSelectionSet();
+
+	for (FGraphPanelSelectionSet::TConstIterator NodeIt(SelectedNodes); NodeIt; ++NodeIt)
+	{
+		UEdGraphNode* Node = CastChecked<UEdGraphNode>(*NodeIt);
+
+		if (!Node->CanUserDeleteNode()) continue;
+
+		if (UUnLive2DAnimBlueprintGraphNode* AnimBlueprintGraphNode = Cast<UUnLive2DAnimBlueprintGraphNode>(Node))
+		{
+			UUnLive2DAnimBlueprintNode_Base* DelNode = AnimBlueprintGraphNode->AnimBlueprintNode;
+
+			FBlueprintEditorUtils::RemoveNode(NULL, AnimBlueprintGraphNode, true);
+
+			// 确保已更新匹配图表
+			UnLive2DAnimBlueprintEdited->CompileUnLive2DAnimNodesFromGraphNodes();
+
+			// 从UnLive2DAnimBlueprint的所有UnLive2DAnimBlueprintNodes列表中删除此节点
+			UnLive2DAnimBlueprintEdited->GetGraphAllNodes().Remove(DelNode);
+			UnLive2DAnimBlueprintEdited->MarkPackageDirty();
+		}
+		else
+		{
+			FBlueprintEditorUtils::RemoveNode(NULL, Node, true);
+		}
+	}
+}
+
+bool FUnLive2DAnimationBlueprintEditor::CanDeleteNodes() const
+{
+	const FGraphPanelSelectionSet SelectedNodes = GetSelectedNodes();
+
+	if (SelectedNodes.Num() == 1)
+	{
+		for (FGraphPanelSelectionSet::TConstIterator NodeIt(SelectedNodes); NodeIt; ++NodeIt)
+		{
+			if (Cast<UUnLive2DAnimBlueprintGraphNode_Root>(*NodeIt))
+			{
+				return false;
+			}
+			return true;
+		}
+	}
+
+	return SelectedNodes.Num() > 0;
+}
+
 void FUnLive2DAnimationBlueprintEditor::OnSelectedNodesChanged(const TSet<class UObject*>& NewSelection)
 {
 	TArray<UObject*> Selection;
@@ -391,6 +550,7 @@ void FUnLive2DAnimationBlueprintEditor::OnSelectedNodesChanged(const TSet<class 
 	{
 		Selection.Add(GetBlueprintObj());
 	}
+	SetSelection(Selection);
 }
 
 void FUnLive2DAnimationBlueprintEditor::OnNodeTitleCommitted(const FText& NewText, ETextCommit::Type CommitInfo, UEdGraphNode* NodeBeingChanged)
@@ -462,20 +622,22 @@ void FUnLive2DAnimationBlueprintEditor::InitUnLive2DAnimationBlueprintEditor(con
 
 	BindCommands();
 
-	const TSharedRef<FTabManager::FLayout> StandaloneDefaultLayout = FTabManager::NewLayout("Stanalone_UnLive2DAnimBlueprintEditorMode_Layout_v1.02")
+	const TSharedRef<FTabManager::FLayout> StandaloneDefaultLayout = FTabManager::NewLayout("Stanalone_UnLive2DAnimBlueprintEditorMode_Layout_v1.04")
 	->AddArea
 	(
 		{
 			FTabManager::NewPrimaryArea()
 			->SetOrientation(Orient_Vertical)
-			/*->Split
+#if UE_VERSION_OLDER_THAN(5,0,0)
+			->Split
 			(
 				// Top toolbar
 				FTabManager::NewStack()
 				->SetSizeCoefficient(0.1f)
 				->SetHideTabWell(true)
 				->AddTab(GetToolbarTabId(), ETabState::OpenedTab)
-			)*/
+			)
+#endif
 			->Split
 			(
 				{

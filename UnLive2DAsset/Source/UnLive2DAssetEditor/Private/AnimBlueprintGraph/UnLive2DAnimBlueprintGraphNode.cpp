@@ -5,6 +5,8 @@
 #include "ToolMenu.h"
 #include "GraphEditorActions.h"
 #include "AnimBlueprintGraph/UnLive2DAnimBlueprintNode_Base.h"
+#include "Engine/Font.h"
+#include "AnimBlueprintGraph/UnLive2DAnimBlueprintGraph.h"
 
 #define LOCTEXT_NAMESPACE "UnLive2DAnimBlueprinGraphNode"
 
@@ -28,6 +30,47 @@ void UUnLive2DAnimBlueprintGraphNode::CreateInputPin()
 		NewPin->PinName = CreateUniquePinName(TEXT("Input"));
 		NewPin->PinFriendlyName = FText::FromString(TEXT(" "));
 	}
+}
+
+int32 UUnLive2DAnimBlueprintGraphNode::EstimateNodeWidth() const
+{
+	const int32 EstimatedCharWidth = 6;
+	FString NodeTitle = GetNodeTitle(ENodeTitleType::FullTitle).ToString();
+	UFont* Font = GetDefault<UEditorEngine>()->EditorFont;
+	int32 Result = NodeTitle.Len() * EstimatedCharWidth;
+
+	if (Font)
+	{
+		Result = Font->GetStringSize(*NodeTitle);
+	}
+
+	return Result;
+}
+
+void UUnLive2DAnimBlueprintGraphNode::AddInputPin()
+{
+	const FScopedTransaction Transaction(NSLOCTEXT("UnrealEd", "SoundCueEditorAddInput", "Add Sound Cue Input"));
+
+	Modify();
+	CreateInputPin();
+
+	UUnLive2DAnimBlueprint* UnLive2DAnimBlueprint = CastChecked<UUnLive2DAnimBlueprintGraph>(GetGraph())->GetUnLive2DAnimBlueprint();
+	UnLive2DAnimBlueprint->CompileUnLive2DAnimNodesFromGraphNodes();
+	UnLive2DAnimBlueprint->MarkPackageDirty();
+
+	// 刷新当前图形，以便可以更新管脚
+	GetGraph()->NotifyGraphChanged();
+}
+
+bool UUnLive2DAnimBlueprintGraphNode::CanAddInputPin() const
+{
+	if (AnimBlueprintNode)
+	{
+		// 子节点数小于最大子节点数则可以添加节点
+		return AnimBlueprintNode->ChildNodes.Num() < AnimBlueprintNode->GetMaxChildNodes();
+	}
+
+	return false;
 }
 
 void UUnLive2DAnimBlueprintGraphNode::CreateInputPins()

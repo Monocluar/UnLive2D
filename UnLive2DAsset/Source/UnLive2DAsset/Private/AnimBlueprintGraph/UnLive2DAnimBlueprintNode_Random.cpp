@@ -41,6 +41,7 @@ void UUnLive2DAnimBlueprintNode_Random::RemoveChildNode(int32 Index)
 void UUnLive2DAnimBlueprintNode_Random::PostLoad()
 {
 	Super::PostLoad();
+
 	if (!bShouldExcludeFromBranchCulling && !bAnimBlueprintExcludedFromBranchCulling)
 	{
 		int32 AmountOfBranchesToPreselect = DetermineAmountOfBranchesToPreselect();
@@ -159,6 +160,14 @@ void UUnLive2DAnimBlueprintNode_Random::UpdatePIEHiddenNodes()
 	}
 }
 #endif
+
+void UUnLive2DAnimBlueprintNode_Random::CreateStartingConnectors()
+{
+	// Random Sound Nodes default with two connectors.
+	InsertChildNode(ChildNodes.Num());
+	InsertChildNode(ChildNodes.Num());
+}
+
 
 int32 UUnLive2DAnimBlueprintNode_Random::DetermineAmountOfBranchesToPreselect()
 {

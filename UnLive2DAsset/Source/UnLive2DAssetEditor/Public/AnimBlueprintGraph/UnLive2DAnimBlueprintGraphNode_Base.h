@@ -38,7 +38,7 @@ public:
 	 */
 	void InsertNewNode(UEdGraphPin* FromPin, UEdGraphPin* NewLinkPin, TSet<UEdGraphNode*>& OutNodeList);
 
-protected:
+public:
 	// UEdGraphNode interface.
 	virtual void AllocateDefaultPins() override;
 	virtual void ReconstructNode() override;

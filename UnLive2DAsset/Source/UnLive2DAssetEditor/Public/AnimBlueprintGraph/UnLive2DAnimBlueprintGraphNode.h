@@ -23,6 +23,12 @@ public:
 	UNLIVE2DASSETEDITOR_API void SetAnimBlueprintNode(UUnLive2DAnimBlueprintNode_Base* InAnimBlueprintNode);
 	// 为此节点创建新的Pin
 	UNLIVE2DASSETEDITOR_API void CreateInputPin();
+	// 根据标题的长度估计此节点的宽度
+	UNLIVE2DASSETEDITOR_API int32 EstimateNodeWidth() const;
+	// 将输入引脚添加到此节点并重新编译
+	UNLIVE2DASSETEDITOR_API void AddInputPin();
+	// 是否可以添加节点
+	UNLIVE2DASSETEDITOR_API bool CanAddInputPin() const;
 
 protected:
 	// UUnLive2DAnimBlueprintGraphNode_Base interface

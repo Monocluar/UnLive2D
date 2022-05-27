@@ -49,6 +49,7 @@ protected:
 		FGraphNodeCreator<UUnLive2DAnimBlueprintGraphNode> NodeCreator(*AnimBlueprintGraph);
 		UUnLive2DAnimBlueprintGraphNode* GraphNode = NodeCreator.CreateNode(bSelectNewNode);
 		GraphNode->SetAnimBlueprintNode(InAnimBlueprintNode);
+		NodeCreator.Finalize();
 	}
 
 
@@ -146,9 +147,7 @@ protected:
 	{
 		TArray<class UEdGraphPin*> InputPins;
 
-#if WITH_EDITOR
 		CastChecked<UUnLive2DAnimBlueprintGraphNode>(AnimBlueprintNode->GetGraphNode())->GetInputPins(InputPins);
-#endif
 
 		for (int32 i = 0; i < InputPins.Num(); i++)
 		{

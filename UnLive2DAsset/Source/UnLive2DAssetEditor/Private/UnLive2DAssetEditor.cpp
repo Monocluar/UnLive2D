@@ -17,6 +17,7 @@
 #include "RigVMCore/RigVMFunction.h"
 #include "RigVMCore/RigVMRegistry.h"
 #include "RigVMCore/RigVMStruct.h"
+#include "AnimBlueprintGraph/UnLive2DAnimBlueprintGraphNodeFactory.h"
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
 
@@ -42,6 +43,9 @@ void FUnLive2DAssetEditorModule::OnPostEngineInit()
 	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
 
 	GameAssetCategory = AssetTools.RegisterAdvancedAssetCategory(FName(TEXT("UnLive2D")), LOCTEXT("UnLive2DCategory", "UnLive2D"));
+
+	TSharedPtr<FUnLive2DAnimBlueprintGraphNodeFactory> UnLive2DAnimBlueprintGraphNodeFactory = MakeShared<FUnLive2DAnimBlueprintGraphNodeFactory>();
+	FEdGraphUtilities::RegisterVisualNodeFactory(UnLive2DAnimBlueprintGraphNodeFactory);
 
 	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 	// 为特定类注册自定义资源布局委托

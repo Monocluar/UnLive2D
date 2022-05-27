@@ -89,6 +89,8 @@ protected:
 
 
 protected:
+	/** FNotifyHook interface */
+	virtual void NotifyPostChange(const FPropertyChangedEvent& PropertyChangedEvent, FProperty* PropertyThatChanged) override;
 
 	// IToolkit interface
 	virtual void RegisterTabSpawners(const TSharedRef<FTabManager>& TabManager) override;
@@ -104,8 +106,20 @@ public:
 	virtual class UUnLive2DAnimBlueprint* GetBlueprintObj() const;
 	// 将当前选定的节点指定给属性控件
 	virtual void SetSelection(TArray<UObject*> SelectedObjects);
+	// 获取当前选定的节点数
+	virtual int32 GetNumberOfSelectedNodes() const;
 	// 获取当前选定的节点集
 	virtual FGraphPanelSelectionSet GetSelectedNodes() const;
+	/** 检查当前是否可以粘贴节点 */
+	virtual bool CanPasteNodes() const;
+	/** 在特定位置粘贴节点 */
+	virtual void PasteNodesHere(const FVector2D& Location);
+	/**
+	 * 获取当前选定节点的边界区域
+	 * @param Rect 最终输出边界区域，包括填充
+	 * @param Padding 要添加到边界所有边的填充量
+	 */
+	virtual bool GetBoundsForSelectedNodes(class FSlateRect& Rect, float Padding);
 
 private:
 
@@ -135,6 +149,12 @@ private:
 
 	/** Extend toolbar */
 	void ExtendToolbar();
+
+private:
+	/** 删除图表中选中的节点 */
+	void DeleteSelectedNodes();
+	/** 是否可以删除选中的节点 */
+	bool CanDeleteNodes() const;
 
 protected:
 
