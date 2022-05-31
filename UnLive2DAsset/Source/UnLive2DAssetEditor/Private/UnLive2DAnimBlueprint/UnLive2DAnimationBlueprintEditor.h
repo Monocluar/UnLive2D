@@ -125,11 +125,6 @@ private:
 
 	void BindCommands();
 
-	/** 将内容浏览器同步到当前选定的节点 */
-	void SyncInBrowser();
-	/** 是否可以将内容浏览器同步到当前选择的节点 */
-	bool CanSyncInBrowser() const;
-
 
 private:
 
@@ -151,10 +146,54 @@ private:
 	void ExtendToolbar();
 
 private:
+
+	/** 将内容浏览器同步到当前选定的节点 */
+	void SyncInBrowser();
+	/** 是否可以将内容浏览器同步到当前选择的节点 */
+	bool CanSyncInBrowser() const;
+
+	// 删除一个输入节点
+	void DeleteInput();
+	// 是否可以删除选中的输入节点
+	bool CanDeleteInput() const { return true; };
+
 	/** 删除图表中选中的节点 */
 	void DeleteSelectedNodes();
 	/** 是否可以删除选中的节点 */
 	bool CanDeleteNodes() const;
+	// 仅删除当前选定的可以复制的节点
+	void DeleteSelectedDuplicatableNodes();
+
+	// 选中所有节点
+	void SelectAllNodes();
+	// 是否可以选中所有节点
+	bool CanSelectAllNodes() const { return true; };
+
+	// 复制选中的节点
+	void CopySelectedNodes();
+	// 是否可以复制节点
+	bool CanCopyNodes() const;
+
+	// 剪切选中的节点
+	void CutSelectedNodes();
+	// 是否可以剪切选中的节点
+	bool CanCutNodes() const;
+
+	// 粘贴复制的节点数据
+	void PasteNodes();
+
+	// 复制一样节点数据
+	void DuplicateNodes();
+	// 是否复制一样节点数据
+	bool CanDuplicateNodes() const;
+
+private:
+	// 播放动画蓝图
+	void PlayUnLive2DAnimBlueprint();
+	// 播放节点动画
+	void PlayAnimNode();
+	// 是否可以播放当前选择的节点
+	bool CanPlayAnimNode() const;
 
 protected:
 
@@ -170,7 +209,7 @@ protected:
 	 */
 	void OnNodeTitleCommitted(const FText& NewText, ETextCommit::Type CommitInfo, UEdGraphNode* NodeBeingChanged);
 
-	/** Plays a single specified node */
+	/** 播放单个指定节点 */
 	void PlaySingleNode(UEdGraphNode* Node);
 
 private:

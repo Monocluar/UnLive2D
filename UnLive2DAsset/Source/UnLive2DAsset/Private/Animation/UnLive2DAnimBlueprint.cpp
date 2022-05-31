@@ -12,6 +12,7 @@
 #include "Engine/AssetUserData.h"
 #include "UnLive2DAssetModule.h"
 #include "AnimBlueprintGraph/UnLive2DAnimBlueprintNode_Random.h"
+#include "Animation/ActiveUnLive2DAnimBlueprint.h"
 
 #if WITH_EDITOR
 TSharedPtr<class IUnLive2DAnimBlueprintAnimEditor> UUnLive2DAnimBlueprint::UnLive2DAnimBlueprintAnimEditor = nullptr;
@@ -68,6 +69,19 @@ void UUnLive2DAnimBlueprint::ResetGraph()
 TArray<UUnLive2DAnimBlueprintNode_Base*>& UUnLive2DAnimBlueprint::GetGraphAllNodes()
 {
 	return AllNodes;
+}
+
+bool UUnLive2DAnimBlueprint::IsPlayable() const
+{
+	return FirstNode != nullptr;
+}
+
+void UUnLive2DAnimBlueprint::Parse(FActiveUnLive2DAnimBlueprint& ActiveAnimBlueprint, FUnLive2DAnimParseParameters& ParseParams)
+{
+	if (FirstNode)
+	{
+		FirstNode->ParseNodes(ActiveAnimBlueprint, ParseParams, 0);
+	}
 }
 
 void UUnLive2DAnimBlueprint::SeUnLive2DAnimBlueprintAnimEditor(TSharedPtr<IUnLive2DAnimBlueprintAnimEditor> InUnLive2DAnimBlueprintGraphEditor)

@@ -4,11 +4,18 @@
 #if WITH_EDITOR
 #include "Motion/CubismMotion.hpp"
 #endif
+#include "Animation/ActiveUnLive2DAnimBlueprint.h"
+#include "UnLive2D.h"
 
 
 #if WITH_EDITOR
 
 using namespace Live2D::Cubism::Framework;
+
+UUnLive2DMotion::UUnLive2DMotion()
+{
+	bFinished = true;
+}
 
 bool UUnLive2DMotion::LoadLive2DMotionData(const FString& ReadMotionPath, EUnLive2DMotionGroup InMotionGroupType, int32 InMotionCount, float FadeInTime, float FadeOutTime)
 {
@@ -21,6 +28,7 @@ bool UUnLive2DMotion::LoadLive2DMotionData(const FString& ReadMotionPath, EUnLiv
 
 	CubismMotion* Motion = CubismMotion::Create(MotionData.MotionByteData.GetData(), MotionData.MotionByteData.Num(), NULL); // 解析动画Json数据
 	Duration = Motion->GetDuration();
+	bLooping = Motion->IsLoop();
 
 	ACubismMotion::Delete(Motion);
 
@@ -37,6 +45,11 @@ void UUnLive2DMotion::SetLive2DMotionData(FUnLive2DMotionData& InMotionData)
 const FUnLive2DMotionData* UUnLive2DMotion::GetMotionData()
 {
 	return &MotionData;
+}
+
+void UUnLive2DMotion::OnPlayAnimEnd()
+{
+	bFinished = true;
 }
 
 void UUnLive2DMotion::AddAssetUserData(UAssetUserData* InUserData)
@@ -81,5 +94,62 @@ UAssetUserData* UUnLive2DMotion::GetAssetUserDataOfClass(TSubclassOf<UAssetUserD
 const TArray<UAssetUserData*>* UUnLive2DMotion::GetAssetUserDataArray() const
 {
 	return &AssetUserData;
+}
+
+void UUnLive2DMotion::Parse( FActiveUnLive2DAnimBlueprint& ActiveLive2DAnim, FUnLive2DAnimParseParameters& ParseParams, const UPTRINT NodeAnimInstanceHash)
+{
+	if (UnLive2D == nullptr) return;
+
+	FUnLive2DAnimInstance* AnimInstance = ActiveLive2DAnim.FindUnLive2DAnimInstance(NodeAnimInstanceHash);
+
+	const bool bIsNewAnim = AnimInstance == nullptr;
+
+	if (!bIsNewAnim)
+	{
+		AnimInstance = &HandleStart(ActiveLive2DAnim, NodeAnimInstanceHash);
+	}
+
+	if (bLooping || ParseParams.bLooping)
+	{
+		AnimInstance->bIsFinished = false;
+	}
+
+	if (AnimInstance->bIsFinished)
+	{
+		return;
+	}
+
+	AnimInstance->StartTime = ParseParams.StartTime;
+
+	bool bAlwaysPlay = false;
+
+	if (AnimInstance->IsPlaying())
+	{
+		ActiveLive2DAnim.bFinished = false;
+	}
+
+	if (bFinished)
+	{
+
+	}
+	else
+	{
+
+	}
+}
+
+void UUnLive2DMotion::PlayMotion()
+{
+	if (UnLive2D)
+	{
+		UnLive2D->PlayMotion(this);
+	}
+}
+
+struct FUnLive2DAnimInstance& UUnLive2DMotion::HandleStart(struct FActiveUnLive2DAnimBlueprint& ActiveLive2DAnim, const UPTRINT NodeAnimInstanceHash) const
+{
+	FUnLive2DAnimInstance& AnimInstance = ActiveLive2DAnim.AddAnimInstance(NodeAnimInstanceHash);
+
+	return AnimInstance;
 }
 

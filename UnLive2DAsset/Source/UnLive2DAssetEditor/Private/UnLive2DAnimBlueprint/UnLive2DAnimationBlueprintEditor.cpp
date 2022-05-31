@@ -25,6 +25,8 @@
 #include "SNodePanel.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "Misc/EngineVersionComparison.h"
+#include "AnimBlueprintGraph/UnLive2DAnimBlueprintEditorCommands.h"
+#include "GraphEditorActions.h"
 
 const FName FUnLive2DAnimBlueprintEditorModes::AnimationBlueprintEditorMode("GraphName");
 const FName FUnLive2DAnimBlueprintEditorModes::AnimationBlueprintInterfaceEditorMode("Interface");
@@ -287,7 +289,11 @@ class UUnLive2DAnimBlueprint* FUnLive2DAnimationBlueprintEditor::GetBlueprintObj
 
 void FUnLive2DAnimationBlueprintEditor::BindCommands()
 {
-	
+	const FUnLive2DAnimBlueprintEditorCommands& Commands = FUnLive2DAnimBlueprintEditorCommands::Get();
+
+	ToolkitCommands->MapAction(
+		Commands.PlayUnLive2DAnimBlueprint,
+		FExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::PlayUnLive2DAnimBlueprint));
 }
 
 void FUnLive2DAnimationBlueprintEditor::SyncInBrowser()
@@ -390,9 +396,49 @@ TSharedRef<SGraphEditor> FUnLive2DAnimationBlueprintEditor::CreateGraphEditorWid
 	{
 		GraphEditorCommands = MakeShareable(new FUICommandList);
 
-		GraphEditorCommands->MapAction(FGenericCommands::Get().Delete,
+		GraphEditorCommands->MapAction(FUnLive2DAnimBlueprintEditorCommands::Get().PlayNode, // 播放节点
+			FExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::PlayAnimNode),
+			FCanExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::CanPlayAnimNode)
+		);
+
+		GraphEditorCommands->MapAction(FUnLive2DAnimBlueprintEditorCommands::Get().BrowserSync, // 内容浏览
+			FExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::SyncInBrowser),
+			FCanExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::CanSyncInBrowser)
+		);
+
+		GraphEditorCommands->MapAction(FUnLive2DAnimBlueprintEditorCommands::Get().DeleteInput, // 删除一个输入节点
+			FExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::DeleteInput),
+			FCanExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::CanDeleteInput)
+			);
+
+		GraphEditorCommands->MapAction(FGenericCommands::Get().Delete, // 删除节点的事件绑定
 			FExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::DeleteSelectedNodes),
 			FCanExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::CanDeleteNodes)
+		);
+
+		GraphEditorCommands->MapAction(FGenericCommands::Get().SelectAll, // 选择所有节点
+			FExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::SelectAllNodes),
+			FCanExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::CanSelectAllNodes)
+		);
+
+		GraphEditorCommands->MapAction(FGenericCommands::Get().Copy, // 复制节点数据
+			FExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::CopySelectedNodes),
+			FCanExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::CanCopyNodes)
+		);
+
+		GraphEditorCommands->MapAction(FGenericCommands::Get().Cut, // 剪切节点
+			FExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::CutSelectedNodes),
+			FCanExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::CanCutNodes)
+		);
+
+		GraphEditorCommands->MapAction(FGenericCommands::Get().Paste, // 粘贴节点
+			FExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::PasteNodes),
+			FCanExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::CanPasteNodes)
+		);
+
+		GraphEditorCommands->MapAction(FGenericCommands::Get().Duplicate, // 复制粘贴节点
+			FExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::DuplicateNodes),
+			FCanExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::CanDuplicateNodes)
 		);
 	}
 
@@ -456,6 +502,23 @@ void FUnLive2DAnimationBlueprintEditor::ExtendToolbar()
 
 	AddToolbarExtender(ToolbarExtender);
 
+	ToolbarExtender->AddToolBarExtension(
+		"Asset",
+		EExtensionHook::After,
+		GetToolkitCommands(),
+		FToolBarExtensionDelegate::CreateLambda([this](FToolBarBuilder& ToolbarBuilder)
+	{
+		ToolbarBuilder.BeginSection("Toolbar");
+		{
+			ToolbarBuilder.AddToolBarButton(FUnLive2DAnimBlueprintEditorCommands::Get().PlayUnLive2DAnimBlueprint);
+
+			ToolbarBuilder.AddToolBarButton(FUnLive2DAnimBlueprintEditorCommands::Get().PlayNode);
+
+			ToolbarBuilder.AddToolBarButton(FUnLive2DAnimBlueprintEditorCommands::Get().StopUnLive2DAnim);
+		}
+		ToolbarBuilder.EndSection();
+	}));
+
 	ToolbarExtender->AddToolBarExtension
 	(
 		"Asset",
@@ -467,6 +530,23 @@ void FUnLive2DAnimationBlueprintEditor::ExtendToolbar()
 		TSharedRef<IUnLive2DAssetFamily> AssetFamily = MangerModule.CreatePersonaAssetFamily(UnLive2DAnimBlueprintEdited);
 		AddToolbarWidget(MangerModule.CreateAssetFamilyShortcutWidget(SharedThis(this), AssetFamily));
 	}));
+}
+
+void FUnLive2DAnimationBlueprintEditor::DeleteInput()
+{
+	if (!UnLive2DAnimBlueprintGraphEditor.IsValid()) return;
+
+	UEdGraphPin* SelectedPin = UnLive2DAnimBlueprintGraphEditor->GetGraphPinForMenu();
+	if (ensure(SelectedPin))
+	{
+		UUnLive2DAnimBlueprintGraphNode* SelectedNode = Cast<UUnLive2DAnimBlueprintGraphNode>(SelectedPin->GetOwningNode());
+
+		if (SelectedNode && SelectedNode == SelectedPin->GetOwningNode())
+		{
+			SelectedNode->RemoveInputPin(SelectedPin);
+		}
+	}
+
 }
 
 void FUnLive2DAnimationBlueprintEditor::DeleteSelectedNodes()
@@ -524,6 +604,144 @@ bool FUnLive2DAnimationBlueprintEditor::CanDeleteNodes() const
 	return SelectedNodes.Num() > 0;
 }
 
+void FUnLive2DAnimationBlueprintEditor::DeleteSelectedDuplicatableNodes()
+{
+	// 缓存旧选择
+	const FGraphPanelSelectionSet OldSelectedNodes = GetSelectedNodes();
+
+	// 清除选择并仅选择可以复制的节点
+	UnLive2DAnimBlueprintGraphEditor->ClearSelectionSet();
+
+	FGraphPanelSelectionSet RemainingNodes;
+	for (FGraphPanelSelectionSet::TConstIterator SelectedIter(OldSelectedNodes); SelectedIter; ++SelectedIter)
+	{
+		UEdGraphNode* Node = Cast<UEdGraphNode>(*SelectedIter);
+		if ((Node != NULL) && Node->CanDuplicateNode())
+		{
+			UnLive2DAnimBlueprintGraphEditor->SetNodeSelection(Node, true);
+		}
+		else
+		{
+			RemainingNodes.Add(Node);
+		}
+	}
+
+	// 删除可复制的节点
+	DeleteSelectedNodes();
+
+	UnLive2DAnimBlueprintGraphEditor->ClearSelectionSet();
+
+	// 还原选中但无法复制的节点
+	for (FGraphPanelSelectionSet::TConstIterator SelectedIter(RemainingNodes); SelectedIter; ++SelectedIter)
+	{
+		if (UEdGraphNode* Node = Cast<UEdGraphNode>(*SelectedIter))
+		{
+			UnLive2DAnimBlueprintGraphEditor->SetNodeSelection(Node, true);
+		}
+	}
+}
+
+void FUnLive2DAnimationBlueprintEditor::SelectAllNodes()
+{
+	UnLive2DAnimBlueprintGraphEditor->SelectAllNodes();
+}
+
+void FUnLive2DAnimationBlueprintEditor::CopySelectedNodes()
+{
+	const FGraphPanelSelectionSet SelectedNodes = GetSelectedNodes();
+
+	for (FGraphPanelSelectionSet::TConstIterator NodeIt(SelectedNodes); NodeIt; ++NodeIt)
+	{
+		if (UUnLive2DAnimBlueprintGraphNode* Node = Cast<UUnLive2DAnimBlueprintGraphNode>(*NodeIt))
+		{
+			Node->PrepareForCopying();
+		}
+	}
+
+	FString ExportedText;
+	FEdGraphUtilities::ExportNodesToText(SelectedNodes, /*out*/ ExportedText);
+	FPlatformApplicationMisc::ClipboardCopy(*ExportedText);
+
+
+	// 返回复制后的所有权数据
+	for (FGraphPanelSelectionSet::TConstIterator SelectedIter(SelectedNodes); SelectedIter; ++SelectedIter)
+	{
+		if (UUnLive2DAnimBlueprintGraphNode* Node = Cast<UUnLive2DAnimBlueprintGraphNode>(*SelectedIter))
+		{
+			Node->PostCopyNode();
+		}
+	}
+}
+
+bool FUnLive2DAnimationBlueprintEditor::CanCopyNodes() const
+{
+	const FGraphPanelSelectionSet SelectedNodes = GetSelectedNodes();
+
+	for (FGraphPanelSelectionSet::TConstIterator NodeIt(SelectedNodes); NodeIt; ++NodeIt)
+	{
+		UEdGraphNode* Node = Cast<UEdGraphNode>(*NodeIt);
+		if ((Node != NULL) && Node->CanDuplicateNode())
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void FUnLive2DAnimationBlueprintEditor::CutSelectedNodes()
+{
+	CopySelectedNodes();
+	DeleteSelectedDuplicatableNodes();
+}
+
+bool FUnLive2DAnimationBlueprintEditor::CanCutNodes() const
+{
+	return CanCopyNodes() && CanDeleteNodes();
+}
+
+void FUnLive2DAnimationBlueprintEditor::PasteNodes()
+{
+	PasteNodesHere(UnLive2DAnimBlueprintGraphEditor->GetPasteLocation());
+}
+
+void FUnLive2DAnimationBlueprintEditor::DuplicateNodes()
+{
+	CopySelectedNodes();
+	PasteNodes();
+}
+
+bool FUnLive2DAnimationBlueprintEditor::CanDuplicateNodes() const
+{
+	return CanCopyNodes();
+}
+
+void FUnLive2DAnimationBlueprintEditor::PlayUnLive2DAnimBlueprint()
+{
+	if (UUnLive2DAnimBlueprintNode_MotionPlayer* SelectedMotion = Cast<UUnLive2DAnimBlueprintNode_MotionPlayer>(UnLive2DAnimBlueprintEdited->FirstNode))
+	{
+		if (SelectedMotion->GetUnLive2DMotion() == nullptr) return;
+
+		SelectedMotion->GetUnLive2DMotion()->PlayMotion();
+	}
+	
+}
+
+void FUnLive2DAnimationBlueprintEditor::PlayAnimNode()
+{
+	const FGraphPanelSelectionSet SelectedNodes = GetSelectedNodes();
+
+	for (FGraphPanelSelectionSet::TConstIterator NodeIt(SelectedNodes); NodeIt; ++NodeIt)
+	{
+		PlaySingleNode(CastChecked<UEdGraphNode>(*NodeIt));
+	}
+}
+
+bool FUnLive2DAnimationBlueprintEditor::CanPlayAnimNode() const
+{
+	return GetSelectedNodes().Num() == 1;
+}
+
 void FUnLive2DAnimationBlueprintEditor::OnSelectedNodesChanged(const TSet<class UObject*>& NewSelection)
 {
 	TArray<UObject*> Selection;
@@ -565,7 +783,18 @@ void FUnLive2DAnimationBlueprintEditor::OnNodeTitleCommitted(const FText& NewTex
 
 void FUnLive2DAnimationBlueprintEditor::PlaySingleNode(UEdGraphNode* Node)
 {
+	UUnLive2DAnimBlueprintGraphNode* UnLive2DAnimBlueprintGraphNode = Cast<UUnLive2DAnimBlueprintGraphNode>(Node);
 
+	if (UnLive2DAnimBlueprintGraphNode)
+	{
+		if (UUnLive2DAnimBlueprintNode_MotionPlayer* SelectedMotion = Cast<UUnLive2DAnimBlueprintNode_MotionPlayer>(UnLive2DAnimBlueprintGraphNode->AnimBlueprintNode))
+		{
+			if (SelectedMotion->GetUnLive2DMotion() == nullptr) return;
+
+			SelectedMotion->GetUnLive2DMotion()->PlayMotion();
+			
+		}
+	}
 }
 
 void FUnLive2DAnimationBlueprintEditor::AssetBrowser_OnMotionDoubleClicked(const FAssetData& AssetData) const
@@ -600,6 +829,13 @@ void FUnLive2DAnimationBlueprintEditor::InitUnLive2DAnimationBlueprintEditor(con
 {
 	UnLive2DAnimBlueprintEdited = InAnimBlueprint;
 
+	UnLive2DAnimBlueprintEdited->SetFlags(RF_Transactional);
+
+	GEditor->RegisterForUndo(this);
+
+	FGraphEditorCommands::Register();
+	FUnLive2DAnimBlueprintEditorCommands::Register();
+
 	FUnLive2DManagerModule& MangerModule = FModuleManager::LoadModuleChecked<FUnLive2DManagerModule>("UnLive2DManager");
 	UnLive2DManagerToolkit = MangerModule.CreatePersonaToolkit(InAnimBlueprint);
 
@@ -618,9 +854,9 @@ void FUnLive2DAnimationBlueprintEditor::InitUnLive2DAnimationBlueprintEditor(con
 	TArray<UObject*> AnimBlueprints;
 	AnimBlueprints.Add(InAnimBlueprint);
 
-	CreateInternalWidgets();
-
 	BindCommands();
+
+	CreateInternalWidgets();
 
 	const TSharedRef<FTabManager::FLayout> StandaloneDefaultLayout = FTabManager::NewLayout("Stanalone_UnLive2DAnimBlueprintEditorMode_Layout_v1.04")
 	->AddArea
@@ -628,16 +864,18 @@ void FUnLive2DAnimationBlueprintEditor::InitUnLive2DAnimationBlueprintEditor(con
 		{
 			FTabManager::NewPrimaryArea()
 			->SetOrientation(Orient_Vertical)
-#if UE_VERSION_OLDER_THAN(5,0,0)
 			->Split
 			(
 				// Top toolbar
 				FTabManager::NewStack()
 				->SetSizeCoefficient(0.1f)
 				->SetHideTabWell(true)
+#if UE_VERSION_OLDER_THAN(5,0,0)
 				->AddTab(GetToolbarTabId(), ETabState::OpenedTab)
-			)
+#else
+				->AddTab(GetEditorName(), ETabState::OpenedTab)
 #endif
+			)
 			->Split
 			(
 				{

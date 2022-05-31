@@ -89,15 +89,17 @@ void FUnLive2DMotionViewEditor::InitUnLive2DMotionViewEditor(const EToolkitMode:
 		(
 			FTabManager::NewPrimaryArea()
 			->SetOrientation(Orient_Vertical)
-#if UE_VERSION_OLDER_THAN(5,0,0)
 			->Split
 			(
 				FTabManager::NewStack()
 				->SetSizeCoefficient(0.1f)
 				->SetHideTabWell(true)
+#if UE_VERSION_OLDER_THAN(5,0,0)
 				->AddTab(GetToolbarTabId(), ETabState::OpenedTab)
-			)
+#else
+				->AddTab(GetEditorName(), ETabState::OpenedTab)
 #endif
+			)
 			->Split
 			(
 				FTabManager::NewSplitter()

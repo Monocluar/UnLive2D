@@ -8,6 +8,36 @@
 #include "Animation/ActiveUnLive2DAnimBlueprint.h"
 #include "UnLive2DAnimBlueprintNode_Base.generated.h"
 
+#define DECLARE_UNLIVE2DANIMBLUEPRINT_ELEMENT(Type,Name)													\
+	Type& Name = *((Type*)(Payload));																		\
+	Payload += sizeof(Type);
+
+#define DECLARE_UNLIVE2DANIMBLUEPRINT_ELEMENT_PTR(Type,Name)												\
+	Type* Name = (Type*)(Payload);																			\
+	Payload += sizeof(Type);
+
+
+#define RETRIEVE_UNLIVE2DANIMBLUEPRINT_PAYLOAD( Size )														\
+		uint8*	Payload					= NULL;																\
+		uint32*	RequiresInitialization	= NULL;																\
+		{																									\
+			uint32* TempOffset = ActiveLive2DAnim.UnLive2DAnimNodeOffsetMap.Find(NodeAnimInstanceHash);		\
+			uint32 Offset;																					\
+			if( !TempOffset )																				\
+			{																								\
+				Offset = ActiveLive2DAnim.UnLive2DAnimNodeData.AddZeroed( Size + sizeof(uint32));			\
+				ActiveLive2DAnim.UnLive2DAnimNodeOffsetMap.Add(NodeAnimInstanceHash, Offset);				\
+				RequiresInitialization = (uint32*) &ActiveLive2DAnim.UnLive2DAnimNodeData[Offset];			\
+				*RequiresInitialization = 1;																\
+				Offset += sizeof(uint32);																	\
+			}																								\
+			else																							\
+			{																								\
+				RequiresInitialization = (uint32*) &ActiveLive2DAnim.UnLive2DAnimNodeData[*TempOffset];		\
+				Offset = *TempOffset + sizeof(uint32);														\
+			}																								\
+			Payload = &ActiveLive2DAnim.UnLive2DAnimNodeData[Offset];										\
+		}																									
 
 UCLASS(Abstract, HideCategories=Object, editinlinenew)
 class UNLIVE2DASSET_API UUnLive2DAnimBlueprintNode_Base : public UObject
@@ -75,8 +105,8 @@ public:
 	// 返回声音是否具有sequencer节点。
 	virtual bool HasConcatenatorNode() const;
 
-	// 分析节点
-	//virtual void ParseNodes(const UPTRINT NodeAnimInstanceHash, FActiveUnLive2DAnimBlueprint& ActiveLive2DAnim, )
+	// 播放节点
+	virtual void ParseNodes(FActiveUnLive2DAnimBlueprint& ActiveLive2DAnim, FUnLive2DAnimParseParameters& ParseParams, const UPTRINT NodeAnimInstanceHash);
 
 	// 返回激活的节点
 	virtual void GetAllNodes(TArray<UUnLive2DAnimBlueprintNode_Base*>& AnimBluepintNodes);

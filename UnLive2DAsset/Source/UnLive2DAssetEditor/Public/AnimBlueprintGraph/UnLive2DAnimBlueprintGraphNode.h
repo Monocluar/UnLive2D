@@ -21,12 +21,16 @@ public:
 public:
 	// 设置它代表的AnimBlueprintNode（在编辑器中将其指定给AnimBlueprintNode）
 	UNLIVE2DASSETEDITOR_API void SetAnimBlueprintNode(UUnLive2DAnimBlueprintNode_Base* InAnimBlueprintNode);
+	// 复制后修复节点的所有者
+	UNLIVE2DASSETEDITOR_API void PostCopyNode();
 	// 为此节点创建新的Pin
 	UNLIVE2DASSETEDITOR_API void CreateInputPin();
 	// 根据标题的长度估计此节点的宽度
 	UNLIVE2DASSETEDITOR_API int32 EstimateNodeWidth() const;
 	// 将输入引脚添加到此节点并重新编译
 	UNLIVE2DASSETEDITOR_API void AddInputPin();
+	// 从此节点中删除特定的输入引脚并重新编译
+	UNLIVE2DASSETEDITOR_API void RemoveInputPin(UEdGraphPin* InGraphPin);
 	// 是否可以添加节点
 	UNLIVE2DASSETEDITOR_API bool CanAddInputPin() const;
 
@@ -42,4 +46,10 @@ protected:
 	virtual FText GetTooltipText() const override;
 	virtual FString GetDocumentationExcerptName() const override;
 	// End of UEdGraphNode interface
+
+	friend class FUnLive2DAnimationBlueprintEditor;
+
+private:
+	// 返回节点的所有权
+	void ResetUnLive2DAnimBlueprintNodeOwner();
 };

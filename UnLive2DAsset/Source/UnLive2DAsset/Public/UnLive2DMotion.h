@@ -15,14 +15,20 @@ class UNLIVE2DASSET_API UUnLive2DMotion : public UObject,  public IInterface_Ass
 	GENERATED_BODY()
 
 public:
+	UUnLive2DMotion();
+
+public:
 	// UnLive2D设置
 	UPROPERTY(AssetRegistrySearchable, Category = Animation, VisibleAnywhere)
 		UUnLive2D* UnLive2D;
 
+	// 是否循环播放
+	UPROPERTY(EditAnywhere, Category = Animation, AssetRegistrySearchable)
+		uint8 bLooping : 1;
+
 	// 正常速率播放一次动画需要时间
 	UPROPERTY(Category = Developer, AssetRegistrySearchable, VisibleAnywhere, BlueprintReadOnly)
 		float Duration;
-
 
 	// 与资产一起存储的用户数据数组
 	UPROPERTY(EditAnywhere, AdvancedDisplay, Instanced, Category = Live2D)
@@ -37,6 +43,7 @@ public:
 
 	const FUnLive2DMotionData* GetMotionData();
 
+	void OnPlayAnimEnd();
 
 protected:
 	// 动作数据
@@ -51,5 +58,19 @@ protected:
 	virtual UAssetUserData* GetAssetUserDataOfClass(TSubclassOf<UAssetUserData> InUserDataClass) override;
 	virtual const TArray<UAssetUserData*>* GetAssetUserDataArray() const override;
 	//~ End IInterface_AssetUserData Interface
+
+public:
+
+	virtual void Parse(struct FActiveUnLive2DAnimBlueprint& ActiveLive2DAnim, struct FUnLive2DAnimParseParameters& ParseParams, const UPTRINT NodeAnimInstanceHash);
+
+	void PlayMotion();
+
+private:
+
+	struct FUnLive2DAnimInstance& HandleStart(struct FActiveUnLive2DAnimBlueprint& ActiveLive2DAnim, const UPTRINT NodeAnimInstanceHash) const;
+
+private:
+
+	bool bFinished;
 
 };

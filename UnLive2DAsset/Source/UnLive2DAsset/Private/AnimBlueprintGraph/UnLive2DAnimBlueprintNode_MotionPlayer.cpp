@@ -1,5 +1,7 @@
 #include "AnimBlueprintGraph/UnLive2DAnimBlueprintNode_MotionPlayer.h"
 #include "UObject/FrameworkObjectVersion.h"
+#include "UnLive2DAssetModule.h"
+#include "Animation/ActiveUnLive2DAnimBlueprint.h"
 
 #define LOCTEXT_NAMESPACE "UnLive2D"
 
@@ -9,6 +11,78 @@ UUnLive2DAnimBlueprintNode_MotionPlayer::UUnLive2DAnimBlueprintNode_MotionPlayer
 {
 	PlayRate = 1.f;
 	bLooping = true;
+}
+
+void UUnLive2DAnimBlueprintNode_MotionPlayer::ParseNodes(FActiveUnLive2DAnimBlueprint& ActiveLive2DAnim, FUnLive2DAnimParseParameters& ParseParams, const UPTRINT NodeAnimInstanceHash)
+{
+	if (bAsyncLoading)
+	{
+		UE_LOG(LogUnLive2D, Verbose, TEXT("UnLive2DAnimBlueprintNode_MotionPlayer::ParseNodes 中%s的异步加载未完成，稍后将尝试播放"), *GetFullNameSafe(this));
+
+		// 是否加载完
+		ActiveLive2DAnim.bFinished = false;
+		return;
+	}
+
+	if (UnLive2DMotion)
+	{
+		bool bAnimIsLoop = UnLive2DMotion->bLooping;
+		UnLive2DMotion->bLooping = false;
+
+		if (bLooping)
+		{
+			FUnLive2DAnimParseParameters UpdatedParams = ParseParams;
+			UpdatedParams.bLooping = true;
+			UnLive2DMotion->Parse(ActiveLive2DAnim, ParseParams, NodeAnimInstanceHash);
+		}
+		else
+		{
+			if (ParseParams.bEnableRetrigger)
+			{
+				UnLive2DMotion->Parse(ActiveLive2DAnim, ParseParams, NodeAnimInstanceHash);
+			}
+			else
+			{
+				if (!ActiveLive2DAnim.bHasVirtualized)
+				{
+					RETRIEVE_UNLIVE2DANIMBLUEPRINT_PAYLOAD(sizeof(int32));
+					DECLARE_UNLIVE2DANIMBLUEPRINT_ELEMENT(int32, bPlayFailed);
+					if (*RequiresInitialization)
+					{
+						bPlayFailed = 0;
+					}
+
+					const int32 InitActiveUnLive2DAnimInstanceNum = ActiveLive2DAnim.GetAnimInstances().Num();
+
+
+					if (!bPlayFailed)
+					{
+						UnLive2DMotion->Parse(ActiveLive2DAnim, ParseParams, NodeAnimInstanceHash);
+					}
+
+					if (*RequiresInitialization != 0)
+					{
+						if (InitActiveUnLive2DAnimInstanceNum == ActiveLive2DAnim.GetAnimInstances().Num())
+						{
+							bPlayFailed = 1;
+						}
+						*RequiresInitialization = 0;
+					}
+				}
+			}
+
+		}
+
+		UnLive2DMotion->bLooping = bAnimIsLoop;
+	}
+	else if (!UnLive2DMotionAssetPtr.IsNull() && !bAssetLoadRequestPending)
+	{
+		UE_LOG(LogUnLive2D, Warning, TEXT("尝试播放时，UUnLive2DAnimBlueprintNode_MotionPlayer::ParseNodes中需要加载%s，可能是因为质量节点已更改。"), *GetFullNameSafe(this));
+
+		LoadAsset();
+		bAssetLoadRequestPending = true;
+
+	}
 }
 
 void UUnLive2DAnimBlueprintNode_MotionPlayer::SetUnLive2DMotion(UUnLive2DMotion* NewUnLive2DMotion)

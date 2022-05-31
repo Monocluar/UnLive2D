@@ -94,6 +94,12 @@ public:
 
 	// 获取图表所有节点
 	TArray<UUnLive2DAnimBlueprintNode_Base*>& GetGraphAllNodes();
+
+	// 是否可以播放
+	virtual bool IsPlayable() const;
+
+	// 播放节点
+	virtual void Parse(struct FActiveUnLive2DAnimBlueprint& ActiveAnimBlueprint, struct FUnLive2DAnimParseParameters& ParseParams);
 #endif
 
 protected:

@@ -121,6 +121,17 @@ bool UUnLive2DAnimBlueprintNode_Base::HasConcatenatorNode() const
 	return false;
 }
 
+void UUnLive2DAnimBlueprintNode_Base::ParseNodes(FActiveUnLive2DAnimBlueprint& ActiveLive2DAnim,  FUnLive2DAnimParseParameters& ParseParams, const UPTRINT NodeAnimInstanceHash)
+{
+	for (int32 i = 0; i < ChildNodes.Num() && i < GetMaxChildNodes(); ++i)
+	{
+		if (ChildNodes[i])
+		{
+			ChildNodes[i]->ParseNodes(ActiveLive2DAnim, ParseParams, GetNodeUnLive2DAnimInstanceHash(NodeAnimInstanceHash, ChildNodes[i], i));
+		}
+	}
+}
+
 void UUnLive2DAnimBlueprintNode_Base::GetAllNodes(TArray<UUnLive2DAnimBlueprintNode_Base*>& AnimBluepintNodes)
 {
 	AnimBluepintNodes.Add(this);

@@ -7,6 +7,8 @@
 #include "AnimBlueprintGraph/UnLive2DAnimBlueprintNode_Base.h"
 #include "Engine/Font.h"
 #include "AnimBlueprintGraph/UnLive2DAnimBlueprintGraph.h"
+#include "AnimBlueprintGraph/UnLive2DAnimBlueprintEditorCommands.h"
+#include "AnimBlueprintGraph/UnLive2DAnimBlueprintNode_MotionPlayer.h"
 
 #define LOCTEXT_NAMESPACE "UnLive2DAnimBlueprinGraphNode"
 
@@ -19,6 +21,11 @@ void UUnLive2DAnimBlueprintGraphNode::SetAnimBlueprintNode(UUnLive2DAnimBlueprin
 {
 	AnimBlueprintNode = InAnimBlueprintNode;
 	AnimBlueprintNode->GraphNode = this;
+}
+
+void UUnLive2DAnimBlueprintGraphNode::PostCopyNode()
+{
+	ResetUnLive2DAnimBlueprintNodeOwner();
 }
 
 void UUnLive2DAnimBlueprintGraphNode::CreateInputPin()
@@ -59,6 +66,34 @@ void UUnLive2DAnimBlueprintGraphNode::AddInputPin()
 	UnLive2DAnimBlueprint->MarkPackageDirty();
 
 	// 刷新当前图形，以便可以更新管脚
+	GetGraph()->NotifyGraphChanged();
+}
+
+void UUnLive2DAnimBlueprintGraphNode::RemoveInputPin(UEdGraphPin* InGraphPin)
+{
+	const FScopedTransaction Transaction(NSLOCTEXT("UnrealEd", "UnLive2DAnimBlueprintEditorDeleteInput", "Delete UnLive2D AnimBlueprint Input"));
+	Modify();
+
+	TArray<class UEdGraphPin*> InputPins;
+	GetInputPins(InputPins);
+
+	for (int32 InputIndex = 0; InputIndex < InputPins.Num(); InputIndex++)
+	{
+		if (InGraphPin == InputPins[InputIndex])
+		{
+			InGraphPin->MarkPendingKill();
+			Pins.Remove(InGraphPin);
+			AnimBlueprintNode->Modify();
+			AnimBlueprintNode->RemoveChildNode(InputIndex);
+			break;
+		}
+	}
+
+	UUnLive2DAnimBlueprint* UnLive2DAnimBlueprint = CastChecked<UUnLive2DAnimBlueprintGraph>(GetGraph())->GetUnLive2DAnimBlueprint();
+	UnLive2DAnimBlueprint->CompileUnLive2DAnimNodesFromGraphNodes();
+	UnLive2DAnimBlueprint->MarkPackageDirty();
+
+	// Refresh the current graph, so the pins can be updated
 	GetGraph()->NotifyGraphChanged();
 }
 
@@ -112,8 +147,8 @@ void UUnLive2DAnimBlueprintGraphNode::GetNodeContextMenuActions(class UToolMenu*
 		// 如果输入的内容可以删除，请显示选项
 		if (Context->Pin->Direction == EGPD_Input && AnimBlueprintNode->ChildNodes.Num() > AnimBlueprintNode->GetMinChildNodes())
 		{
-			/*FToolMenuSection& Section = Menu->AddSection("UnLive2DAnimBlueprintGraphDeleteInput");
-			Section.AddMenuEntry(FUnLive2DAnimBlueprintGraphditorCommands::Get().DeleteInput);*/
+			FToolMenuSection& Section = Menu->AddSection("UnLive2DAnimBlueprintGraphDeleteInput");
+			Section.AddMenuEntry(FUnLive2DAnimBlueprintEditorCommands::Get().DeleteInput);
 		}
 	}
 	else if (Context->Node)
@@ -122,7 +157,7 @@ void UUnLive2DAnimBlueprintGraphNode::GetNodeContextMenuActions(class UToolMenu*
 			FToolMenuSection& Section = Menu->AddSection("UnLive2DAnimBlueprintGraphNodeAlignment");
 			Section.AddSubMenu("Alignment", LOCTEXT("AlignmentHeader", "Alignment"), FText(), FNewToolMenuDelegate::CreateLambda([](UToolMenu* SubMenu)
 			{
-				/*{
+				{
 					FToolMenuSection& SubMenuSection = SubMenu->AddSection("EdGraphSchemaAlignment", LOCTEXT("AlignHeader", "Align"));
 					SubMenuSection.AddMenuEntry(FGraphEditorCommands::Get().AlignNodesTop);
 					SubMenuSection.AddMenuEntry(FGraphEditorCommands::Get().AlignNodesMiddle);
@@ -137,7 +172,7 @@ void UUnLive2DAnimBlueprintGraphNode::GetNodeContextMenuActions(class UToolMenu*
 					FToolMenuSection& SubMenuSection = SubMenu->AddSection("EdGraphSchemaDistribution", LOCTEXT("DistributionHeader", "Distribution"));
 					SubMenuSection.AddMenuEntry(FGraphEditorCommands::Get().DistributeNodesHorizontally);
 					SubMenuSection.AddMenuEntry(FGraphEditorCommands::Get().DistributeNodesVertically);
-				}*/
+				}
 			}));
 		}
 
@@ -147,6 +182,16 @@ void UUnLive2DAnimBlueprintGraphNode::GetNodeContextMenuActions(class UToolMenu*
 			Section.AddMenuEntry(FGenericCommands::Get().Cut);
 			Section.AddMenuEntry(FGenericCommands::Get().Copy);
 			Section.AddMenuEntry(FGenericCommands::Get().Duplicate);
+		}
+
+		{
+			FToolMenuSection& Section = Menu->AddSection("SUnLive2DAnimBlueprintGraphNodeAddPlaySync");
+			Section.AddMenuEntry(FUnLive2DAnimBlueprintEditorCommands::Get().PlayNode);
+
+			if (Cast<UUnLive2DAnimBlueprintNode_MotionPlayer>(AnimBlueprintNode))
+			{
+				Section.AddMenuEntry(FUnLive2DAnimBlueprintEditorCommands::Get().BrowserSync);
+			}
 		}
 	}
 }
@@ -169,6 +214,20 @@ FString UUnLive2DAnimBlueprintGraphNode::GetDocumentationExcerptName() const
 {
 	UClass* MyClass = (AnimBlueprintNode != NULL) ? AnimBlueprintNode->GetClass() : this->GetClass();
 	return FString::Printf(TEXT("%s%s"), MyClass->GetPrefixCPP(), *MyClass->GetName());
+}
+
+void UUnLive2DAnimBlueprintGraphNode::ResetUnLive2DAnimBlueprintNodeOwner()
+{
+	if (AnimBlueprintNode == nullptr) return;
+
+	UUnLive2DAnimBlueprint* UnLive2DAnimBlueprint = CastChecked<UUnLive2DAnimBlueprintGraph>(GetGraph())->GetUnLive2DAnimBlueprint();
+
+	if (AnimBlueprintNode->GetOuter() != UnLive2DAnimBlueprint)
+	{
+		AnimBlueprintNode->Rename(NULL, UnLive2DAnimBlueprint, REN_DontCreateRedirectors);
+	}
+
+	AnimBlueprintNode->GraphNode = this;
 }
 
 #undef LOCTEXT_NAMESPACE

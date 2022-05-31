@@ -36,9 +36,6 @@ public:
 #endif
 
 public:
-    // 播放动画
-    void PlayMotion(const FName& InName);
-
 	// 拍打动画
 	bool OnTapMotion(const FVector2D& InTapMotion);
 
@@ -78,7 +75,6 @@ private:
 
     // 设置播放表情系统
     void SetExpression(const FName& ExpressionID);
-
 
 private:
 

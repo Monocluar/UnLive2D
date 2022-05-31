@@ -28,6 +28,16 @@ const csmChar* MotionGroupTapBody = "TapBody";
 const csmChar* HitAreaNameHead = "Head";
 const csmChar* HitAreaNameBody = "Body";
 
+TWeakObjectPtr<UUnLive2DMotion> CurrentPlayMotion = nullptr;
+
+void OnMotionEnd(ACubismMotion* MotionData)
+{
+	UE_LOG(LogUnLive2D, Log, TEXT("播放动画完成"));
+	if (CurrentPlayMotion.IsValid())
+	{
+		CurrentPlayMotion->OnPlayAnimEnd();
+	}
+}
 
 FUnLive2DRawModel::FUnLive2DRawModel(class UUnLive2D* Owner)
 	: Csm::CubismUserModel()
@@ -553,31 +563,6 @@ Csm::CubismMotionQueueEntryHandle FUnLive2DRawModel::StartMotion(const Csm::csmC
 
 	Csm::ACubismMotion* FindPtr = Live2DMotions.FindOrAdd(Name.GetRawString());
 
-	/*if (FindPtr == nullptr)
-	{
-		const FUnLiveByteData* FindMotionPtr = OwnerLive2D->GetUnLive2DLoadData()->Live2DMotionData.Find(Name.GetRawString());
-
-		if (FindMotionPtr != nullptr)
-		{
-			Csm::CubismMotion* Motion = static_cast<CubismMotion*>(LoadMotion(FindMotionPtr->ByteData.GetData(), FindMotionPtr->ByteData.Num(), NULL));
-
-			FindPtr = Motion;
-
-			csmFloat32 fadeTime = Live2DModelSetting->GetMotionFadeInTimeValue(Group, No);
-			if (fadeTime >= 0.0f)
-			{
-				Motion->SetFadeInTime(fadeTime);
-			}
-
-			fadeTime = Live2DModelSetting->GetMotionFadeOutTimeValue(Group, No);
-			if (fadeTime >= 0.0f)
-			{
-				Motion->SetFadeOutTime(fadeTime);
-			}
-			Motion->SetEffectIds(EyeBlinkIds, LipSyncIds);
-
-		}
-	}*/
 
 	UE_LOG(LogUnLive2D, Log, TEXT("FRawModel::StartMotion: Start [%s_%d]"), UTF8_TO_TCHAR(Group), No);
 
@@ -592,22 +577,15 @@ float FUnLive2DRawModel::StartMotion(UUnLive2DMotion* InMotion)
 
 	int32 Priority = (int32)MotionData->MotionGroupType;
 
-	/*if (MotionData->MotionGroupType == EUnLive2DMotionGroup::TapBody)
-	{
-		_motionManager->SetReservePriority(Priority);
-	}
-	else if (!_motionManager->ReserveMotion(Priority))
-	{
-		return 0.f;
-	}*/
-
 	const FString Name = MotionData->GetMotionName();
 
 	Csm::ACubismMotion* FindPtr = Live2DMotions.FindOrAdd(*Name);
 
+	CurrentPlayMotion = InMotion;
+
 	if (FindPtr == nullptr)
 	{
-		Csm::CubismMotion* Motion = static_cast<CubismMotion*>(LoadMotion(MotionData->MotionByteData.GetData(), MotionData->MotionByteData.Num(), NULL));
+		Csm::CubismMotion* Motion = static_cast<CubismMotion*>(LoadMotion(MotionData->MotionByteData.GetData(), MotionData->MotionByteData.Num(), NULL, OnMotionEnd));
 
 		FindPtr = Motion;
 

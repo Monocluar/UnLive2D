@@ -22,6 +22,8 @@ private:
 
 	uint8 bAsyncLoading:1;
 
+	bool bAssetLoadRequestPending;
+
 public:
 	// 播放速率
 	UPROPERTY(EditAnywhere, Category=Motion)
@@ -30,6 +32,7 @@ public:
 	// 动画达到末尾是否继续播放
 	UPROPERTY(EditAnywhere, Category = Motion)
 		bool bLooping;
+
 
 public:
 
@@ -50,6 +53,8 @@ protected:
 #if WITH_EDITOR
 	virtual FText GetTitle() const override;
 #endif
+
+	virtual void ParseNodes(FActiveUnLive2DAnimBlueprint& ActiveLive2DAnim, FUnLive2DAnimParseParameters& ParseParams, const UPTRINT NodeAnimInstanceHash) override;
 	//~ End UUnLive2DAnimBlueprintNode_Base Interface
 
 
