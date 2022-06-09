@@ -60,6 +60,14 @@ void UUnLive2D::PlayMotion(UUnLive2DMotion* InMotion)
 	}
 }
 
+void UUnLive2D::PlayExpression(UUnLive2DExpression* InExpression)
+{
+	if (UnLive2DRawModel.IsValid())
+	{
+		UnLive2DRawModel->StartExpressions(InExpression);
+	}
+}
+
 void UUnLive2D::InitLive2D()
 {
 	if (UnLive2DRawModel.IsValid()) return;
@@ -84,11 +92,37 @@ void UUnLive2D::InitLive2D()
 }
 
 #if WITH_EDITOR
-void UUnLive2D::LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& TexturePaths, TArray<FUnLive2DMotionData>& LoadMotionData)
+void UUnLive2D::LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& TexturePaths, TArray<FUnLive2DMotionData>& LoadMotionData, TMap<FString, FUnLiveByteData>& LoadExpressionData)
 {
-	Live2DFileData = FUnLive2DRawModel::LoadLive2DFileDataFormPath(InPath, TexturePaths, LoadMotionData);
+	Live2DFileData = FUnLive2DRawModel::LoadLive2DFileDataFormPath(InPath, TexturePaths, LoadMotionData, LoadExpressionData);
 
 }
+
+void UUnLive2D::GetModelParamterGroup()
+{
+	if (!UnLive2DRawModel.IsValid()) return;
+
+	Csm::CubismModel* UnLive2DModel = UnLive2DRawModel->GetModel();
+
+	if (UnLive2DModel == nullptr) return;
+
+	const Csm::csmInt32 ParameterCount = UnLive2DModel->GetParameterCount();
+
+	const csmChar** ParameterIds = UnLive2DRawModel->GetLive2DModelParameterIds();
+
+	TMap<FString, float> ParameterArr;
+
+	for (Csm::csmInt32 i = 0; i < ParameterCount; i++)
+	{
+		Csm::csmFloat32 Parameter = UnLive2DModel->GetParameterValue(i);
+		const char* ParameterIDName = ParameterIds[i];
+
+		ParameterArr.Add(FString(ParameterIDName),Parameter);
+	}
+
+	ParameterArr.Num();
+}
+
 #endif
 
 const FUnLive2DLoadData* UUnLive2D::GetUnLive2DLoadData()

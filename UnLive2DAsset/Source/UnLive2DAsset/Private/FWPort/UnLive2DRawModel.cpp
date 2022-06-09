@@ -10,9 +10,10 @@
 
 #include "UnLive2DAssetModule.h"
 #include "CubismConfig.h"
-#include "UnLive2DMotion.h"
+#include "Animation/UnLive2DMotion.h"
 #include "Misc/FileHelper.h"
-
+#include "Animation/UnLive2DExpression.h"
+#include "Live2DCubismCore.hpp"
 
 // 动作优先度配置
 const csmInt32 PriorityNone = 0;
@@ -83,31 +84,12 @@ bool FUnLive2DRawModel::LoadAsset(const FUnLive2DLoadData& InData)
 	{
 		LoadModel(InData.Live2DCubismData.GetData(), InData.Live2DCubismData.Num());
 
-		UE_LOG(LogUnLive2D, Log, TEXT("FRawModel::LoadAsset: %f, %f"), _model->GetCanvasWidth(), _model->GetCanvasHeight());
+		UE_LOG(LogUnLive2D, Log, TEXT("FUnLive2DRawModel::LoadAsset: %f, %f"), _model->GetCanvasWidth(), _model->GetCanvasHeight());
 	}
-
-	// 表情模块
-	if (InData.Live2DExpressionData.Num() > 0)
+	else
 	{
-		int32 i = 0;
-		for (auto& Item : InData.Live2DExpressionData)
-		{
-			if (Item.Value.ByteData.Num() == 0) continue;
-
-			ACubismMotion* Motion = LoadExpression(Item.Value.ByteData.GetData(), Item.Value.ByteData.Num(), TCHAR_TO_UTF8(*Item.Key.ToString()));
-
-			Csm::ACubismMotion*& FindPtr = Live2DExpressions.FindOrAdd(Item.Key);
-			if (FindPtr != nullptr)
-			{
-				ACubismMotion::Delete(FindPtr);
-			}
-
-			FindPtr = Motion;
-
-			i++;
-		}
-
-		UE_LOG(LogUnLive2D, Log, TEXT("FRawModel::LoadAsset: Expression readed %d"), i);
+		UE_LOG(LogUnLive2D, Error, TEXT("FUnLive2DRawModel::LoadAsset:没有找到Live2DCubismData数据"));
+		return false;
 	}
 
 	// 物理模块
@@ -284,7 +266,7 @@ void FUnLive2DRawModel::OnUpDate(float InDeltaTime)
 }
 
 #if WITH_EDITOR
-FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& LoadTexturePaths, TArray<FUnLive2DMotionData>& LoadMotionData)
+FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& LoadTexturePaths, TArray<FUnLive2DMotionData>& LoadMotionData, TMap<FString, FUnLiveByteData>& LoadExpressionData)
 {
 	FUnLive2DLoadData LoadData;
 
@@ -313,26 +295,6 @@ FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& I
 		if (ReadSuc)
 		{
 			LoadData.Live2DCubismData = CubismModelFile;
-		}
-	}
-
-	// 表情模块
-	if (JsonData->GetExpressionCount() > 0)
-	{
-		const csmInt32 Count = JsonData->GetExpressionCount();
-		for (csmInt32 i = 0; i < Count; i++)
-		{
-			csmString Name = JsonData->GetExpressionName(i);
-			csmString Path = JsonData->GetExpressionFileName(i);
-
-			FString ExpressionPath = FileHomeDir / UTF8_TO_TCHAR(Path.GetRawString());
-
-			TArray<uint8> ModelFile;
-			const bool ReadSuc = FFileHelper::LoadFileToArray(ModelFile, *ExpressionPath);
-			if (ReadSuc)
-			{
-				LoadData.Live2DExpressionData.Add(Name.GetRawString(), FUnLiveByteData(ModelFile));
-			}
 		}
 	}
 
@@ -417,6 +379,8 @@ FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& I
 
 			FString TempReadPath = FileHomeDir / UTF8_TO_TCHAR(Path.GetRawString());
 
+			FString PathFileName = FPaths::GetBaseFilename(TempReadPath);
+
 			TArray<uint8> ModelFile;
 			const bool ReadSuc = FFileHelper::LoadFileToArray(ModelFile, *TempReadPath);
 
@@ -432,6 +396,7 @@ FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& I
 			MotionData.MotionGroupType = (EUnLive2DMotionGroup)GroupType->GetIndexByName(Group);
 
 			MotionData.MotionCount = j;
+			MotionData.PathName = PathFileName.LeftChop(8);
 			LoadMotionData.Add(MotionData);
 
 			//LoadData.Live2DMotionData.Add(Name.GetRawString(),FUnLiveByteData(ModelFile));
@@ -439,10 +404,31 @@ FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& I
 
 	}
 
+	// 表情模块
+	if (JsonData->GetExpressionCount() > 0)
+	{
+		const csmInt32 Count = JsonData->GetExpressionCount();
+		for (csmInt32 i = 0; i < Count; i++)
+		{
+			csmString Name = JsonData->GetExpressionName(i);
+			csmString Path = JsonData->GetExpressionFileName(i);
+
+			FString ExpressionPath = FileHomeDir / UTF8_TO_TCHAR(Path.GetRawString());
+
+			TArray<uint8> ModelFile;
+			const bool ReadSuc = FFileHelper::LoadFileToArray(ModelFile, *ExpressionPath);
+			if (ReadSuc)
+			{
+				LoadExpressionData.Add(FPaths::GetBaseFilename(ExpressionPath).LeftChop(5), FUnLiveByteData(ModelFile));
+			}
+		}
+	}
+
 	delete JsonData;
 
 	return LoadData;
 }
+
 #endif
 
 void FUnLive2DRawModel::ReleaseMotions()
@@ -460,7 +446,7 @@ void FUnLive2DRawModel::ReleaseMotions()
 
 void FUnLive2DRawModel::ReleaseExpressions()
 {
-	for (TMap<FName, Csm::ACubismMotion*>::TConstIterator Iterator(Live2DExpressions); Iterator; ++Iterator)
+	for (TMap<uint32, Csm::ACubismMotion*>::TConstIterator Iterator(Live2DExpressions); Iterator; ++Iterator)
 	{
 		Csm::ACubismMotion* ExpressionsPtr = Iterator.Value();
 		if (ExpressionsPtr == nullptr) continue;
@@ -496,6 +482,16 @@ bool FUnLive2DRawModel::HitTest(const Csm::csmChar* HitAreaName, const FVector2D
 
 	return false;
 
+}
+
+const char** FUnLive2DRawModel::GetLive2DModelParameterIds()
+{
+	return  Live2D::Cubism::Core::csmGetParameterIds(GetModel()->GetModel());
+}
+
+const float* FUnLive2DRawModel::GetLive2DModelParameterValues()
+{
+	return  Live2D::Cubism::Core::csmGetParameterValues(GetModel()->GetModel());
 }
 
 bool FUnLive2DRawModel::OnTapMotion(const FVector2D& InTapMotion)
@@ -553,7 +549,7 @@ Csm::CubismMotionQueueEntryHandle FUnLive2DRawModel::StartMotion(const Csm::csmC
 	}
 	else if (!_motionManager->ReserveMotion(Priority))
 	{
-		//UE_LOG(LogUnLive2D, Log, TEXT("FRawModel::StartMotion: Can't start motion."));
+		//UE_LOG(LogUnLive2D, Log, TEXT("FUnLive2DRawModel::StartMotion: Can't start motion."));
 		return InvalidMotionQueueEntryHandleValue;
 	}
 
@@ -564,7 +560,7 @@ Csm::CubismMotionQueueEntryHandle FUnLive2DRawModel::StartMotion(const Csm::csmC
 	Csm::ACubismMotion* FindPtr = Live2DMotions.FindOrAdd(Name.GetRawString());
 
 
-	UE_LOG(LogUnLive2D, Log, TEXT("FRawModel::StartMotion: Start [%s_%d]"), UTF8_TO_TCHAR(Group), No);
+	UE_LOG(LogUnLive2D, Log, TEXT("FUnLive2DRawModel::StartMotion: Start [%s_%d]"), UTF8_TO_TCHAR(Group), No);
 
 	return _motionManager->StartMotionPriority(FindPtr, false, Priority);
 }
@@ -605,6 +601,26 @@ float FUnLive2DRawModel::StartMotion(UUnLive2DMotion* InMotion)
 	return 0.f;
 }
 
+float FUnLive2DRawModel::StartExpressions(UUnLive2DExpression* InExpressions)
+{
+	if (InExpressions == nullptr) return 0.f;
+
+	const FUnLiveByteData* Data = InExpressions->GetExpressionData();
+
+	Csm::ACubismMotion* FindPtr = Live2DExpressions.FindOrAdd(InExpressions->GetUniqueID());
+
+	if (FindPtr == nullptr)
+	{
+		Csm::CubismExpressionMotion* Expression = static_cast<CubismExpressionMotion*>(LoadExpression(Data->ByteData.GetData(), Data->ByteData.Num(), TCHAR_TO_UTF8(*InExpressions->GetFName().ToString())));
+
+		FindPtr = Expression;
+	}
+
+	_expressionManager->StartMotionPriority(FindPtr, false, PriorityForce);
+
+	return 0.f;
+}
+
 Csm::CubismMotionQueueEntryHandle FUnLive2DRawModel::StartRandomMotion(const Csm::csmChar* Group, Csm::csmInt32 Priority)
 {
 	if (0 == Live2DModelSetting->GetMotionCount(Group))
@@ -624,7 +640,7 @@ void FUnLive2DRawModel::SetRandomExpression()
 	int32 RandIndex = FMath::RandRange(0, Live2DExpressions.Num() - 1);
 
 	int32 i = 0;
-	for (TMap<FName, Csm::ACubismMotion*>::TConstIterator Iterator(Live2DExpressions); Iterator; ++Iterator)
+	for (TMap<uint32, Csm::ACubismMotion*>::TConstIterator Iterator(Live2DExpressions); Iterator; ++Iterator)
 	{
 		if (i == RandIndex)
 		{
@@ -635,7 +651,7 @@ void FUnLive2DRawModel::SetRandomExpression()
 	}
 }
 
-void FUnLive2DRawModel::SetExpression(const FName& ExpressionID)
+void FUnLive2DRawModel::SetExpression(const uint32& ExpressionID)
 {
 	Csm::ACubismMotion** MotionPtr = Live2DExpressions.Find(ExpressionID);
 

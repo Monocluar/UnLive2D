@@ -18,6 +18,7 @@
 #include "RigVMCore/RigVMRegistry.h"
 #include "RigVMCore/RigVMStruct.h"
 #include "AnimBlueprintGraph/UnLive2DAnimBlueprintGraphNodeFactory.h"
+#include "UnLive2DExpressionAction.h"
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
 
@@ -54,6 +55,7 @@ void FUnLive2DAssetEditorModule::OnPostEngineInit()
 
 	AssetTools.RegisterAssetTypeActions(MakeShareable(new FUnLive2DTypeAction(GameAssetCategory)));
 	AssetTools.RegisterAssetTypeActions(MakeShareable(new FUnLive2DMotionTypeAction(GameAssetCategory)));
+	AssetTools.RegisterAssetTypeActions(MakeShareable(new FUnLive2DExpressionAction(GameAssetCategory)));
 	AssetTools.RegisterAssetTypeActions(MakeShareable(new FUnLive2DAnimBlurprintTypeAction(GameAssetCategory)));
 
 }

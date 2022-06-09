@@ -7,6 +7,7 @@
 #include "UnLive2DManagerModule.h"
 #include "IUnLive2DAssetFamily.h"
 #include "Misc/EngineVersionComparison.h"
+#include "SUnLive2DParameterGroup.h"
 
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
@@ -51,14 +52,23 @@ struct FUnLive2DViewEditorTabs
 	// Tab identifiers
 	static const FName DetailsID;
 	static const FName ViewportID;
+	static const FName ParameterGroupID;
 };
 
 const FName FUnLive2DViewEditorTabs::DetailsID(TEXT("Details"));
 const FName FUnLive2DViewEditorTabs::ViewportID(TEXT("Viewport"));
+const FName FUnLive2DViewEditorTabs::ParameterGroupID(TEXT("ParameterGroup"));
 
 FUnLive2DViewEditor::FUnLive2DViewEditor()
 	:UnLive2DBeingEdited(nullptr)
 {
+}
+
+FUnLive2DViewEditor::~FUnLive2DViewEditor()
+{
+	ViewportPtr.Reset();
+	ToolbarExtender.Reset();
+	UnLive2DToolkit.Reset();
 }
 
 FString FUnLive2DViewEditor::GetReferencerName() const
@@ -86,7 +96,7 @@ void FUnLive2DViewEditor::InitUnLive2DViewEditor(const EToolkitMode::Type Mode, 
 		.UnLive2DBeingEdited(this, &FUnLive2DViewEditor::GetUnLive2DBeingEdited);
 
 	// Default layout Standalone_FlipbookEditor_Layout_v1
-	const TSharedRef<FTabManager::FLayout> StandaloneDefaultLayout = FTabManager::NewLayout("Standalone_UnLive2DViewEditor_Layout_v1")
+	const TSharedRef<FTabManager::FLayout> StandaloneDefaultLayout = FTabManager::NewLayout("Standalone_UnLive2DViewEditor_Layout_v1.1")
 		->AddArea
 		(
 			FTabManager::NewPrimaryArea()
@@ -121,6 +131,7 @@ void FUnLive2DViewEditor::InitUnLive2DViewEditor(const EToolkitMode::Type Mode, 
 					FTabManager::NewStack()
 					->SetSizeCoefficient(0.2f)
 					->AddTab(FUnLive2DViewEditorTabs::DetailsID, ETabState::OpenedTab)
+					->AddTab(FUnLive2DViewEditorTabs::ParameterGroupID, ETabState::OpenedTab)
 				)
 			)
 		);
@@ -148,6 +159,11 @@ void FUnLive2DViewEditor::RegisterTabSpawners(const TSharedRef<FTabManager>& InT
 		.SetDisplayName(LOCTEXT("DetailsTabLabel", "Details"))
 		.SetGroup(WorkspaceMenuCategoryRef)
 		.SetIcon(FSlateIcon(FEditorStyle::GetStyleSetName(), "LevelEditor.Tabs.Details"));
+
+	InTabManager->RegisterTabSpawner(FUnLive2DViewEditorTabs::ParameterGroupID, FOnSpawnTab::CreateSP(this, &FUnLive2DViewEditor::SpawnTab_ParameterGroup))
+		.SetDisplayName(LOCTEXT("ParameterGroupTabLabel", "ParameterGroup"))
+		.SetGroup(WorkspaceMenuCategoryRef)
+		.SetIcon(FSlateIcon(FEditorStyle::GetStyleSetName(), "Persona.Tabs.AnimCurvePreviewer"));
 }
 
 void FUnLive2DViewEditor::UnregisterTabSpawners(const TSharedRef<FTabManager>& InTabManager)
@@ -156,6 +172,7 @@ void FUnLive2DViewEditor::UnregisterTabSpawners(const TSharedRef<FTabManager>& I
 
 	InTabManager->UnregisterTabSpawner(FUnLive2DViewEditorTabs::ViewportID);
 	InTabManager->UnregisterTabSpawner(FUnLive2DViewEditorTabs::DetailsID);
+	InTabManager->UnregisterTabSpawner(FUnLive2DViewEditorTabs::ParameterGroupID);
 }
 
 void FUnLive2DViewEditor::PostUndo(bool bSuccess)
@@ -226,30 +243,6 @@ TSharedRef<SDockTab> FUnLive2DViewEditor::SpawnTab_Viewport(const FSpawnTabArgs&
 	ViewInputMax = GetTotalSequenceLength();
 	LastObservedSequenceLength = ViewInputMax;
 
-	// 序列播放管理器
-	/*TSharedRef<SWidget> ScrubControl = SNew(SScrubControlPanel)
-		.IsEnabled(true)
-		.Value(this, &FUnLive2DViewEditor::GetPlaybackPosition)
-		.NumOfKeys(this, &FUnLive2DViewEditor::GetTotalFrameCountPlusOne)
-		.SequenceLength(this, &FUnLive2DViewEditor::GetTotalSequenceLength)
-		.OnValueChanged(this, &FUnLive2DViewEditor::SetPlaybackPosition)
-		//		.OnBeginSliderMovement(this, &FUnLive2DViewEditor::OnBeginSliderMovement)
-		//		.OnEndSliderMovement(this, &FUnLive2DViewEditor::OnEndSliderMovement)
-		.OnClickedForwardPlay(this, &FUnLive2DViewEditor::OnClick_Forward)
-		.OnClickedForwardStep(this, &FUnLive2DViewEditor::OnClick_Forward_Step)
-		.OnClickedForwardEnd(this, &FUnLive2DViewEditor::OnClick_Forward_End)
-		.OnClickedBackwardPlay(this, &FUnLive2DViewEditor::OnClick_Backward)
-		.OnClickedBackwardStep(this, &FUnLive2DViewEditor::OnClick_Backward_Step)
-		.OnClickedBackwardEnd(this, &FUnLive2DViewEditor::OnClick_Backward_End)
-		.OnClickedToggleLoop(this, &FUnLive2DViewEditor::OnClick_ToggleLoop)
-		.OnGetLooping(this, &FUnLive2DViewEditor::IsLooping)
-		.OnGetPlaybackMode(this, &FUnLive2DViewEditor::GetPlaybackMode)
-		.ViewInputMin(this, &FUnLive2DViewEditor::GetViewRangeMin)
-		.ViewInputMax(this, &FUnLive2DViewEditor::GetViewRangeMax)
-		.OnSetInputViewRange(this, &FUnLive2DViewEditor::SetViewRange)
-		.bAllowZoom(true)
-		.IsRealtimeStreamingMode(false);*/
-
 	return SNew(SDockTab)
 		.Label(LOCTEXT("ViewportTab_Title", "Viewport"))
 		[
@@ -259,23 +252,6 @@ TSharedRef<SDockTab> FUnLive2DViewEditor::SpawnTab_Viewport(const FSpawnTabArgs&
 			[
 				ViewportPtr.ToSharedRef()
 			]
-
-			/*+ SVerticalBox::Slot()
-				.Padding(0, 8, 0, 0)
-				.AutoHeight()
-				[
-					SNew(SFlipbookTimeline, GetToolkitCommands())
-					.FlipbookBeingEdited(this, &FFlipbookEditor::GetFlipbookBeingEdited)
-				.OnSelectionChanged(this, &FFlipbookEditor::SetSelection)
-				.PlayTime(this, &FFlipbookEditor::GetPlaybackPosition)
-				]
-
-			+ SVerticalBox::Slot()
-				.Padding(0, 8, 0, 0)
-				.AutoHeight()
-				[
-					ScrubControl
-				]*/
 		];
 }
 
@@ -286,6 +262,15 @@ TSharedRef<SDockTab> FUnLive2DViewEditor::SpawnTab_Details(const FSpawnTabArgs& 
 		.Label(LOCTEXT("DetailsTab_Title", "Details"))
 		[
 			SNew(SUnLive2DPropertiesTabBody, SharedThis(this))
+		];
+}
+
+TSharedRef<SDockTab> FUnLive2DViewEditor::SpawnTab_ParameterGroup(const FSpawnTabArgs& Args)
+{
+	return SNew(SDockTab)
+		.Label(LOCTEXT("ParameterGroupTab_Title", "_ParameterGroup"))
+		[
+			SNew(SUnLive2DParameterGroup, SharedThis(this))
 		];
 }
 

@@ -9,6 +9,7 @@
 
 using namespace Live2D::Cubism::Framework;
 class UUnLive2DMotion;
+class UUnLive2DExpression;
 
 // Live2D 模型基础类
 class FUnLive2DRawModel : public CubismUserModel
@@ -32,8 +33,13 @@ public:
 	FORCEINLINE TWeakPtr<Csm::ICubismModelSetting> GetModelSetting() const { return Live2DModelSetting; };
 
 #if WITH_EDITOR
-	static FUnLive2DLoadData LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& LoadTexturePaths, TArray<struct FUnLive2DMotionData>& LoadMotionData);
+	static FUnLive2DLoadData LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& LoadTexturePaths, TArray<struct FUnLive2DMotionData>& LoadMotionData, TMap<FString, FUnLiveByteData>& LoadExpressionData);
 #endif
+
+    // 获取Parameter组
+    const char** GetLive2DModelParameterIds();
+
+    const float* GetLive2DModelParameterValues();
 
 public:
 	// 拍打动画
@@ -50,6 +56,9 @@ public:
 
     // 播放Live2D动作
 	float StartMotion(UUnLive2DMotion* InMotion);
+
+    // 播放Live2D表情
+    float StartExpressions(UUnLive2DExpression* InExpressions);
 
 private:
 
@@ -74,7 +83,7 @@ private:
     void SetRandomExpression();
 
     // 设置播放表情系统
-    void SetExpression(const FName& ExpressionID);
+    void SetExpression(const uint32& ExpressionID);
 
 private:
 
@@ -94,7 +103,7 @@ private:
     TMap<FName, Csm::ACubismMotion*> Live2DMotions;
 
     // 可播放的表情系统
-    TMap<FName, Csm::ACubismMotion*> Live2DExpressions;
+    TMap<uint32, Csm::ACubismMotion*> Live2DExpressions;
 
     // 设置眨眼参数的ID
     Csm::csmVector<Csm::CubismIdHandle> EyeBlinkIds;

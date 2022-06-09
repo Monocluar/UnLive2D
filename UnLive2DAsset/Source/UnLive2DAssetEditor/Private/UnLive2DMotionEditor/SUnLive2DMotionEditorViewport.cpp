@@ -2,56 +2,56 @@
 #include "Framework/MultiBox/MultiBoxExtender.h"
 #include "UnLive2DMotionViewportClient.h"
 
-void SUnLive2DMotionEditorViewport::Construct(const FArguments& InArgs)
+void SUnLive2DAnimBaseEditorViewport::Construct(const FArguments& InArgs)
 {
-	UnLive2DMotionBeingEdited = InArgs._UnLive2DMotionBeingEdited;
+	UnLive2DAnimBaseBeingEdited = InArgs._UnLive2DAnimBaseBeingEdited;
 
 	SEditorViewport::Construct(SEditorViewport::FArguments());
 }
 
-void SUnLive2DMotionEditorViewport::BindCommands()
+void SUnLive2DAnimBaseEditorViewport::BindCommands()
 {
 	SEditorViewport::BindCommands();
 }
 
-TSharedRef<FEditorViewportClient> SUnLive2DMotionEditorViewport::MakeEditorViewportClient()
+TSharedRef<FEditorViewportClient> SUnLive2DAnimBaseEditorViewport::MakeEditorViewportClient()
 {
-	EditorViewportClient = MakeShareable(new FUnLive2DMotionViewportClient(UnLive2DMotionBeingEdited.Get()));
+	EditorViewportClient = MakeShareable(new FUnLive2DAnimBaseViewportClient(UnLive2DAnimBaseBeingEdited.Get()));
 
 	return EditorViewportClient.ToSharedRef();
 }
 
-TSharedPtr<SWidget> SUnLive2DMotionEditorViewport::MakeViewportToolbar()
+TSharedPtr<SWidget> SUnLive2DAnimBaseEditorViewport::MakeViewportToolbar()
 {
 	//return SNew(SUnLive2DEditorViewportToolbar, SharedThis(this));
 
 	return SEditorViewport::MakeViewportToolbar();
 }
 
-EVisibility SUnLive2DMotionEditorViewport::GetTransformToolbarVisibility() const
+EVisibility SUnLive2DAnimBaseEditorViewport::GetTransformToolbarVisibility() const
 {
 	return EVisibility::Visible;
 }
 
-void SUnLive2DMotionEditorViewport::OnFocusViewportToSelection()
+void SUnLive2DAnimBaseEditorViewport::OnFocusViewportToSelection()
 {
 	EditorViewportClient->RequestFocusOnSelection(/*bInstant=*/ false);
 
 	SEditorViewport::OnFocusViewportToSelection();
 }
 
-TSharedRef<class SEditorViewport> SUnLive2DMotionEditorViewport::GetViewportWidget()
+TSharedRef<class SEditorViewport> SUnLive2DAnimBaseEditorViewport::GetViewportWidget()
 {
 	return SharedThis(this);
 }
 
-TSharedPtr<FExtender> SUnLive2DMotionEditorViewport::GetExtenders() const
+TSharedPtr<FExtender> SUnLive2DAnimBaseEditorViewport::GetExtenders() const
 {
 	TSharedPtr<FExtender> Result(MakeShareable(new FExtender));
 	return Result;
 }
 
-void SUnLive2DMotionEditorViewport::OnFloatingButtonClicked()
+void SUnLive2DAnimBaseEditorViewport::OnFloatingButtonClicked()
 {
 
 }

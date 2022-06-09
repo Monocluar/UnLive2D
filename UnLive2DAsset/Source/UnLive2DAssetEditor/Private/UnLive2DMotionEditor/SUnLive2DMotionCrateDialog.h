@@ -23,7 +23,7 @@ public:
 
 	void Construct(const FArguments& InArgs);
 
-	bool ConfigureProperties(TWeakObjectPtr<UUnLive2DMotionFactory> InUnLive2DMotionFactory);
+	bool ConfigureProperties(TWeakObjectPtr<UFactory> InUnLive2DMotionFactory);
 
 private:
 
@@ -56,7 +56,7 @@ private:
 
 private:
 	// 工厂类指针
-	TWeakObjectPtr<UUnLive2DMotionFactory> UnLive2DMotionFactory;
+	TWeakObjectPtr<UFactory> UnLive2DMotionFactory;
 
 	/** 指向要求用户选择父类的窗口的指针 */
 	TWeakPtr<SWindow> PickerWindow;

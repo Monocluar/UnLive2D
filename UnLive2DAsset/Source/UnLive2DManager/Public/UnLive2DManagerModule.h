@@ -12,7 +12,7 @@
 class UUnLive2D;
 class IUnLive2DToolkit;
 class IUnLive2DAssetFamily;
-class UUnLive2DMotion;
+class UUnLive2DAnimBase;
 class UUnLive2DAnimBlueprint;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogUnLive2DManagerModule, Log, All);
@@ -48,7 +48,7 @@ public:
 public:
 	// 创建一个工具包
 	virtual TSharedRef<IUnLive2DToolkit> CreatePersonaToolkit(UUnLive2D* InAsset) const;
-	virtual TSharedRef<IUnLive2DToolkit> CreatePersonaToolkit(UUnLive2DMotion* InMotionAsset) const;
+	virtual TSharedRef<IUnLive2DToolkit> CreatePersonaToolkit(UUnLive2DAnimBase* InMotionAsset) const;
 	virtual TSharedRef<IUnLive2DToolkit> CreatePersonaToolkit(UUnLive2DAnimBlueprint* InAnimBlueprint) const;
 
 	/** 为资产族创建快捷方式小部件 */

@@ -53,10 +53,7 @@ void UUnLive2DViewRendererUI::ReleaseSlateResources(bool bReleaseChildren)
 {
 	Super::ReleaseSlateResources(bReleaseChildren);
 
-	if (GetWorld() && !GetWorld()->IsEditorWorld())
-	{
-		MySlateWidget.Reset();
-	}
+	MySlateWidget.Reset();
 }
 
 #undef LOCTEXT_NAMESPACE

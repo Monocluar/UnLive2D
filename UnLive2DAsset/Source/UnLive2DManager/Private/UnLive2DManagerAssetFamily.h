@@ -7,7 +7,7 @@
 #include "IUnLive2DAssetFamily.h"
 
 class UUnLive2D;
-class UUnLive2DMotion;
+class UUnLive2DAnimBase;
 class UUnLive2DAnimBlueprint;
 
 class FUnLive2DManagerAssetFamily : public IUnLive2DAssetFamily
@@ -40,7 +40,7 @@ protected:
 private:
 	TWeakObjectPtr<const UUnLive2D> UnLive2D;
 
-	TWeakObjectPtr<const UUnLive2DMotion> UnLive2DMotion;
+	TWeakObjectPtr<const UUnLive2DAnimBase> UnLive2DAnimBase;
 
 	/** The last anim blueprint that was encountered */
 	TWeakObjectPtr<const UUnLive2DAnimBlueprint> UnLive2DAnimBlueprint;

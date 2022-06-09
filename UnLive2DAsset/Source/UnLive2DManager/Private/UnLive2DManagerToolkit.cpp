@@ -1,8 +1,8 @@
 #include "UnLive2DManagerToolkit.h"
-#include "UnLive2DMotion.h"
 #include "UnLive2DManagerAssetFamily.h"
 #include "UnLive2D.h"
 #include "Animation/UnLive2DAnimBlueprint.h"
+#include "Animation/UnLive2DAnimBase.h"
 
 FUnLive2DMangerToolkit::FUnLive2DMangerToolkit()
 	: UnLive2D(nullptr)
@@ -26,11 +26,11 @@ void FUnLive2DMangerToolkit::Initialize(UUnLive2D* InUnLive2D)
 	FindCounterpartAssets(InUnLive2D, UnLive2D);
 }
 
-void FUnLive2DMangerToolkit::Initialize(UUnLive2DMotion* InUnLive2DMotion)
+void FUnLive2DMangerToolkit::Initialize(UUnLive2DAnimBase* InUnLive2DMotion)
 {
 	check(InUnLive2DMotion);
-	UnLive2DMotion = InUnLive2DMotion;
-	InitialAssetClass = UUnLive2DMotion::StaticClass();
+	UnLive2DAnimBase = InUnLive2DMotion;
+	InitialAssetClass = UUnLive2DAnimBase::StaticClass();
 
 	FindCounterpartAssets(InUnLive2DMotion, UnLive2D);
 }
@@ -65,9 +65,9 @@ UUnLive2DAnimBlueprint* FUnLive2DMangerToolkit::GetAnimBlueprint() const
 	return UnLive2DAnimBlueprint.Get();
 }
 
-UUnLive2DMotion* FUnLive2DMangerToolkit::GetMotionAsset() const
+UUnLive2DAnimBase* FUnLive2DMangerToolkit::GetAnimBaseAsset() const
 {
-	return UnLive2DMotion.Get();
+	return UnLive2DAnimBase.Get();
 }
 
 int32 FUnLive2DMangerToolkit::GetCustomData(const int32 Key) const

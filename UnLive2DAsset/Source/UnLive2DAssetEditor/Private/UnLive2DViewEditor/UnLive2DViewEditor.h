@@ -16,7 +16,7 @@ public:
 
 	FUnLive2DViewEditor();
 
-
+	virtual ~FUnLive2DViewEditor();
 
 public:
 	// 初始化编辑器
@@ -62,6 +62,7 @@ protected:
 
 	TSharedRef<SDockTab> SpawnTab_Viewport(const FSpawnTabArgs& Args);
 	TSharedRef<SDockTab> SpawnTab_Details(const FSpawnTabArgs& Args);
+	TSharedRef<SDockTab> SpawnTab_ParameterGroup(const FSpawnTabArgs& Args);
 
 protected:
 	// 打开的资源指针

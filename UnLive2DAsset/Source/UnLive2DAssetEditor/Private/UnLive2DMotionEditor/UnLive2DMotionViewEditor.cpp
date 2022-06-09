@@ -2,12 +2,13 @@
 #include "UnLive2DManagerModule.h"
 #include "SSingleObjectDetailsPanel.h"
 #include "IUnLive2DAssetFamily.h"
-#include "UnLive2DMotion.h"
+#include "Animation/UnLive2DMotion.h"
 #include "UnLive2DMotionEditor/SUnLive2DMotionAssetBrowser.h"
 #include "SUnLive2DMotionEditorViewport.h"
 #include "UnLive2DMotionViewportClient.h"
 #include "UnLive2D.h"
 #include "Misc/EngineVersionComparison.h"
+#include "Animation/UnLive2DExpression.h"
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
 
@@ -31,11 +32,11 @@ public:
 
 private:
 
-	TWeakPtr<class FUnLive2DMotionViewEditor> UnLive2DMotionEditorPtr;
+	TWeakPtr<class FUnLive2DAnimBaseViewEditor> UnLive2DMotionEditorPtr;
 
 public:
 
-	void Construct(const FArguments& InArgs, TSharedPtr<FUnLive2DMotionViewEditor> InUnLive2DMotionEditor)
+	void Construct(const FArguments& InArgs, TSharedPtr<FUnLive2DAnimBaseViewEditor> InUnLive2DMotionEditor)
 	{
 		UnLive2DMotionEditorPtr = InUnLive2DMotionEditor;
 
@@ -44,7 +45,7 @@ public:
 
 	virtual UObject* GetObjectToObserve() const override
 	{
-		return UnLive2DMotionEditorPtr.Pin()->GetUnLive2DMotionEdited();
+		return UnLive2DMotionEditorPtr.Pin()->GetUnLive2DAnimBaseEdited();
 	}
 
 	virtual TSharedRef<SWidget> PopulateSlot(TSharedRef<SWidget> PropertyEditorWidget) override
@@ -58,33 +59,33 @@ public:
 	}
 };
 
-FUnLive2DMotionViewEditor::FUnLive2DMotionViewEditor()
-	: UnLive2DMotionBeingEdited(nullptr)
+FUnLive2DAnimBaseViewEditor::FUnLive2DAnimBaseViewEditor()
+	: UnLive2DAnimBeingEdited(nullptr)
 {
 
 }
 
-void FUnLive2DMotionViewEditor::InitUnLive2DMotionViewEditor(const EToolkitMode::Type Mode, const TSharedPtr< IToolkitHost >& InitToolkitHost, UUnLive2DMotion* InitUnLive2DMotion)
+void FUnLive2DAnimBaseViewEditor::InitUnLive2DAnimViewEditor(const EToolkitMode::Type Mode, const TSharedPtr< IToolkitHost >& InitToolkitHost, UUnLive2DAnimBase* InitUnLive2DAnimBase)
 {
-	UnLive2DMotionBeingEdited = InitUnLive2DMotion;
+	UnLive2DAnimBeingEdited = InitUnLive2DAnimBase;
 	FUnLive2DManagerModule& MangerModule = FModuleManager::LoadModuleChecked<FUnLive2DManagerModule>("UnLive2DManager");
-	UnLive2DMotionToolkit = MangerModule.CreatePersonaToolkit(UnLive2DMotionBeingEdited);
+	UnLive2DAnimToolkit = MangerModule.CreatePersonaToolkit(UnLive2DAnimBeingEdited);
 
-	TSharedRef<IUnLive2DAssetFamily> AssetFamily = MangerModule.CreatePersonaAssetFamily(InitUnLive2DMotion);
-	AssetFamily->RecordAssetOpened(FAssetData(InitUnLive2DMotion));
+	TSharedRef<IUnLive2DAssetFamily> AssetFamily = MangerModule.CreatePersonaAssetFamily(InitUnLive2DAnimBase);
+	AssetFamily->RecordAssetOpened(FAssetData(InitUnLive2DAnimBase));
 
-	UpDataMotion();
+	UpDataAnimBase();
 
 	BindCommands();
 
-	ViewportPtr = SNew(SUnLive2DMotionEditorViewport)
-		.UnLive2DMotionBeingEdited(this, &FUnLive2DMotionViewEditor::GetUnLive2DMotionEdited);
+	ViewportPtr = SNew(SUnLive2DAnimBaseEditorViewport)
+		.UnLive2DAnimBaseBeingEdited(this, &FUnLive2DAnimBaseViewEditor::GetUnLive2DAnimBaseEdited);
 
-	UnLive2DMotionAssetListPtr = SNew(SUnLive2DMotionAssetBrowser, SharedThis(this));
+	UnLive2DAnimAssetListPtr = SNew(SUnLive2DAnimBaseAssetBrowser, SharedThis(this));
 
-	const FName MotionViewEditorAppIdentifier = FName(TEXT("MotionViewEditorApp"));
+	const FName MotionViewEditorAppIdentifier = FName(TEXT("AnimBaseViewEditorApp"));
 
-	const TSharedRef<FTabManager::FLayout> StandaloneDefaultLayout = FTabManager::NewLayout("Standalone_UnLive2DMotionViewEditor_Layout_v1")
+	const TSharedRef<FTabManager::FLayout> StandaloneDefaultLayout = FTabManager::NewLayout("Standalone_UnLive2DAnimBaseViewEditor_Layout_v1")
 		->AddArea
 		(
 			FTabManager::NewPrimaryArea()
@@ -133,37 +134,37 @@ void FUnLive2DMotionViewEditor::InitUnLive2DMotionViewEditor(const EToolkitMode:
 			)
 		);
 
-	InitAssetEditor(Mode, InitToolkitHost, MotionViewEditorAppIdentifier, StandaloneDefaultLayout, /*bCreateDefaultStandaloneMenu=*/ true, /*bCreateDefaultToolbar=*/ true, InitUnLive2DMotion);
+	InitAssetEditor(Mode, InitToolkitHost, MotionViewEditorAppIdentifier, StandaloneDefaultLayout, /*bCreateDefaultStandaloneMenu=*/ true, /*bCreateDefaultToolbar=*/ true, InitUnLive2DAnimBase);
 
 	ExtendToolbar();
 
 	RegenerateMenusAndToolbars();
 }
 
-void FUnLive2DMotionViewEditor::RegisterTabSpawners(const TSharedRef<FTabManager>& InTabManager)
+void FUnLive2DAnimBaseViewEditor::RegisterTabSpawners(const TSharedRef<FTabManager>& InTabManager)
 {
 	WorkspaceMenuCategory = InTabManager->AddLocalWorkspaceMenuCategory(LOCTEXT("WorkspaceMenu_UnLive2DMotionViewEditorr", "UnLive2DView Motion Editor"));
 	auto WorkspaceMenuCategoryRef = WorkspaceMenuCategory.ToSharedRef();
 
 	FAssetEditorToolkit::RegisterTabSpawners(InTabManager);
 
-	InTabManager->RegisterTabSpawner(FUnLive2DMotionViewEditorTabs::ViewportID, FOnSpawnTab::CreateSP(this, &FUnLive2DMotionViewEditor::SpawnTab_Viewport))
+	InTabManager->RegisterTabSpawner(FUnLive2DMotionViewEditorTabs::ViewportID, FOnSpawnTab::CreateSP(this, &FUnLive2DAnimBaseViewEditor::SpawnTab_Viewport))
 		.SetDisplayName(LOCTEXT("ViewportTab", "Viewport"))
 		.SetGroup(WorkspaceMenuCategoryRef)
 		.SetIcon(FSlateIcon(FEditorStyle::GetStyleSetName(), "LevelEditor.Tabs.Viewports"));
 
-	InTabManager->RegisterTabSpawner(FUnLive2DMotionViewEditorTabs::DetailsID, FOnSpawnTab::CreateSP(this, &FUnLive2DMotionViewEditor::SpawnTab_Details))
+	InTabManager->RegisterTabSpawner(FUnLive2DMotionViewEditorTabs::DetailsID, FOnSpawnTab::CreateSP(this, &FUnLive2DAnimBaseViewEditor::SpawnTab_Details))
 		.SetDisplayName(LOCTEXT("DetailsTabLabel", "Details"))
 		.SetGroup(WorkspaceMenuCategoryRef)
 		.SetIcon(FSlateIcon(FEditorStyle::GetStyleSetName(), "LevelEditor.Tabs.Details"));
 
-	InTabManager->RegisterTabSpawner(FUnLive2DMotionViewEditorTabs::AssetBrowserTab, FOnSpawnTab::CreateSP(this, &FUnLive2DMotionViewEditor::SpawnTab_AssetBrowser))
+	InTabManager->RegisterTabSpawner(FUnLive2DMotionViewEditorTabs::AssetBrowserTab, FOnSpawnTab::CreateSP(this, &FUnLive2DAnimBaseViewEditor::SpawnTab_AssetBrowser))
 		.SetDisplayName(LOCTEXT("AssetBrowserTab", "AssetBrowser"))
 		.SetGroup(WorkspaceMenuCategoryRef)
 		.SetIcon(FSlateIcon(FEditorStyle::GetStyleSetName(), "LevelEditor.Tabs.ContentBrowser"));
 }
 
-void FUnLive2DMotionViewEditor::UnregisterTabSpawners(const TSharedRef<FTabManager>& InTabManager)
+void FUnLive2DAnimBaseViewEditor::UnregisterTabSpawners(const TSharedRef<FTabManager>& InTabManager)
 {
 	FAssetEditorToolkit::UnregisterTabSpawners(InTabManager);
 
@@ -172,78 +173,78 @@ void FUnLive2DMotionViewEditor::UnregisterTabSpawners(const TSharedRef<FTabManag
 	InTabManager->UnregisterTabSpawner(FUnLive2DMotionViewEditorTabs::AssetBrowserTab);
 }
 
-void FUnLive2DMotionViewEditor::PostUndo(bool bSuccess)
+void FUnLive2DAnimBaseViewEditor::PostUndo(bool bSuccess)
 {
 	OnPostUndo.Broadcast();
 }
 
-void FUnLive2DMotionViewEditor::PostRedo(bool bSuccess)
+void FUnLive2DAnimBaseViewEditor::PostRedo(bool bSuccess)
 {
 	OnPostUndo.Broadcast();
 }
 
-FName FUnLive2DMotionViewEditor::GetToolkitFName() const
+FName FUnLive2DAnimBaseViewEditor::GetToolkitFName() const
 {
 	return FName("UnLive2DMotionViewEditor");
 }
 
-FText FUnLive2DMotionViewEditor::GetBaseToolkitName() const
+FText FUnLive2DAnimBaseViewEditor::GetBaseToolkitName() const
 {
 	return LOCTEXT("UnLive2DMotionEditorAppLabel", "UnLive2D Motion Editor");
 }
 
-FText FUnLive2DMotionViewEditor::GetToolkitName() const
+FText FUnLive2DAnimBaseViewEditor::GetToolkitName() const
 {
-	return FText::FromString(UnLive2DMotionBeingEdited->GetName());
+	return FText::FromString(UnLive2DAnimBeingEdited->GetName());
 }
 
-FText FUnLive2DMotionViewEditor::GetToolkitToolTipText() const
+FText FUnLive2DAnimBaseViewEditor::GetToolkitToolTipText() const
 {
-	return FAssetEditorToolkit::GetToolTipTextForObject(UnLive2DMotionBeingEdited);
+	return FAssetEditorToolkit::GetToolTipTextForObject(UnLive2DAnimBeingEdited);
 }
 
-FLinearColor FUnLive2DMotionViewEditor::GetWorldCentricTabColorScale() const
+FLinearColor FUnLive2DAnimBaseViewEditor::GetWorldCentricTabColorScale() const
 {
 	return FLinearColor::White;
 }
 
-FString FUnLive2DMotionViewEditor::GetWorldCentricTabPrefix() const
+FString FUnLive2DAnimBaseViewEditor::GetWorldCentricTabPrefix() const
 {
 	return TEXT("UnLive2DMotionAssetEditor");
 }
 
-FString FUnLive2DMotionViewEditor::GetDocumentationLink() const
+FString FUnLive2DAnimBaseViewEditor::GetDocumentationLink() const
 {
 	return TEXT("Engine/UnLive2DAsset/UnLive2DMotionEditor");
 }
 
-void FUnLive2DMotionViewEditor::AddReferencedObjects(FReferenceCollector& Collector)
+void FUnLive2DAnimBaseViewEditor::AddReferencedObjects(FReferenceCollector& Collector)
 {
-	Collector.AddReferencedObject(UnLive2DMotionBeingEdited);
+	Collector.AddReferencedObject(UnLive2DAnimBeingEdited);
 }
 
-void FUnLive2DMotionViewEditor::SetUnLive2DMotionBeingEdited(UUnLive2DMotion* NewMotion)
+void FUnLive2DAnimBaseViewEditor::SetUnLive2DAnimBeingEdited(UUnLive2DAnimBase* NewAnimBase)
 {
-	if ((NewMotion != UnLive2DMotionBeingEdited) && (NewMotion != nullptr))
+	if ((NewAnimBase != UnLive2DAnimBeingEdited) && (NewAnimBase != nullptr))
 	{
-		UUnLive2DMotion* OldMotion = UnLive2DMotionBeingEdited;
-		UnLive2DMotionBeingEdited = NewMotion;
+		UUnLive2DAnimBase* OldAnimBase = UnLive2DAnimBeingEdited;
+		UnLive2DAnimBeingEdited = NewAnimBase;
 
-		RemoveEditingObject(OldMotion);
-		AddEditingObject(NewMotion);
+		RemoveEditingObject(OldAnimBase);
+		AddEditingObject(NewAnimBase);
 
-		UnLive2DMotionAssetListPtr->SelectAsset(NewMotion);
+		UnLive2DAnimAssetListPtr->SelectAsset(NewAnimBase);
 
-		OpenNewMotionDocumentTab(NewMotion);
+		OpenNewAnimBaseDocumentTab(NewAnimBase);
 	}
 }
 
-void FUnLive2DMotionViewEditor::BindCommands()
+void FUnLive2DAnimBaseViewEditor::BindCommands()
 {
 
 }
 
-void FUnLive2DMotionViewEditor::ExtendToolbar()
+void FUnLive2DAnimBaseViewEditor::ExtendToolbar()
 {
 	if (ToolbarExtender.IsValid())
 	{
@@ -263,20 +264,26 @@ void FUnLive2DMotionViewEditor::ExtendToolbar()
 		FToolBarExtensionDelegate::CreateLambda([this](FToolBarBuilder& ParentToolbarBuilder)
 	{
 		FUnLive2DManagerModule& MangerModule = FModuleManager::LoadModuleChecked<FUnLive2DManagerModule>("UnLive2DManager");
-		TSharedRef<IUnLive2DAssetFamily> AssetFamily = MangerModule.CreatePersonaAssetFamily(UnLive2DMotionBeingEdited);
+		TSharedRef<IUnLive2DAssetFamily> AssetFamily = MangerModule.CreatePersonaAssetFamily(UnLive2DAnimBeingEdited);
 		AddToolbarWidget(MangerModule.CreateAssetFamilyShortcutWidget(SharedThis(this), AssetFamily));
 	}));
 }
 
-void FUnLive2DMotionViewEditor::UpDataMotion()
+void FUnLive2DAnimBaseViewEditor::UpDataAnimBase()
 {
-	if (UnLive2DMotionBeingEdited && UnLive2DMotionBeingEdited->UnLive2D)
+	if (UnLive2DAnimBeingEdited == nullptr || UnLive2DAnimBeingEdited->UnLive2D == nullptr) return;
+
+	if (UUnLive2DMotion* Motion = Cast<UUnLive2DMotion>(UnLive2DAnimBeingEdited))
 	{
-		UnLive2DMotionBeingEdited->UnLive2D->PlayMotion(UnLive2DMotionBeingEdited);
+		UnLive2DAnimBeingEdited->UnLive2D->PlayMotion(Motion);
+	}
+	else if (UUnLive2DExpression* Expression = Cast<UUnLive2DExpression>(UnLive2DAnimBeingEdited))
+	{
+		UnLive2DAnimBeingEdited->UnLive2D->PlayExpression(Expression);
 	}
 }
 
-TSharedRef<SDockTab> FUnLive2DMotionViewEditor::SpawnTab_Viewport(const FSpawnTabArgs& Args)
+TSharedRef<SDockTab> FUnLive2DAnimBaseViewEditor::SpawnTab_Viewport(const FSpawnTabArgs& Args)
 {
 	return SNew(SDockTab)
 		.Label(LOCTEXT("ViewportTab_Title", "Viewport"))
@@ -290,7 +297,7 @@ TSharedRef<SDockTab> FUnLive2DMotionViewEditor::SpawnTab_Viewport(const FSpawnTa
 		];
 }
 
-TSharedRef<SDockTab> FUnLive2DMotionViewEditor::SpawnTab_Details(const FSpawnTabArgs& Args)
+TSharedRef<SDockTab> FUnLive2DAnimBaseViewEditor::SpawnTab_Details(const FSpawnTabArgs& Args)
 {
 	return SNew(SDockTab)
 		//.Icon(FEditorStyle::GetBrush("LevelEditor.Tabs.Details"))
@@ -300,29 +307,29 @@ TSharedRef<SDockTab> FUnLive2DMotionViewEditor::SpawnTab_Details(const FSpawnTab
 		];
 }
 
-TSharedRef<SDockTab> FUnLive2DMotionViewEditor::SpawnTab_AssetBrowser(const FSpawnTabArgs& Args)
+TSharedRef<SDockTab> FUnLive2DAnimBaseViewEditor::SpawnTab_AssetBrowser(const FSpawnTabArgs& Args)
 {
 	return SNew(SDockTab)
 		//.Icon(FEditorStyle::GetBrush("LevelEditor.Tabs.ContentBrowser"))
 		.Label(LOCTEXT("AssetBrowserTab", "AssetBrowser"))
 		[
 			//SNew(SUnLive2DMotionPropertiesTabBody, SharedThis(this))
-			UnLive2DMotionAssetListPtr.ToSharedRef()
+			UnLive2DAnimAssetListPtr.ToSharedRef()
 		];
 }
 
-TSharedPtr<SDockTab> FUnLive2DMotionViewEditor::OpenNewMotionDocumentTab(UUnLive2DMotion* InMotion)
+TSharedPtr<SDockTab> FUnLive2DAnimBaseViewEditor::OpenNewAnimBaseDocumentTab(UUnLive2DAnimBase* InAnimBase)
 {
 	TSharedPtr<SDockTab> OpenedTab;
 
-	if (InMotion != nullptr)
+	if (InAnimBase != nullptr)
 	{
 		FUnLive2DManagerModule& MangerModule = FModuleManager::GetModuleChecked<FUnLive2DManagerModule>("UnLive2DManager");
 
-		TSharedRef<IUnLive2DAssetFamily> AssetFamily = MangerModule.CreatePersonaAssetFamily(InMotion);
-		AssetFamily->RecordAssetOpened(FAssetData(InMotion));
+		TSharedRef<IUnLive2DAssetFamily> AssetFamily = MangerModule.CreatePersonaAssetFamily(InAnimBase);
+		AssetFamily->RecordAssetOpened(FAssetData(InAnimBase));
 
-		UpDataMotion();
+		UpDataAnimBase();
 	}
 
 	return OpenedTab;

@@ -12,7 +12,7 @@
 #include "Framework/Commands/GenericCommands.h"
 #include "UnLive2DAssetEditorModeManager.h"
 #include "SUnLive2DAnimBlueprintEditorViewport.h"
-#include "UnLive2DMotion.h"
+#include "Animation/UnLive2DMotion.h"
 #include "ContentBrowserModule.h"
 #include "IContentBrowserSingleton.h"
 #include "UnLive2DEditorStyle.h"

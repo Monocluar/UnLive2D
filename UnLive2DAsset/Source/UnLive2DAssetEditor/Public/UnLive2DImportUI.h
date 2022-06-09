@@ -20,6 +20,11 @@ public:
 	// 是否导入动作
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=ImportSetting)
 		bool bIsImportMotion;
+
+	// 是否导入表情
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ImportSetting)
+		bool bIsImportExpression;
+
 public:
 	UFUNCTION(BlueprintCallable, Category = Miscellaneous)
 		void ResetToDefault();

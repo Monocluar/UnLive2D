@@ -1,8 +1,9 @@
 #include "UnLive2DManagerAssetFamily.h"
 #include "UnLive2D.h"
-#include "UnLive2DMotion.h"
+#include "Animation/UnLive2DAnimBase.h"
 #include "Animation/UnLive2DAnimBlueprint.h"
 #include "AssetToolsModule.h"
+#include "Misc/EngineVersionComparison.h"
 
 #define LOCTEXT_NAMESPACE "UnLive2DManagerAssetFamily"
 
@@ -20,7 +21,7 @@ static void FindAssets(const UUnLive2D* InUnLive2D, TArray<FAssetData>& OutAsset
 
 FUnLive2DManagerAssetFamily::FUnLive2DManagerAssetFamily(const UObject* InFromObject)
 	: UnLive2D(nullptr)
-	, UnLive2DMotion(nullptr)
+	, UnLive2DAnimBase(nullptr)
 {
 	if (InFromObject)
 	{
@@ -28,9 +29,9 @@ FUnLive2DManagerAssetFamily::FUnLive2DManagerAssetFamily(const UObject* InFromOb
 		{
 			UnLive2D = CastChecked<UUnLive2D>(InFromObject);
 		}
-		else if (InFromObject->IsA<UUnLive2DMotion>())
+		else if (InFromObject->IsA<UUnLive2DAnimBase>())
 		{
-			UnLive2DMotion = CastChecked<UUnLive2DMotion>(InFromObject);
+			UnLive2DAnimBase = CastChecked<UUnLive2DAnimBase>(InFromObject);
 		}
 		else if (InFromObject->IsA<UUnLive2DAnimBlueprint>())
 		{
@@ -50,9 +51,9 @@ FSlateColor FUnLive2DManagerAssetFamily::GetAssetTypeDisplayTint(UClass* InAsset
 	{
 		UseAssetClass = UUnLive2D::StaticClass();
 	}
-	else if (InAssetClass->IsChildOf<UUnLive2DMotion>())
+	else if (InAssetClass->IsChildOf<UUnLive2DAnimBase>())
 	{
-		UseAssetClass = UUnLive2DMotion::StaticClass();
+		UseAssetClass = UUnLive2DAnimBase::StaticClass();
 	}
 	else if (InAssetClass->IsChildOf<UUnLive2DAnimBlueprint>())
 	{
@@ -82,7 +83,7 @@ const FSlateBrush* FUnLive2DManagerAssetFamily::GetAssetTypeDisplayIcon(UClass* 
 		{
 			return FAppStyle::Get().GetBrush("Persona.AssetClass.Skeleton");
 		}
-		else if (InAssetClass->IsChildOf<UUnLive2DMotion>())
+		else if (InAssetClass->IsChildOf<UUnLive2DAnimBase>())
 		{
 			return FAppStyle::Get().GetBrush("Persona.AssetClass.Animation");
 		}
@@ -109,9 +110,9 @@ void FUnLive2DManagerAssetFamily::FindCounterpartAssets(const UObject* InAsset, 
 	{
 		OutUnLive2D = CastChecked<UUnLive2D>(InAsset);
 	}
-	else if (InAsset->IsA<UUnLive2DMotion>())
+	else if (InAsset->IsA<UUnLive2DAnimBase>())
 	{
-		const UUnLive2DMotion* MotionAsset = CastChecked<const UUnLive2DMotion>(InAsset);
+		const UUnLive2DAnimBase* MotionAsset = CastChecked<const UUnLive2DAnimBase>(InAsset);
 		OutUnLive2D = MotionAsset->UnLive2D;
 	}
 	else if (InAsset->IsA<UUnLive2DAnimBlueprint>())
@@ -125,7 +126,7 @@ void FUnLive2DManagerAssetFamily::GetAssetTypes(TArray<UClass*>& OutAssetTypes) 
 {
 	OutAssetTypes.Reset();
 	OutAssetTypes.Add(UUnLive2D::StaticClass());
-	OutAssetTypes.Add(UUnLive2DMotion::StaticClass());
+	OutAssetTypes.Add(UUnLive2DAnimBase::StaticClass());
 	OutAssetTypes.Add(UUnLive2DAnimBlueprint::StaticClass());
 }
 
@@ -137,16 +138,16 @@ FAssetData FUnLive2DManagerAssetFamily::FindAssetOfType(UClass* InAssetClass) co
 		{
 			return FAssetData(UnLive2D.Get());
 		}
-		else if (InAssetClass->IsChildOf<UUnLive2DMotion>())
+		else if (InAssetClass->IsChildOf<UUnLive2DAnimBase>())
 		{
-			if (UnLive2DMotion.IsValid())
+			if (UnLive2DAnimBase.IsValid())
 			{
-				return FAssetData(UnLive2DMotion.Get());
+				return FAssetData(UnLive2DAnimBase.Get());
 			}
 			else
 			{
 				TArray<FAssetData> Assets;
-				FindAssets<UUnLive2DMotion>(UnLive2D.Get(), Assets, "UnLive2D");
+				FindAssets<UUnLive2DAnimBase>(UnLive2D.Get(), Assets, "UnLive2D");
 				if (Assets.IsValidIndex(0))
 				{
 					return Assets[0];
@@ -183,7 +184,7 @@ void FUnLive2DManagerAssetFamily::FindAssetsOfType(UClass* InAssetClass, TArray<
 			// we should always have a skeleton here, this asset family is based on it
 			OutAssets.Add(FAssetData(UnLive2D.Get()));
 		}
-		else if (InAssetClass->IsChildOf<UUnLive2DMotion>())
+		else if (InAssetClass->IsChildOf<UUnLive2DAnimBase>())
 		{
 			FindAssets<UAnimationAsset>(UnLive2D.Get(), OutAssets, "UnLive2D");
 		}
@@ -202,7 +203,7 @@ FText FUnLive2DManagerAssetFamily::GetAssetTypeDisplayName(UClass* InAssetClass)
 		{
 			return LOCTEXT("UnLive2DDisplayName", "Live2D");
 		}
-		else if (InAssetClass->IsChildOf<UUnLive2DMotion>())
+		else if (InAssetClass->IsChildOf<UUnLive2DAnimBase>())
 		{
 			return LOCTEXT("UnLive2DMotionDisplayName", "Live2D动作");
 		}
@@ -224,7 +225,7 @@ bool FUnLive2DManagerAssetFamily::IsAssetCompatible(const FAssetData& InAssetDat
 		{
 			return FAssetData(UnLive2D.Get()) == InAssetData;
 		}
-		else if (Class->IsChildOf<UUnLive2DMotion>())
+		else if (Class->IsChildOf<UUnLive2DAnimBase>())
 		{
 			FAssetDataTagMapSharedView::FFindTagResult Result = InAssetData.TagsAndValues.FindTag("UnLive2D");
 
@@ -255,9 +256,9 @@ UClass* FUnLive2DManagerAssetFamily::GetAssetFamilyClass(UClass* InClass) const
 		{
 			return UUnLive2D::StaticClass();
 		}
-		else if (InClass->IsChildOf<UUnLive2DMotion>())
+		else if (InClass->IsChildOf<UUnLive2DAnimBase>())
 		{
-			return UUnLive2DMotion::StaticClass();
+			return UUnLive2DAnimBase::StaticClass();
 		}
 		else if (InClass->IsChildOf<UUnLive2DAnimBlueprint>())
 		{
@@ -279,9 +280,9 @@ void FUnLive2DManagerAssetFamily::RecordAssetOpened(const FAssetData& InAssetDat
 			{
 				UnLive2D = Cast<UUnLive2D>(InAssetData.GetAsset());
 			}
-			else if (Class->IsChildOf<UUnLive2DMotion>())
+			else if (Class->IsChildOf<UUnLive2DAnimBase>())
 			{
-				UnLive2DMotion = Cast<UUnLive2DMotion>(InAssetData.GetAsset());
+				UnLive2DAnimBase = Cast<UUnLive2DAnimBase>(InAssetData.GetAsset());
 			}
 			else if (Class->IsChildOf<UUnLive2DAnimBlueprint>())
 			{

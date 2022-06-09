@@ -357,7 +357,7 @@ void UUnLive2DRendererComponent::UpDataUnLive2DProperty()
 
 void UUnLive2DRendererComponent::OnLevelRemovedFromWorld(ULevel* InLevel, UWorld* InWorld)
 {
-	if (InLevel == nullptr && InWorld == GetWorld())
+	if (InLevel == nullptr || InWorld == GetWorld())
 	{
 		UnLive2DRander.Reset();
 	}

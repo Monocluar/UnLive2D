@@ -5,16 +5,16 @@
 #include "WorkflowOrientedApp/WorkflowCentricApplication.h"
 #include "EditorUndoClient.h"
 
-class UUnLive2DMotion;
+class UUnLive2DAnimBase;
 
-class FUnLive2DMotionViewEditor : public FWorkflowCentricApplication, public FGCObject, public FEditorUndoClient
+class FUnLive2DAnimBaseViewEditor : public FWorkflowCentricApplication, public FGCObject, public FEditorUndoClient
 {
 public:
-	FUnLive2DMotionViewEditor();
+	FUnLive2DAnimBaseViewEditor();
 
 public:
 	// 初始化编辑器
-	void InitUnLive2DMotionViewEditor(const EToolkitMode::Type Mode, const TSharedPtr< IToolkitHost >& InitToolkitHost, UUnLive2DMotion* InitUnLive2DMotion);
+	void InitUnLive2DAnimViewEditor(const EToolkitMode::Type Mode, const TSharedPtr< IToolkitHost >& InitToolkitHost, UUnLive2DAnimBase* InitUnLive2DAnimBase);
 
 protected:
 	// IToolkit interface
@@ -43,25 +43,25 @@ public:
 
 public:
 
-	UUnLive2DMotion* GetUnLive2DMotionEdited() const {return UnLive2DMotionBeingEdited; }
+	UUnLive2DAnimBase* GetUnLive2DAnimBaseEdited() const {return UnLive2DAnimBeingEdited; }
 
-	void SetUnLive2DMotionBeingEdited(UUnLive2DMotion* NewMotion);
+	void SetUnLive2DAnimBeingEdited(UUnLive2DAnimBase* NewAnimBase);
 
 private:
 	// Live2D动作
-	UUnLive2DMotion* UnLive2DMotionBeingEdited;
+	UUnLive2DAnimBase* UnLive2DAnimBeingEdited;
 
 	/** 工具栏扩展器 */
 	TSharedPtr<class FExtender> ToolbarExtender;
 
 	/** UnLive2D资源管理器 */
-	TSharedPtr<class IUnLive2DToolkit> UnLive2DMotionToolkit;
+	TSharedPtr<class IUnLive2DToolkit> UnLive2DAnimToolkit;
 
 	// UnLive2D动作资源列表
-	TSharedPtr<class SUnLive2DMotionAssetBrowser> UnLive2DMotionAssetListPtr;
+	TSharedPtr<class SUnLive2DAnimBaseAssetBrowser> UnLive2DAnimAssetListPtr;
 
 
-	TSharedPtr<class SUnLive2DMotionEditorViewport> ViewportPtr;
+	TSharedPtr<class SUnLive2DAnimBaseEditorViewport> ViewportPtr;
 
 public:
 	/** 在全局撤消/重做时触发多播委托*/
@@ -72,11 +72,11 @@ protected:
 	void BindCommands();
 	void ExtendToolbar();
 
-	void UpDataMotion();
+	void UpDataAnimBase();
 
 	TSharedRef<SDockTab> SpawnTab_Viewport(const FSpawnTabArgs& Args);
 	TSharedRef<SDockTab> SpawnTab_Details(const FSpawnTabArgs& Args);
 	TSharedRef<SDockTab> SpawnTab_AssetBrowser(const FSpawnTabArgs& Args);
 
-	TSharedPtr<SDockTab> OpenNewMotionDocumentTab(UUnLive2DMotion* InMotion);
+	TSharedPtr<SDockTab> OpenNewAnimBaseDocumentTab(UUnLive2DAnimBase* InAnimBase);
 };

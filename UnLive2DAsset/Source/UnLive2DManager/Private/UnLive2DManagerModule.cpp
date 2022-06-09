@@ -30,7 +30,7 @@ TSharedRef<IUnLive2DToolkit> FUnLive2DManagerModule::CreatePersonaToolkit(UUnLiv
 	return NewPersonaToolkit;
 }
 
-TSharedRef<IUnLive2DToolkit> FUnLive2DManagerModule::CreatePersonaToolkit(UUnLive2DMotion* InMotionAsset) const
+TSharedRef<IUnLive2DToolkit> FUnLive2DManagerModule::CreatePersonaToolkit(UUnLive2DAnimBase* InMotionAsset) const
 {
 	TSharedRef<FUnLive2DMangerToolkit> NewPersonaToolkit(new FUnLive2DMangerToolkit());
 	NewPersonaToolkit->Initialize(InMotionAsset);

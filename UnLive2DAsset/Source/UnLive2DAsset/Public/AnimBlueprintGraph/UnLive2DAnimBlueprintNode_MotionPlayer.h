@@ -4,7 +4,7 @@
 #include "CoreMinimal.h"
 #include "UObject/ObjectMacros.h"
 #include "UObject/SoftObjectPtr.h"
-#include "UnLive2DMotion.h"
+#include "Animation/UnLive2DMotion.h"
 #include "UnLive2DAnimBlueprintNode_AssetReferencer.h"
 #include "UnLive2DAnimBlueprintNode_MotionPlayer.generated.h"
 

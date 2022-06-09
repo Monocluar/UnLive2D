@@ -1,11 +1,10 @@
-#include "UnLive2DMotion.h"
+#include "Animation/UnLive2DMotion.h"
 #include "Misc/FileHelper.h"
 
 #if WITH_EDITOR
 #include "Motion/CubismMotion.hpp"
 #endif
 #include "Animation/ActiveUnLive2DAnimBlueprint.h"
-#include "UnLive2D.h"
 
 
 #if WITH_EDITOR
@@ -38,6 +37,13 @@ bool UUnLive2DMotion::LoadLive2DMotionData(const FString& ReadMotionPath, EUnLiv
 void UUnLive2DMotion::SetLive2DMotionData(FUnLive2DMotionData& InMotionData)
 {
 	MotionData = InMotionData;
+
+
+	CubismMotion* Motion = CubismMotion::Create(MotionData.MotionByteData.GetData(), MotionData.MotionByteData.Num(), NULL); // 解析动画Json数据
+	Duration = Motion->GetDuration();
+	bLooping = Motion->IsLoop();
+
+	ACubismMotion::Delete(Motion);
 }
 
 #endif
@@ -50,50 +56,6 @@ const FUnLive2DMotionData* UUnLive2DMotion::GetMotionData()
 void UUnLive2DMotion::OnPlayAnimEnd()
 {
 	bFinished = true;
-}
-
-void UUnLive2DMotion::AddAssetUserData(UAssetUserData* InUserData)
-{
-	if (InUserData != nullptr)
-	{
-		UAssetUserData* ExistingData = GetAssetUserDataOfClass(InUserData->GetClass());
-		if (ExistingData != nullptr)
-		{
-			AssetUserData.Remove(ExistingData);
-		}
-		AssetUserData.Add(InUserData);
-	}
-}
-
-void UUnLive2DMotion::RemoveUserDataOfClass(TSubclassOf<UAssetUserData> InUserDataClass)
-{
-	for (int32 DataIdx = 0; DataIdx < AssetUserData.Num(); DataIdx++)
-	{
-		UAssetUserData* Datum = AssetUserData[DataIdx];
-		if (Datum != nullptr && Datum->IsA(InUserDataClass))
-		{
-			AssetUserData.RemoveAt(DataIdx);
-			return;
-		}
-	}
-}
-
-UAssetUserData* UUnLive2DMotion::GetAssetUserDataOfClass(TSubclassOf<UAssetUserData> InUserDataClass)
-{
-	for (int32 DataIdx = 0; DataIdx < AssetUserData.Num(); DataIdx++)
-	{
-		UAssetUserData* Datum = AssetUserData[DataIdx];
-		if (Datum != nullptr && Datum->IsA(InUserDataClass))
-		{
-			return Datum;
-		}
-	}
-	return nullptr;
-}
-
-const TArray<UAssetUserData*>* UUnLive2DMotion::GetAssetUserDataArray() const
-{
-	return &AssetUserData;
 }
 
 void UUnLive2DMotion::Parse( FActiveUnLive2DAnimBlueprint& ActiveLive2DAnim, FUnLive2DAnimParseParameters& ParseParams, const UPTRINT NodeAnimInstanceHash)

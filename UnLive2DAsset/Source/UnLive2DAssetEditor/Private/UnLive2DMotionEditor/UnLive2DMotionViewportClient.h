@@ -4,14 +4,14 @@
 #include "UnLive2DViewportClient.h"
 
 class UUnLive2DRendererComponent;
-class UUnLive2DMotion;
+class UUnLive2DAnimBase;
 
-class FUnLive2DMotionViewportClient : public FUnLive2DViewportClient
+class FUnLive2DAnimBaseViewportClient : public FUnLive2DViewportClient
 {
 public:
-	FUnLive2DMotionViewportClient(TWeakObjectPtr<UUnLive2DMotion> InUnLive2DMotionBegingEdited);
+	FUnLive2DAnimBaseViewportClient(TWeakObjectPtr<UUnLive2DAnimBase> InUnLive2DAnimBaseBegingEdited);
 
-	virtual ~FUnLive2DMotionViewportClient();
+	virtual ~FUnLive2DAnimBaseViewportClient();
 
 protected:
 
@@ -22,7 +22,7 @@ protected:
 
 private:
 
-	TWeakObjectPtr<UUnLive2DMotion> UnLive2DMotionBeingEditedLastFrame;
+	TWeakObjectPtr<UUnLive2DAnimBase> UnLive2DAnimBaseBeingEditedLastFrame;
 
 	TWeakObjectPtr<UUnLive2DRendererComponent> AnimatedRenderComponent;
 private:

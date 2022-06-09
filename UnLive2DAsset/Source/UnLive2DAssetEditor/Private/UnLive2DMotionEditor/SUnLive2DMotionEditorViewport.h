@@ -5,16 +5,16 @@
 #include "SCommonEditorViewportToolbarBase.h"
 
 
-class UUnLive2DMotion;
-class FUnLive2DMotionViewportClient;
+class UUnLive2DAnimBase;
+class FUnLive2DAnimBaseViewportClient;
 
-class SUnLive2DMotionEditorViewport : public SEditorViewport, public ICommonEditorViewportToolbarInfoProvider
+class SUnLive2DAnimBaseEditorViewport : public SEditorViewport, public ICommonEditorViewportToolbarInfoProvider
 {
 public:
-	SLATE_BEGIN_ARGS(SUnLive2DMotionEditorViewport)
-		: _UnLive2DMotionBeingEdited(nullptr)
+	SLATE_BEGIN_ARGS(SUnLive2DAnimBaseEditorViewport)
+		: _UnLive2DAnimBaseBeingEdited(nullptr)
 	{}
-		SLATE_ATTRIBUTE( UUnLive2DMotion*, UnLive2DMotionBeingEdited )
+		SLATE_ATTRIBUTE( UUnLive2DAnimBase*, UnLive2DAnimBaseBeingEdited )
 	SLATE_END_ARGS()
 
 public:
@@ -38,8 +38,8 @@ public:
 	// End of ICommonEditorViewportToolbarInfoProvider interface
 
 private:
-	TAttribute<UUnLive2DMotion*> UnLive2DMotionBeingEdited;
+	TAttribute<UUnLive2DAnimBase*> UnLive2DAnimBaseBeingEdited;
 
 	// Viewport client
-	TSharedPtr<FUnLive2DMotionViewportClient> EditorViewportClient;
+	TSharedPtr<FUnLive2DAnimBaseViewportClient> EditorViewportClient;
 };

@@ -12,7 +12,8 @@
 #include "AssetToolsModule.h"
 #include "UnLive2DAssetEditor.h"
 #include "AssetRegistry/AssetRegistryModule.h"
-#include "UnLive2DMotion.h"
+#include "Animation/UnLive2DMotion.h"
+#include "Animation/UnLive2DExpression.h"
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
 
@@ -123,7 +124,8 @@ UObject* UUnLive2DFactory::FactoryCreateFile(UClass* InClass, UObject* InParent,
 
 			TArray<FString> TexturePaths;
 			TArray<FUnLive2DMotionData> LoadMotionDataArr;
-			UnLive2DPtr->LoadLive2DFileDataFormPath(Live2DDataPath, TexturePaths, LoadMotionDataArr);
+			TMap<FString, FUnLiveByteData> LoadExpressionArr;
+			UnLive2DPtr->LoadLive2DFileDataFormPath(Live2DDataPath, TexturePaths, LoadMotionDataArr, LoadExpressionArr);
 
 			if (ImportUI->bIsImportTexture) // 是否导入图片
 			{
@@ -147,9 +149,19 @@ UObject* UUnLive2DFactory::FactoryCreateFile(UClass* InClass, UObject* InParent,
 				
 				for (FUnLive2DMotionData& Item : LoadMotionDataArr)
 				{
-					UUnLive2DMotion* Motion = CreateAsset<UUnLive2DMotion>(InParent->GetPathName()/ TEXT("Motions"), Item.GetMotionName());
+					UUnLive2DMotion* Motion = CreateAsset<UUnLive2DMotion>(InParent->GetOutermost()->GetPathName(), TEXT("Motions"), Item.GetFPathName());
 					Motion->SetLive2DMotionData(Item);
 					Motion->UnLive2D = UnLive2DPtr;
+				}
+			}
+
+			if (ImportUI->bIsImportExpression) //是否导入表情
+			{
+				for (auto& Item : LoadExpressionArr)
+				{
+					UUnLive2DExpression* Expression = CreateAsset<UUnLive2DExpression>(InParent->GetOutermost()->GetPathName(), TEXT("Expression"), Item.Key);
+					Expression->SetLive2DExpressionData(Item.Value);
+					Expression->UnLive2D = UnLive2DPtr;
 				}
 			}
 		}
@@ -165,11 +177,11 @@ void UUnLive2DFactory::PostInitProperties()
 	ImportUI = NewObject<UUnLive2DImportUI>(this, NAME_None, RF_NoFlags);
 }
 
-UObject* UUnLive2DFactory::CreateAssetOfClass(UClass* AssetClass, FString ParentPackageName, FString ObjectName, bool bAllowReplace /*= false*/)
+UObject* UUnLive2DFactory::CreateAssetOfClass(UClass* AssetClass, FString ParentPackageName, FString ItemizeName,  FString ObjectName, bool bAllowReplace /*= false*/)
 {
 	// 看看这个序列是否已经存在。
-	UObject* ParentPkg = CreatePackage(*ParentPackageName);
-	FString ParentPath = FString::Printf(TEXT("%s/%s"), *FPackageName::GetLongPackagePath(*ParentPackageName), *ObjectName);
+	//UObject* ParentPkg = CreatePackage(*ParentPackageName);
+	FString ParentPath = FString::Printf(TEXT("%s/%s/%s"), *FPackageName::GetLongPackagePath(*ParentPackageName), *ItemizeName, *ObjectName);
 	UObject* Parent = CreatePackage( *ParentPath);
 
 	// 查看是否存在具有此名称的对象

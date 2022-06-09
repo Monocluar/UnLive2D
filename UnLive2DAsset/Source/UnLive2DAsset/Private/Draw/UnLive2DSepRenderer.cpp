@@ -164,11 +164,31 @@ FUnLive2DRenderState::~FUnLive2DRenderState()
 {
 	UnLoadTextures();
 	UnLive2DClippingManager.Reset();
-	UnLive2DToNormalBlendMaterial.Empty();
-	UnLive2DToAdditiveBlendMaterial.Empty();
-	UnLive2DToMultiplyBlendMaterial.Empty();
 
-	if (!MaskBufferRenderTarget.IsValid())
+	for (auto &Item : UnLive2DToNormalBlendMaterial)
+	{
+		if (Item.Value == nullptr) continue;
+
+		Item.Value->RemoveFromRoot();
+	}
+	UnLive2DToNormalBlendMaterial.Empty();
+	for (auto& Item : UnLive2DToMultiplyBlendMaterial)
+	{
+		if (Item.Value == nullptr) continue;
+
+		Item.Value->RemoveFromRoot();
+	}
+	UnLive2DToMultiplyBlendMaterial.Empty();
+	for (auto& Item : UnLive2DToAdditiveBlendMaterial)
+	{
+		if (Item.Value == nullptr) continue;
+
+		Item.Value->RemoveFromRoot();
+	}
+	UnLive2DToAdditiveBlendMaterial.Empty();
+
+
+	if (!MaskBufferRenderTarget.IsValid() && MaskBufferRenderTarget.Get() != nullptr)
 	{
 		MaskBufferRenderTarget->RemoveFromRoot();
 	}
@@ -412,6 +432,8 @@ void FUnLive2DRenderState::InitRenderBuffers()
 
 		Csm::CubismModel* UnLive2DModel = ThisSharedPtr->GetUnLive2D()->GetUnLive2DRawModel().Pin()->GetModel();
 
+		if (UnLive2DModel == nullptr) return;
+
 		Csm::csmInt32 DrawableCount = UnLive2DModel->GetDrawableCount();
 
 		if (UnLive2DModel == nullptr) return;
@@ -470,7 +492,7 @@ const UUnLive2D* FUnLive2DRenderState::GetUnLive2D() const
 {
 	if (OwnerCompWeak.IsValid())
 	{
-		return OwnerCompWeak->SourceUnLive2D;
+		return OwnerCompWeak->GetUnLive2D();
 	}
 	else if (OwnerViewUIWeak.IsValid())
 	{
@@ -484,18 +506,21 @@ UMaterialInstanceDynamic* FUnLive2DRenderState::GetUnLive2DMaterial(int32 InMode
 {
 	Rendering::CubismRenderer::CubismBlendMode InMode = (Rendering::CubismRenderer::CubismBlendMode )InModeIndex;
 	if (!OwnerCompWeak.IsValid() && !OwnerViewUIWeak.IsValid()) return nullptr;
+	UMaterialInstanceDynamic* MatDynamic = nullptr;
 	switch (InMode)
 	{
 	case Rendering::CubismRenderer::CubismBlendMode_Normal:
 	{
 		if (OwnerCompWeak.IsValid())
 		{
-			return UMaterialInstanceDynamic::Create(OwnerCompWeak->UnLive2DNormalMaterial, OwnerCompWeak.Get());
+			MatDynamic = UMaterialInstanceDynamic::Create(OwnerCompWeak->UnLive2DNormalMaterial, OwnerCompWeak.Get());
+			break;
 		}
 		
 		if (OwnerViewUIWeak.Pin()->OwnerWidget.IsValid())
 		{
-			return UMaterialInstanceDynamic::Create(OwnerViewUIWeak.Pin()->OwnerWidget->UnLive2DNormalMaterial, OwnerViewUIWeak.Pin()->OwnerWidget.Get());
+			MatDynamic = UMaterialInstanceDynamic::Create(OwnerViewUIWeak.Pin()->OwnerWidget->UnLive2DNormalMaterial, OwnerViewUIWeak.Pin()->OwnerWidget.Get());
+			break;
 		}
 	}
 	break;
@@ -503,12 +528,14 @@ UMaterialInstanceDynamic* FUnLive2DRenderState::GetUnLive2DMaterial(int32 InMode
 	{
 		if (OwnerCompWeak.IsValid())
 		{
-			return UMaterialInstanceDynamic::Create(OwnerCompWeak->UnLive2DAdditiveMaterial, OwnerCompWeak.Get());
+			MatDynamic = UMaterialInstanceDynamic::Create(OwnerCompWeak->UnLive2DAdditiveMaterial, OwnerCompWeak.Get());
+			break;
 		}
 
 		if (OwnerViewUIWeak.Pin()->OwnerWidget.IsValid())
 		{
-			return UMaterialInstanceDynamic::Create(OwnerViewUIWeak.Pin()->OwnerWidget->UnLive2DAdditiveMaterial, OwnerViewUIWeak.Pin()->OwnerWidget.Get());
+			MatDynamic = UMaterialInstanceDynamic::Create(OwnerViewUIWeak.Pin()->OwnerWidget->UnLive2DAdditiveMaterial, OwnerViewUIWeak.Pin()->OwnerWidget.Get());
+			break;
 		}
 	}
 	break;
@@ -516,18 +543,25 @@ UMaterialInstanceDynamic* FUnLive2DRenderState::GetUnLive2DMaterial(int32 InMode
 	{
 		if (OwnerCompWeak.IsValid())
 		{
-			return UMaterialInstanceDynamic::Create(OwnerCompWeak->UnLive2DMultiplyMaterial, OwnerCompWeak.Get());
+			MatDynamic = UMaterialInstanceDynamic::Create(OwnerCompWeak->UnLive2DMultiplyMaterial, OwnerCompWeak.Get());
+			break;
 		}
 
 		if (OwnerViewUIWeak.Pin()->OwnerWidget.IsValid())
 		{
-			return UMaterialInstanceDynamic::Create(OwnerViewUIWeak.Pin()->OwnerWidget->UnLive2DMultiplyMaterial, OwnerViewUIWeak.Pin()->OwnerWidget.Get());
+			MatDynamic = UMaterialInstanceDynamic::Create(OwnerViewUIWeak.Pin()->OwnerWidget->UnLive2DMultiplyMaterial, OwnerViewUIWeak.Pin()->OwnerWidget.Get());
+			break;
 		}
 	}
 	break;
 	}
 
-	return nullptr; 
+	if (MatDynamic)
+	{
+		MatDynamic->AddToRoot();
+	}
+
+	return MatDynamic; 
 }
 
 FName FUnLive2DRenderState::GetDMaterialTextureParameterName() const

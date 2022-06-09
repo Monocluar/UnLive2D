@@ -1,18 +1,18 @@
 #include "UnLive2DMotionViewportClient.h"
 #include "UnLive2DRendererComponent.h"
-#include "UnLive2DMotion.h"
+#include "Animation/UnLive2DAnimBase.h"
 
-FUnLive2DMotionViewportClient::FUnLive2DMotionViewportClient(TWeakObjectPtr<UUnLive2DMotion> InUnLive2DMotionBegingEdited)
+FUnLive2DAnimBaseViewportClient::FUnLive2DAnimBaseViewportClient(TWeakObjectPtr<UUnLive2DAnimBase> InUnLive2DAnimBaseBegingEdited)
 {
-	UnLive2DMotionBeingEditedLastFrame = InUnLive2DMotionBegingEdited;
+	UnLive2DAnimBaseBeingEditedLastFrame = InUnLive2DAnimBaseBegingEdited;
 	PreviewScene = &OwnedPreviewScene;
 
 	SetRealtime(true);
 
-	if (InUnLive2DMotionBegingEdited.IsValid())
+	if (InUnLive2DAnimBaseBegingEdited.IsValid())
 	{
 		AnimatedRenderComponent = NewObject<UUnLive2DRendererComponent>();
-		AnimatedRenderComponent->SetUnLive2D(InUnLive2DMotionBegingEdited->UnLive2D);
+		AnimatedRenderComponent->SetUnLive2D(InUnLive2DAnimBaseBegingEdited->UnLive2D);
 		PreviewScene->AddComponent(AnimatedRenderComponent.Get(), FTransform::Identity);
 	}
 
@@ -22,7 +22,7 @@ FUnLive2DMotionViewportClient::FUnLive2DMotionViewportClient(TWeakObjectPtr<UUnL
 	EngineShowFlags.SetCompositeEditorPrimitives(true);
 }
 
-FUnLive2DMotionViewportClient::~FUnLive2DMotionViewportClient()
+FUnLive2DAnimBaseViewportClient::~FUnLive2DAnimBaseViewportClient()
 {
 	if (AnimatedRenderComponent.IsValid())
 	{
@@ -30,7 +30,7 @@ FUnLive2DMotionViewportClient::~FUnLive2DMotionViewportClient()
 	}
 }
 
-void FUnLive2DMotionViewportClient::Tick(float DeltaSeconds)
+void FUnLive2DAnimBaseViewportClient::Tick(float DeltaSeconds)
 {
 	FUnLive2DViewportClient::Tick(DeltaSeconds);
 
@@ -40,7 +40,7 @@ void FUnLive2DMotionViewportClient::Tick(float DeltaSeconds)
 	}
 }
 
-FBox FUnLive2DMotionViewportClient::GetDesiredFocusBounds() const
+FBox FUnLive2DAnimBaseViewportClient::GetDesiredFocusBounds() const
 {
 	if (AnimatedRenderComponent.IsValid())
 	{

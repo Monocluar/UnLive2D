@@ -14,6 +14,7 @@ class UMaterialInterface;
 class UBodySetup;
 class UTexture2D;
 class UUnLive2DMotion;
+class UUnLive2DExpression;
 
 
 UCLASS(Blueprintable, BlueprintType, Category = UnLive2D, hidecategories=Object)
@@ -47,6 +48,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Anim")
 		virtual void  PlayMotion(UUnLive2DMotion* InMotion);
 
+	UFUNCTION(BlueprintCallable, Category = "Anim")
+		virtual void PlayExpression(UUnLive2DExpression* InExpression);
+
 public:
     // UnLive2D更新
     FSimpleDelegate OnUpDataUnLive2D;
@@ -65,7 +69,9 @@ public:
 
 #if WITH_EDITOR
 	// 加载Live2D文件数据
-	void LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& TexturePaths, TArray<FUnLive2DMotionData>& LoadMotionData);
+	void LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& TexturePaths, TArray<FUnLive2DMotionData>& LoadMotionData, TMap<FString, FUnLiveByteData>& LoadExpressionData);
+
+	void GetModelParamterGroup();
 #endif
 
     FORCEINLINE TWeakPtr<FUnLive2DRawModel> GetUnLive2DRawModel() const {return UnLive2DRawModel; }

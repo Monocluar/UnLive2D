@@ -34,14 +34,13 @@ protected:
 	// 初始化
 	virtual void InitUnLive2D();
 
-public:
+protected:
 	// UnLive2D资源
 	UPROPERTY(Category = Live2D, EditAnywhere)
 		UUnLive2D* SourceUnLive2D;
 
+public:
 	TSharedPtr<class FUnLive2DRenderState> UnLive2DRander;
-
-
 
 public:
 	// Live2D颜色混合模式为CubismBlendMode_Normal使用的材质
@@ -63,6 +62,9 @@ public:
 public:
 	UFUNCTION(BlueprintCallable, Category = "Live2D")
 		bool SetUnLive2D(UUnLive2D* NewUnLive2D);
+
+	UFUNCTION(BlueprintCallable, Category = "Live2D")
+		UUnLive2D* GetUnLive2D(){ return SourceUnLive2D; }
 
 protected:
 

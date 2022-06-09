@@ -2,15 +2,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/ObjectMacros.h"
-#include "UObject/Object.h"
 #include "CubismConfig.h"
+#include "UnLive2DAnimBase.h"
 #include "UnLive2DMotion.generated.h"
 
-class UUnLive2D;
-
-UCLASS(Blueprintable, BlueprintType, Category = UnLive2DMotion, hidecategories=Object)
-class UNLIVE2DASSET_API UUnLive2DMotion : public UObject,  public IInterface_AssetUserData
+UCLASS(Blueprintable, BlueprintType, Category = UnLive2DAnim, hidecategories=Object)
+class UNLIVE2DASSET_API UUnLive2DMotion : public UUnLive2DAnimBase
 {
 	GENERATED_BODY()
 
@@ -18,10 +15,6 @@ public:
 	UUnLive2DMotion();
 
 public:
-	// UnLive2D设置
-	UPROPERTY(AssetRegistrySearchable, Category = Animation, VisibleAnywhere)
-		UUnLive2D* UnLive2D;
-
 	// 是否循环播放
 	UPROPERTY(EditAnywhere, Category = Animation, AssetRegistrySearchable)
 		uint8 bLooping : 1;
@@ -29,10 +22,6 @@ public:
 	// 正常速率播放一次动画需要时间
 	UPROPERTY(Category = Developer, AssetRegistrySearchable, VisibleAnywhere, BlueprintReadOnly)
 		float Duration;
-
-	// 与资产一起存储的用户数据数组
-	UPROPERTY(EditAnywhere, AdvancedDisplay, Instanced, Category = Live2D)
-		TArray<UAssetUserData*> AssetUserData;
 public:
 
 #if WITH_EDITOR
@@ -50,18 +39,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, AssetRegistrySearchable, Category = Animation)
 		FUnLive2DMotionData MotionData;
 
-protected:
-
-	//~ Begin IInterface_AssetUserData Interface
-	virtual void AddAssetUserData(UAssetUserData* InUserData) override;
-	virtual void RemoveUserDataOfClass(TSubclassOf<UAssetUserData> InUserDataClass) override;
-	virtual UAssetUserData* GetAssetUserDataOfClass(TSubclassOf<UAssetUserData> InUserDataClass) override;
-	virtual const TArray<UAssetUserData*>* GetAssetUserDataArray() const override;
-	//~ End IInterface_AssetUserData Interface
-
 public:
 
-	virtual void Parse(struct FActiveUnLive2DAnimBlueprint& ActiveLive2DAnim, struct FUnLive2DAnimParseParameters& ParseParams, const UPTRINT NodeAnimInstanceHash);
+	virtual void Parse(struct FActiveUnLive2DAnimBlueprint& ActiveLive2DAnim, struct FUnLive2DAnimParseParameters& ParseParams, const UPTRINT NodeAnimInstanceHash) override;
 
 	void PlayMotion();
 

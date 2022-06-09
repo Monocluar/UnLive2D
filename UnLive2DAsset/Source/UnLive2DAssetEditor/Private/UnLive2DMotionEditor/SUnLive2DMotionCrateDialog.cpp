@@ -4,9 +4,10 @@
 #include "UnLive2D.h"
 #include "ContentBrowserModule.h"
 #include "IContentBrowserSingleton.h"
-#include "UnLive2DMotion.h"
+#include "Animation/UnLive2DMotion.h"
 #include "ContentBrowserDelegates.h"
 #include "UnLive2DMotionImportUI.h"
+#include "UnLive2DExpressionFactory.h"
 
 #define LOCTEXT_NAMESPACE "UnLive2DMotionFactory"
 
@@ -27,6 +28,8 @@ void SUnLive2DMotionCrateDialog::Construct(const FArguments& InArgs)
 	ImportUI = InArgs._ImportUI;
 
 	bOkClicked = false;
+
+	TSharedPtr<SBorder> MotionPamesBorder;
 
 	ChildSlot
 	[
@@ -52,7 +55,7 @@ void SUnLive2DMotionCrateDialog::Construct(const FArguments& InArgs)
 			.FillHeight(1)
 			.Padding(0.0f, 10.0f, 0.0f, 0.0f)
 			[
-				SNew(SBorder)
+				SAssignNew(MotionPamesBorder, SBorder)
 				.BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
 				.Content()
 				[
@@ -90,11 +93,16 @@ void SUnLive2DMotionCrateDialog::Construct(const FArguments& InArgs)
 		]
 	];
 
+	if (ImportUI == nullptr)
+	{
+		MotionPamesBorder->SetVisibility(EVisibility::Collapsed);
+	}
+
 	MakeMotionPicker();
 	MakeMotionDetail();
 }
 
-bool SUnLive2DMotionCrateDialog::ConfigureProperties(TWeakObjectPtr<UUnLive2DMotionFactory> InUnLive2DMotionFactory)
+bool SUnLive2DMotionCrateDialog::ConfigureProperties(TWeakObjectPtr<UFactory> InUnLive2DMotionFactory)
 {
 
 	UnLive2DMotionFactory = InUnLive2DMotionFactory;
@@ -119,14 +127,23 @@ FReply SUnLive2DMotionCrateDialog::OkClicked()
 {
 	MotionAssetArr.Empty();
 
-	if (UnLive2DMotionFactory.IsValid())
-	{
-		UnLive2DMotionFactory->BlueprintType = BPTYPE_Normal;
-		UnLive2DMotionFactory->TargetUnLive2D = Cast<UUnLive2D>(TargetUnLive2DAsset.GetAsset());
+	if (!UnLive2DMotionFactory.IsValid()) return FReply::Handled();
 
-		if (UnLive2DMotionFactory.IsValid() && (UnLive2DMotionFactory->TargetUnLive2D != nullptr))
+	if (UUnLive2DMotionFactory* MotionFactory = Cast<UUnLive2DMotionFactory>(UnLive2DMotionFactory.Get()))
+	{
+		MotionFactory->TargetUnLive2D = Cast<UUnLive2D>(TargetUnLive2DAsset.GetAsset());
+
+		if ((MotionFactory->TargetUnLive2D != nullptr))
 		{
-			FindAssets<UUnLive2DMotion>(UnLive2DMotionFactory->TargetUnLive2D, MotionAssetArr);
+			FindAssets<UUnLive2DMotion>(MotionFactory->TargetUnLive2D, MotionAssetArr);
+		}
+	}
+	else if (UUnLive2DExpressionFactory* ExpressionFactory = Cast<UUnLive2DExpressionFactory>(UnLive2DMotionFactory.Get()))
+	{
+		ExpressionFactory->TargetUnLive2D = Cast<UUnLive2D>(TargetUnLive2DAsset.GetAsset());
+		if ((ExpressionFactory->TargetUnLive2D != nullptr))
+		{
+			FindAssets<UUnLive2DExpressionFactory>(ExpressionFactory->TargetUnLive2D, MotionAssetArr);
 		}
 	}
 
@@ -137,18 +154,21 @@ FReply SUnLive2DMotionCrateDialog::OkClicked()
 		return FReply::Handled();
 	}
 
-	if (ImportUI->MotionGroupType == EUnLive2DMotionGroup::None)
+	if (ImportUI != nullptr)
 	{
-		FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("NeedValidMotionGroupType", "动作组类型错误"));
-		return FReply::Handled();
-	}
+		if (ImportUI->MotionGroupType == EUnLive2DMotionGroup::None)
+		{
+			FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("NeedValidMotionGroupType", "动作组类型错误"));
+			return FReply::Handled();
+		}
 
-	if (HasUnLive2DMotion(ImportUI->MotionCount, ImportUI->MotionGroupType))
-	{
-		FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("HasNeedValidMotione", "已经重复了动作组"));
-		return FReply::Handled();
-	}
+		if (HasUnLive2DMotion(ImportUI->MotionCount, ImportUI->MotionGroupType))
+		{
+			FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("HasNeedValidMotione", "已经重复了动作组"));
+			return FReply::Handled();
+		}
 
+	}
 
 	CloseDialog(true);
 
@@ -199,6 +219,8 @@ void SUnLive2DMotionCrateDialog::MakeMotionPicker()
 
 void SUnLive2DMotionCrateDialog::MakeMotionDetail()
 {
+	if (ImportUI == nullptr) return;
+
 	FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
 	FDetailsViewArgs DetailsViewArgs;
 	DetailsViewArgs.bAllowSearch = false;

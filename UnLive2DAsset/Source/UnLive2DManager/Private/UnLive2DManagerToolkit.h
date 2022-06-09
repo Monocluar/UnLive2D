@@ -6,7 +6,7 @@
 #include "IUnLive2DToolkit.h"
 
 class UUnLive2D;
-class UUnLive2DMotion;
+class UUnLive2DAnimBase;
 class UUnLive2DAnimBlueprint;
 
 
@@ -20,7 +20,7 @@ public:
 public:
 
 	void Initialize(UUnLive2D* InUnLive2D);
-	void Initialize(UUnLive2DMotion* InUnLive2DMotion);
+	void Initialize(UUnLive2DAnimBase* InUnLive2DMotion);
 	void Initialize(UUnLive2DAnimBlueprint* InAnimBlueprint);
 
 	// 创建预览窗口
@@ -37,7 +37,7 @@ public:
 	virtual UUnLive2DAnimBlueprint* GetAnimBlueprint() const override;
 
 	// 获取Live2D动画资源
-	virtual UUnLive2DMotion* GetMotionAsset() const override;
+	virtual UUnLive2DAnimBase* GetAnimBaseAsset() const override;
 
 	/** 检索编辑器自定义数据。如果密钥无效，则返回INDEX_NONE */
 	virtual int32 GetCustomData(const int32 Key) const override;
@@ -53,7 +53,7 @@ private:
 	TWeakObjectPtr<UUnLive2D> UnLive2D;
 
 	// 动画资源
-	TWeakObjectPtr<UUnLive2DMotion> UnLive2DMotion;
+	TWeakObjectPtr<UUnLive2DAnimBase> UnLive2DAnimBase;
 
 	// 动画蓝图
 	TWeakObjectPtr<UUnLive2DAnimBlueprint> UnLive2DAnimBlueprint;

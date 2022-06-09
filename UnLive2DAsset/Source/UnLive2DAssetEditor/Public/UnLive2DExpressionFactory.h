@@ -3,16 +3,14 @@
 #include "CoreMinimal.h"
 #include "Factories/Factory.h"
 #include "EditorReimportHandler.h"
-#include "CubismConfig.h"
-#include "UnLive2DMotionFactory.generated.h"
+#include "UnLive2DExpressionFactory.generated.h"
 
 UCLASS()
-class UNLIVE2DASSETEDITOR_API UUnLive2DMotionFactory : public UFactory
+class UNLIVE2DASSETEDITOR_API UUnLive2DExpressionFactory : public UFactory
 {
-
 	GENERATED_UCLASS_BODY()
-public:
 
+public:
 	UPROPERTY(EditAnywhere, Category = UnLive2DMotionFactory)
 		class UUnLive2D* TargetUnLive2D;
 
@@ -26,10 +24,4 @@ public:
 
 	// 通过从文件名导入新对象来创建新对象。
 	virtual UObject* FactoryCreateFile(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, const FString& Filename, const TCHAR* Parms, FFeedbackContext* Warn, bool& bOutOperationCanceled) override;
-
-	virtual void PostInitProperties() override;
-
-private:
-	UPROPERTY()
-		class UUnLive2DMotionImportUI* ImportUISetting;
 };

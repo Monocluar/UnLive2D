@@ -56,6 +56,12 @@ public:
 	UPROPERTY()
 		TArray<uint8> MotionByteData;
 
+#if WITH_EDITORONLY_DATA
+	UPROPERTY()
+		FString PathName;
+#endif // WITH_EDITORONLY_DATA
+
+
 public:
 
 	FString GetMotionName() const
@@ -64,6 +70,8 @@ public:
 		FString GroupStr = GroupEnumPtr->GetNameStringByIndex((int32)MotionGroupType);
 		return FString::Printf(TEXT("%s_%d"), *GroupStr, MotionCount);
 	}
+
+	FString GetFPathName() const { return PathName; }
 
 };
 
@@ -98,14 +106,6 @@ public:
 	// <Live2D立体数据
 	UPROPERTY()
 		TArray<uint8> Live2DCubismData;
-
-	// <Live2D表情数据
-	UPROPERTY()
-		TMap<FName, FUnLiveByteData> Live2DExpressionData;
-
-	/*// <Live2D动作组数据
-	UPROPERTY()
-		TMap<FName, FUnLiveByteData> Live2DMotionData;*/
 
 	// <Live2D物理数据
 	UPROPERTY()
