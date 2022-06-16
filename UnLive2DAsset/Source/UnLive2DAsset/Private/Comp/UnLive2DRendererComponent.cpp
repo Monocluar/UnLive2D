@@ -29,21 +29,53 @@ typedef FMatrix44f FUnLiveMatrix;
 typedef FVector4f FUnLiveVector4;
 #endif
 
-
-void DrawSepMask_Normal(UUnLive2DRendererComponent* UnLive2DRendererComponent, Csm::CubismModel* Live2DModel, const Csm::csmInt32 DrawableIndex, class CubismClippingContext* ClipContext, int32& ElementIndex)
+struct FUnLive2DMeshSectionData
 {
-	TArray<FVector> Live2DVertexs;
-	TArray<int32> Live2DIndices;
-	TArray<FVector> Live2DNormals;
-	TArray<FVector2D> Live2DUVs;
-	TArray<FColor> Live2DColors;
+public:
+	TArray<FVector> InterlottingLive2DVertexs;
 
-	TArray<FVector2D> Live2DUV1; // 遮罩缓冲的UV坐标
-	TArray<FVector2D> Live2DUV2; // ChannelFlag XY
-	TArray<FVector2D> Live2DUV3; // ChannelFlag ZW
-	//TArray<FVector> Live2DDrakColors;
+	TArray<int32> InterlottingLive2DIndices;
 
-	float DepthOffset = 0; //深度
+	TArray<FVector2D> InterlottingLive2DUVs;
+
+	TArray<FColor> InterlottingLive2DColors;
+
+	TArray<FVector2D> InterlottingLive2DUV1;
+
+	UMaterialInstanceDynamic* InterlottingDynamicMat;
+
+public:
+	FUnLive2DMeshSectionData(TArray<FVector>& Live2DVertexs, TArray<int32>& Live2DIndices, TArray<FVector2D>& Live2DUVs, TArray<FColor>& Live2DColors, TArray<FVector2D>& Live2DUV1, UMaterialInstanceDynamic* DynamicMat)
+		: InterlottingLive2DVertexs(MoveTemp(Live2DVertexs))
+		, InterlottingLive2DIndices(MoveTemp(Live2DIndices))
+		, InterlottingLive2DUVs(MoveTemp(Live2DUVs))
+		, InterlottingLive2DColors(MoveTemp(Live2DColors))
+		, InterlottingLive2DUV1(MoveTemp(Live2DUV1))
+		, InterlottingDynamicMat(DynamicMat)
+	{}
+
+	FUnLive2DMeshSectionData()
+		: InterlottingDynamicMat(nullptr)
+	{}
+};
+
+TArray<FUnLive2DMeshSectionData> UnLive2DMeshSectionData;
+
+
+void DrawMeshMeshSection(UUnLive2DRendererComponent* UnLive2DRendererComponent)
+{
+	for (int32 i = 0; i < UnLive2DMeshSectionData.Num(); i++)
+	{
+		UnLive2DRendererComponent->SetMaterial(i, UnLive2DMeshSectionData[i].InterlottingDynamicMat);
+		UnLive2DRendererComponent->CreateMeshSection(i, UnLive2DMeshSectionData[i].InterlottingLive2DVertexs, UnLive2DMeshSectionData[i].InterlottingLive2DIndices, TArray<FVector>(),	UnLive2DMeshSectionData[i].InterlottingLive2DUVs, UnLive2DMeshSectionData[i].InterlottingLive2DUV1, TArray<FVector2D>(), TArray<FVector2D>(), UnLive2DMeshSectionData[i].InterlottingLive2DColors, TArray<FProcMeshTangent>(), false);
+	}
+
+	UnLive2DMeshSectionData.Empty();
+}
+
+void DrawSepMask_Normal(UUnLive2DRendererComponent* UnLive2DRendererComponent, Csm::CubismModel* Live2DModel, const Csm::csmInt32 DrawableIndex, class CubismClippingContext* ClipContext)
+{
+	float DepthOffset = 0 ; //深度
 
 	csmFloat32 Opacity = Live2DModel->GetDrawableOpacity(DrawableIndex); // 获取不透明度
 	if (Opacity <= 0.f) return;
@@ -51,6 +83,20 @@ void DrawSepMask_Normal(UUnLive2DRendererComponent* UnLive2DRendererComponent, C
 	UMaterialInstanceDynamic* DynamicMat = UnLive2DRendererComponent->UnLive2DRander->GetMaterialInstanceDynamicToIndex(Live2DModel, DrawableIndex, ClipContext != nullptr); // 获取当前动态材质
 
 	if (DynamicMat == nullptr) return;
+
+	FUnLive2DMeshSectionData* MeshSectionData = nullptr;
+
+	if (UnLive2DMeshSectionData.Num() == 0 || UnLive2DMeshSectionData.Top().InterlottingDynamicMat != DynamicMat)
+	{
+		MeshSectionData = &UnLive2DMeshSectionData.AddDefaulted_GetRef();
+		MeshSectionData->InterlottingDynamicMat = DynamicMat;
+	}
+	else
+	{
+		MeshSectionData = &UnLive2DMeshSectionData.Top();
+	}
+
+	int32 InterlottingIndiceIndex = MeshSectionData->InterlottingLive2DVertexs.Num();
 
 	const csmInt32 NumVertext = Live2DModel->GetDrawableVertexCount(DrawableIndex); // 获得Drawable顶点的个数
 
@@ -60,14 +106,6 @@ void DrawSepMask_Normal(UUnLive2DRendererComponent* UnLive2DRendererComponent, C
 	FUnLiveVector4 ChanelFlag;
 	FUnLiveMatrix MartixForDraw = UnLive2DRendererComponent->UnLive2DRander->GetUnLive2DPosToClipMartix(ClipContext, ChanelFlag);
 
-	Live2DVertexs.SetNum(NumVertext);
-	FVector* VertexPtr = (FVector*)Live2DVertexs.GetData();
-
-	Live2DUVs.SetNum(NumVertext);
-	FVector2D* UVPtr = (FVector2D*)Live2DUVs.GetData();
-
-	Live2DColors.SetNum(NumVertext);
-	FColor* ColorsPtr = (FColor*)Live2DColors.GetData();
 
 	for (int32 VertexIndex = 0; VertexIndex < NumVertext; ++VertexIndex)
 	{
@@ -91,20 +129,18 @@ void DrawSepMask_Normal(UUnLive2DRendererComponent* UnLive2DRendererComponent, C
 			FVector2D MaskUV = FVector2D(ClipPosition.X, 1 + ClipPosition.Y);
 			MaskUV /= ClipPosition.W;
 
-			Live2DUV1.Add(MaskUV);
-			//Live2DUV2.Add(FVector2D(ChanelFlag.X, ChanelFlag.Y));
-			//Live2DUV3.Add(FVector2D(ChanelFlag.Z, ChanelFlag.W));
-			ColorsPtr[VertexIndex] = FColor(ChanelFlag.X * 255, ChanelFlag.Y * 255, ChanelFlag.Z * 255, Opacity * 255);
+			MeshSectionData->InterlottingLive2DUV1.Add(MaskUV);
+			MeshSectionData->InterlottingLive2DColors.Add(FColor(ChanelFlag.X * 255, ChanelFlag.Y * 255, ChanelFlag.Z * 255, Opacity * 255));
 
 		}
 		else
 		{
-			ColorsPtr[VertexIndex] = FColor(255, 255, 255, Opacity * 255);
+			MeshSectionData->InterlottingLive2DColors.Add(FColor(255, 255, 255, Opacity * 255));
 		}
 
-		VertexPtr[VertexIndex] = FVector(Position.X * 100, DepthOffset, Position.Y * 100);
-		UVPtr[VertexIndex] = FVector2D(UVArray[VertexIndex * 2], 1 - UVArray[VertexIndex * 2 + 1]);// UE UV坐标与Live2D的Y坐标是相反的
-		//Live2DDrakColors.Add(0.f, 0.f, 0.f);
+
+		MeshSectionData->InterlottingLive2DVertexs.Add(FVector(Position.X * 100, DepthOffset, Position.Y * 100));
+		MeshSectionData->InterlottingLive2DUVs.Add(FVector2D(UVArray[VertexIndex * 2], 1 - UVArray[VertexIndex * 2 + 1]));// UE UV坐标与Live2D的Y坐标是相反的
 	}
 
 	const csmInt32 VertexIndexCount = Live2DModel->GetDrawableVertexIndexCount(DrawableIndex); // 获得Drawable的顶点索引个数
@@ -113,31 +149,23 @@ void DrawSepMask_Normal(UUnLive2DRendererComponent* UnLive2DRendererComponent, C
 
 	const csmUint16* IndicesArray = const_cast<csmUint16*>(Live2DModel->GetDrawableVertexIndices(DrawableIndex)); //顶点索引
 
-	Live2DIndices.SetNum(VertexIndexCount);
-
-	int32* IndexPtr = (int32* )Live2DIndices.GetData();
-
 	for (int32 VertexIndex = 0; VertexIndex < VertexIndexCount; ++VertexIndex)
 	{
-		IndexPtr[VertexIndex] = (int32)IndicesArray[VertexIndex];
+		MeshSectionData->InterlottingLive2DIndices.AddDefaulted_GetRef() = InterlottingIndiceIndex + (int32)IndicesArray[VertexIndex];
 	}
 
-	UnLive2DRendererComponent->SetMaterial(ElementIndex, DynamicMat);
-	UnLive2DRendererComponent->CreateMeshSection(ElementIndex, Live2DVertexs, Live2DIndices, Live2DNormals, Live2DUVs, Live2DUV1, Live2DUV2, Live2DUV3, Live2DColors, TArray<FProcMeshTangent>(), false);
-
-	ElementIndex++;
 }
 
-void DrawSepMask(UUnLive2DRendererComponent* UnLive2DRendererComponent, Csm::CubismModel* Live2DModel, const Csm::csmInt32 DrawableIndex, class CubismClippingContext* ClipContext, int32& ElementIndex)
+void DrawSepMask(UUnLive2DRendererComponent* UnLive2DRendererComponent, Csm::CubismModel* Live2DModel, const Csm::csmInt32 DrawableIndex, class CubismClippingContext* ClipContext)
 {
 	if (Live2DModel == nullptr) return;
 
-	DrawSepMask_Normal(UnLive2DRendererComponent, Live2DModel, DrawableIndex, ClipContext, ElementIndex);
+	DrawSepMask_Normal(UnLive2DRendererComponent, Live2DModel, DrawableIndex, ClipContext);
 }
 
-void DrawSepNormal(UUnLive2DRendererComponent* UnLive2DRendererComponent, Csm::CubismModel* Live2DModel, const Csm::csmInt32 DrawableIndex, int32& ElementIndex)
+void DrawSepNormal(UUnLive2DRendererComponent* UnLive2DRendererComponent, Csm::CubismModel* Live2DModel, const Csm::csmInt32 DrawableIndex)
 {
-	DrawSepMask_Normal(UnLive2DRendererComponent, Live2DModel, DrawableIndex, nullptr, ElementIndex);
+	DrawSepMask_Normal(UnLive2DRendererComponent, Live2DModel, DrawableIndex, nullptr);
 }
 
 
@@ -283,8 +311,6 @@ void UUnLive2DRendererComponent::UpdateRenderer()
 		SortedDrawableIndexList[Order] = i;
 	}
 
-	int32 MeshSection = 0; // 根据顺序绘制
-
 	// 描画
 	for (csmInt32 i = 0; i < DrawableCount; i++)
 	{
@@ -300,13 +326,15 @@ void UUnLive2DRendererComponent::UpdateRenderer()
 
 		if (IsMaskDraw)
 		{
-			DrawSepMask(this, UnLive2DModel, DrawableIndex, ClipContext, MeshSection);
+			DrawSepMask(this, UnLive2DModel, DrawableIndex, ClipContext);
 		}
 		else
 		{
-			DrawSepNormal(this, UnLive2DModel, DrawableIndex, MeshSection);
+			DrawSepNormal(this, UnLive2DModel, DrawableIndex);
 		}
 	}
+
+	DrawMeshMeshSection(this);
 }
 
 void UUnLive2DRendererComponent::InitUnLive2D()

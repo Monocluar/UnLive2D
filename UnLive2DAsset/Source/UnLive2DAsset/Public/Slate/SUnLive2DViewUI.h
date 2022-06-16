@@ -6,6 +6,7 @@
 #include "Widgets/SLeafWidget.h"
 #include "Widgets/DeclarativeSyntaxSupport.h"
 #include "UnLive2DViewRendererUI.h"
+#include "Materials/MaterialInstanceDynamic.h"
 
 class UUnLive2D;
 
@@ -33,7 +34,10 @@ protected:
 
 	void InitUnLive2D();
 
-	void UpDateMesh(int32 LayerId, FSlateWindowElementList &OutDrawElements, const FGeometry &AllottedGeometry, int32 DrawableIndex, class CubismClippingContext* ClipContext, int32& ElementIndex);
+	void UpDateMesh(const FGeometry &AllottedGeometry, int32 DrawableIndex, class CubismClippingContext* ClipContext);
+
+	// 描画
+	void Flush(int32 LayerId, FSlateWindowElementList& OutDrawElements);
 
 	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
 
@@ -52,5 +56,32 @@ protected:
 
 	// UnLive2D 渲染模块
 	TSharedPtr<class FUnLive2DRenderState> UnLive2DRenderPtr;
+
+private:
+
+	struct FCustomVertsData
+	{
+	public:
+		TArray<FSlateVertex> InterlottingLive2DVertexData;
+
+		TArray<SlateIndex> InterlottingLive2DIndexData;
+
+		UMaterialInstanceDynamic* InterlottingDynamicMat;
+
+	public:
+		
+		FCustomVertsData(TArray<FSlateVertex>& Live2DVertexData, TArray<SlateIndex> Live2DIndexData, UMaterialInstanceDynamic* DynamicMat)
+			: InterlottingLive2DVertexData(MoveTemp(Live2DVertexData))
+			, InterlottingLive2DIndexData(MoveTemp(Live2DIndexData))
+			, InterlottingDynamicMat(DynamicMat)
+		{
+		}
+
+		FCustomVertsData()
+			: InterlottingDynamicMat(nullptr)
+		{}
+	};
+
+	TArray<FCustomVertsData> UnLive2DCustomVertsData;
 
 };

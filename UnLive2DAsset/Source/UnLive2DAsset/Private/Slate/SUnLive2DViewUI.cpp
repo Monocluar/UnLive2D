@@ -74,15 +74,9 @@ void SUnLive2DViewUI::InitUnLive2D()
 	}
 }
 
-void SUnLive2DViewUI::UpDateMesh(int32 LayerId, FSlateWindowElementList& OutDrawElements, const FGeometry& AllottedGeometry, int32 DrawableIndex, class CubismClippingContext* ClipContext, int32& ElementIndex)
+void SUnLive2DViewUI::UpDateMesh(const FGeometry& AllottedGeometry, int32 DrawableIndex, class CubismClippingContext* ClipContext)
 {
-	TArray<FVector2D> Live2DVertexs;
-	TArray<FSlateVertex> Live2DVertexData;
-	TArray<SlateIndex> Live2DIndexData;
-
-	//TArray<FVector2D> Live2DUV1; // 遮罩缓冲的UV坐标
-	//TArray<FVector2D> Live2DUV2; // ChannelFlag XY
-	//TArray<FVector2D> Live2DUV3; // ChannelFlag ZW
+	//TArray<SlateIndex> Live2DIndexData;
 
 	const Csm::CubismModel* UnLive2DModel = UnLive2DWeak->GetUnLive2DRawModel().Pin()->GetModel();
 
@@ -92,6 +86,29 @@ void SUnLive2DViewUI::UpDateMesh(int32 LayerId, FSlateWindowElementList& OutDraw
 
 	if (!IsValid(DynamicMat)) return;
 
+	FVector2D BoundsSize = FVector2D(UnLive2DModel->GetCanvasWidth(), UnLive2DModel->GetCanvasHeight());
+
+	const FVector2D WidgetSize = AllottedGeometry.GetLocalSize();
+
+	const FVector2D WidgetScale = WidgetSize / BoundsSize;
+	const float SetupScale = WidgetScale.GetMin();
+	const FSlateRenderTransform &Transform = AllottedGeometry.GetAccumulatedRenderTransform();
+
+	FCustomVertsData* MeshSectionData = nullptr;
+
+	if (UnLive2DCustomVertsData.Num() == 0 || UnLive2DCustomVertsData.Top().InterlottingDynamicMat != DynamicMat)
+	{
+		MeshSectionData = &UnLive2DCustomVertsData.AddDefaulted_GetRef();
+		MeshSectionData->InterlottingDynamicMat = DynamicMat;
+	}
+	else
+	{
+		MeshSectionData = &UnLive2DCustomVertsData.Top();
+	}
+
+
+	int32 InterlottingIndiceIndex = MeshSectionData->InterlottingLive2DVertexData.Num();
+
 	const csmInt32 NumVertext = UnLive2DModel->GetDrawableVertexCount(DrawableIndex); // 获得Drawable顶点的个数
 
 	const csmFloat32* UVArray = reinterpret_cast<csmFloat32*>(const_cast<Live2D::Cubism::Core::csmVector2*>(UnLive2DModel->GetDrawableVertexUvs(DrawableIndex))); // 获取UV组
@@ -100,9 +117,8 @@ void SUnLive2DViewUI::UpDateMesh(int32 LayerId, FSlateWindowElementList& OutDraw
 	FUnLiveVector4 ChanelFlag;
 	FUnLiveMatrix MartixForDraw = UnLive2DRenderPtr->GetUnLive2DPosToClipMartix(ClipContext, ChanelFlag);
 
-	Live2DVertexData.SetNumUninitialized(NumVertext);
-	FSlateVertex* VertexDataPtr = (FSlateVertex*)Live2DVertexData.GetData();
-
+	/*Live2DVertexData.SetNumUninitialized(NumVertext);
+	FSlateVertex* VertexDataPtr = (FSlateVertex*)Live2DVertexData.GetData();*/
 
 	for (int32 VertexIndex = 0; VertexIndex < NumVertext; ++VertexIndex)
 	{
@@ -113,7 +129,7 @@ void SUnLive2DViewUI::UpDateMesh(int32 LayerId, FSlateWindowElementList& OutDraw
 		TVector4<float> Position = TVector4<float>(VertexArray[VertexIndex * 2], VertexArray[VertexIndex * 2 + 1], 0, 1);
 #endif
 
-		FSlateVertex* VertexIndexData = &VertexDataPtr[VertexIndex];
+		FSlateVertex* VertexIndexData = &MeshSectionData->InterlottingLive2DVertexData.AddDefaulted_GetRef();
 
 		float MaskVal = 1;
 		FVector2D UV = FVector2D(UVArray[VertexIndex * 2], 1 - UVArray[VertexIndex * 2 + 1]); // UE UV坐标与Live2D的Y坐标是相反的
@@ -129,9 +145,6 @@ void SUnLive2DViewUI::UpDateMesh(int32 LayerId, FSlateWindowElementList& OutDraw
 			FVector2D MaskUV = FVector2D(ClipPosition.X, 1 + ClipPosition.Y);
 			MaskUV /= ClipPosition.W;
 
-			//Live2DUV1.Add(MaskUV);
-			//Live2DUV2.Add(FVector2D(ChanelFlag.X, ChanelFlag.Y));
-			//Live2DUV3.Add(FVector2D(ChanelFlag.Z, ChanelFlag.W));
 			VertexIndexData->Color = FColor(255 * ChanelFlag.X, 255 * ChanelFlag.Y, 255 * ChanelFlag.Z, Opacity * 255);
 
 #if UE_VERSION_OLDER_THAN(5,0,0)
@@ -151,7 +164,14 @@ void SUnLive2DViewUI::UpDateMesh(int32 LayerId, FSlateWindowElementList& OutDraw
 			VertexIndexData->Color = FColor(255, 255, 255, Opacity * 255);
 		}
 
-		Live2DVertexs.Add(FVector2D(Position.X, Position.Y));
+		
+		FVector2D NewPos = Transform.TransformPoint(FVector2D(Position.X, Position.Y) * SetupScale * FVector2D(1.f, -1.f) + (WidgetSize / 2));
+
+#if UE_VERSION_OLDER_THAN(5,0,0)
+		VertexIndexData->SetPosition(NewPos);
+#else
+		VertexIndexData->SetPosition(FVector2f(NewPos.X, NewPos.Y));
+#endif
 
 #if UE_VERSION_OLDER_THAN(5,0,0)
 		VertexIndexData->MaterialTexCoords = UV;
@@ -162,51 +182,31 @@ void SUnLive2DViewUI::UpDateMesh(int32 LayerId, FSlateWindowElementList& OutDraw
 		VertexIndexData->PixelSize[1] = 1;
 	}
 
-	FVector2D BoundsSize = FVector2D(UnLive2DModel->GetCanvasWidth(), UnLive2DModel->GetCanvasHeight());
-
 	const csmInt32 VertexIndexCount = UnLive2DModel->GetDrawableVertexIndexCount(DrawableIndex); // 获得Drawable的顶点索引个数
 
 	check(VertexIndexCount > 0 && "Bad Index Count");
 
 	const csmUint16* IndicesArray = const_cast<csmUint16*>(UnLive2DModel->GetDrawableVertexIndices(DrawableIndex)); //顶点索引
 
-	Live2DIndexData.SetNumUninitialized(VertexIndexCount);
-	SlateIndex* IndexDataPtr = (SlateIndex* )Live2DIndexData.GetData();
-
 	for (int32 VertexIndex = 0; VertexIndex < VertexIndexCount; ++VertexIndex)
 	{
-		IndexDataPtr[VertexIndex] = (SlateIndex)IndicesArray[VertexIndex];
+		SlateIndex& Live2DIndexData = MeshSectionData->InterlottingLive2DIndexData.AddDefaulted_GetRef();
+		Live2DIndexData =  InterlottingIndiceIndex + (SlateIndex)IndicesArray[VertexIndex];
 	}
+	
+}
 
-	const FVector2D WidgetSize = AllottedGeometry.GetLocalSize();
-
-	const FVector2D WidgetScale = WidgetSize / BoundsSize;
-	const float SetupScale = WidgetScale.GetMin();
-
-	const FSlateRenderTransform &Transform = AllottedGeometry.GetAccumulatedRenderTransform();
-
-	for (int32 i = 0; i < Live2DVertexData.Num(); i++)
+void SUnLive2DViewUI::Flush(int32 LayerId, FSlateWindowElementList& OutDrawElements)
+{
+	for (int32 i = 0; i < UnLive2DCustomVertsData.Num(); i++)
 	{
-		FSlateVertex* VertexIndexData = &VertexDataPtr[i];
-
-		FVector2D NewPos = Transform.TransformPoint(Live2DVertexs[i] * SetupScale * FVector2D(1.f, -1.f) + (WidgetSize / 2));
-
-#if UE_VERSION_OLDER_THAN(5,0,0)
-		VertexIndexData->SetPosition(NewPos);
-#else
-		VertexIndexData->SetPosition(FVector2f(NewPos.X, NewPos.Y));
-#endif
-	}
-
-	if (IsValid(DynamicMat))
-	{
-		TSharedPtr<FSlateBrush> Brush = MakeShareable(new FUnLive2DSlateMaterialBrush(DynamicMat, FVector2D(64.f, 64.f)));
+		TSharedPtr<FSlateBrush> Brush = MakeShareable(new FUnLive2DSlateMaterialBrush(UnLive2DCustomVertsData[i].InterlottingDynamicMat, FVector2D(64.f, 64.f)));
 		FSlateResourceHandle RenderingResourceHandle = FSlateApplication::Get().GetRenderer()->GetResourceHandle(*Brush);
 
-		FSlateDrawElement::MakeCustomVerts(OutDrawElements, LayerId, RenderingResourceHandle, Live2DVertexData, Live2DIndexData, nullptr, 0, 0);
+		FSlateDrawElement::MakeCustomVerts(OutDrawElements, LayerId, RenderingResourceHandle, UnLive2DCustomVertsData[i].InterlottingLive2DVertexData, UnLive2DCustomVertsData[i].InterlottingLive2DIndexData, nullptr, 0, 0);
 	}
 
-	ElementIndex++;
+	UnLive2DCustomVertsData.Empty();
 }
 
 void SUnLive2DViewUI::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
@@ -245,9 +245,7 @@ int32 SUnLive2DViewUI::OnPaint(const FPaintArgs& Args, const FGeometry& Allotted
 			SortedDrawableIndexList[Order] = i;
 		}
 
-		int32 MeshSection = 0; // 根据顺序绘制
-
-		// 描画
+		// 合批
 		for (csmInt32 i = 0; i < DrawableCount; i++)
 		{
 			const csmInt32 DrawableIndex = SortedDrawableIndexList[i];
@@ -260,9 +258,11 @@ int32 SUnLive2DViewUI::OnPaint(const FPaintArgs& Args, const FGeometry& Allotted
 
 			const bool IsMaskDraw = (nullptr != ClipContext);
 
-			ThisPtr->UpDateMesh(LayerId, OutDrawElements, AllottedGeometry, DrawableIndex, ClipContext, MeshSection);
+			ThisPtr->UpDateMesh(AllottedGeometry, DrawableIndex, ClipContext);
 		}
 
+		// 描画
+		ThisPtr->Flush(LayerId, OutDrawElements);
 	}
 
 

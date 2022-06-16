@@ -32,7 +32,6 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, AssetRegistrySearchable, Category = Live2D)
 		TArray<TSoftObjectPtr<UTexture2D>> TextureAssets;
 
-
 public:
 
 	// 渲染设置数据
