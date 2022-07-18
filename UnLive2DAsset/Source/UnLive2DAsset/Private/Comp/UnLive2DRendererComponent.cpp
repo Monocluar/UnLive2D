@@ -286,9 +286,12 @@ void UUnLive2DRendererComponent::PostEditChangeProperty(FPropertyChangedEvent& P
 
 void UUnLive2DRendererComponent::UpdateRenderer()
 {
-	if (!SourceUnLive2D->GetUnLive2DRawModel().IsValid()) return;
 
-	Csm::CubismModel* UnLive2DModel = SourceUnLive2D->GetUnLive2DRawModel().Pin()->GetModel();
+	TWeakPtr<FUnLive2DRawModel> WeakPtr = GetUnLive2D()->GetUnLive2DRawModel();
+
+	if (!WeakPtr.IsValid()) return;
+
+	Csm::CubismModel* UnLive2DModel = WeakPtr.Pin()->GetModel();
 
 	if (UnLive2DModel == nullptr || !UnLive2DRander.IsValid()) return;
 
