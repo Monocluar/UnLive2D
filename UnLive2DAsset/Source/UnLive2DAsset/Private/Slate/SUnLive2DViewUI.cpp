@@ -63,6 +63,14 @@ const UUnLive2D* SUnLive2DViewUI::GetUnLive2D() const
 	return UnLive2DWeak.Get();
 }
 
+void SUnLive2DViewUI::ReleaseRenderStateData()
+{
+	if (UnLive2DRenderPtr.IsValid())
+	{
+		UnLive2DRenderPtr.Reset();
+	}
+}
+
 void SUnLive2DViewUI::InitUnLive2D()
 {
 	if (!FSlateApplication::IsInitialized()) return;

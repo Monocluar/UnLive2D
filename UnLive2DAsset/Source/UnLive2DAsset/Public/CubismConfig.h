@@ -71,7 +71,11 @@ public:
 		return FString::Printf(TEXT("%s_%d"), *GroupStr, MotionCount);
 	}
 
+#if WITH_EDITOR
+
 	FString GetFPathName() const { return PathName; }
+#endif // WITH_EDITOR
+
 
 };
 

@@ -90,18 +90,18 @@ private:
 	void EvaluateNodes(bool bAddToRoot);
 
 public:
+	// 是否可以播放
+	virtual bool IsPlayable() const;
 #if WITH_EDITOR
 
 	// 获取图表所有节点
 	TArray<UUnLive2DAnimBlueprintNode_Base*>& GetGraphAllNodes();
 
-	// 是否可以播放
-	virtual bool IsPlayable() const;
+
+#endif
 
 	// 播放节点
 	virtual void Parse(struct FActiveUnLive2DAnimBlueprint& ActiveAnimBlueprint, struct FUnLive2DAnimParseParameters& ParseParams);
-#endif
-
 protected:
 #if WITH_EDITOR
 	virtual void PostInitProperties() override;

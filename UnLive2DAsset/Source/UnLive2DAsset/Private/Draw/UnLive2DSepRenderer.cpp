@@ -162,16 +162,15 @@ FUnLive2DRenderState::FUnLive2DRenderState(TSharedRef<SUnLive2DViewUI> InViewUI)
 
 FUnLive2DRenderState::~FUnLive2DRenderState()
 {
-	UnLoadTextures();
 	UnLive2DClippingManager.Reset();
 
-	UnOldMaterial();
-
+	UnLoadTextures();
 
 	if (!MaskBufferRenderTarget.IsValid() && MaskBufferRenderTarget.Get() != nullptr)
 	{
 		MaskBufferRenderTarget->RemoveFromRoot();
 	}
+	UnOldMaterial();
 }
 
 void FUnLive2DRenderState::InitRender(TWeakObjectPtr<UUnLive2D> InNewUnLive2D)

@@ -49,28 +49,6 @@ void UUnLive2DAnimBlueprint::EvaluateNodes(bool bAddToRoot)
 
 }
 
-#if WITH_EDITOR
-
-UEdGraph* UUnLive2DAnimBlueprint::GetGraph()
-{
-	return UnLive2DAnimBlueprintGraph;
-}
-
-void UUnLive2DAnimBlueprint::ResetGraph()
-{
-	for (UUnLive2DAnimBlueprintNode_Base* AnimBlueprintNode : AllNodes)
-	{
-		UnLive2DAnimBlueprintGraph->RemoveNode(AnimBlueprintNode->GraphNode);
-	}
-	AllNodes.Reset();
-	FirstNode = nullptr;
-}
-
-TArray<UUnLive2DAnimBlueprintNode_Base*>& UUnLive2DAnimBlueprint::GetGraphAllNodes()
-{
-	return AllNodes;
-}
-
 bool UUnLive2DAnimBlueprint::IsPlayable() const
 {
 	return FirstNode != nullptr;
@@ -83,6 +61,29 @@ void UUnLive2DAnimBlueprint::Parse(FActiveUnLive2DAnimBlueprint& ActiveAnimBluep
 		FirstNode->ParseNodes(ActiveAnimBlueprint, ParseParams, 0);
 	}
 }
+
+#if WITH_EDITOR
+void UUnLive2DAnimBlueprint::ResetGraph()
+{
+
+	for (UUnLive2DAnimBlueprintNode_Base* AnimBlueprintNode : AllNodes)
+	{
+		UnLive2DAnimBlueprintGraph->RemoveNode(AnimBlueprintNode->GraphNode);
+	}
+	AllNodes.Reset();
+	FirstNode = nullptr;
+}
+
+UEdGraph* UUnLive2DAnimBlueprint::GetGraph()
+{
+	return UnLive2DAnimBlueprintGraph;
+}
+
+TArray<UUnLive2DAnimBlueprintNode_Base*>& UUnLive2DAnimBlueprint::GetGraphAllNodes()
+{
+	return AllNodes;
+}
+
 
 void UUnLive2DAnimBlueprint::SeUnLive2DAnimBlueprintAnimEditor(TSharedPtr<IUnLive2DAnimBlueprintAnimEditor> InUnLive2DAnimBlueprintGraphEditor)
 {

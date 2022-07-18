@@ -6,15 +6,14 @@
 #endif
 #include "Animation/ActiveUnLive2DAnimBlueprint.h"
 
-
-#if WITH_EDITOR
-
-using namespace Live2D::Cubism::Framework;
-
 UUnLive2DMotion::UUnLive2DMotion()
 {
 	bFinished = true;
 }
+
+
+#if WITH_EDITOR
+using namespace Live2D::Cubism::Framework;
 
 bool UUnLive2DMotion::LoadLive2DMotionData(const FString& ReadMotionPath, EUnLive2DMotionGroup InMotionGroupType, int32 InMotionCount, float FadeInTime, float FadeOutTime)
 {

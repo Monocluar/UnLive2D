@@ -96,7 +96,7 @@ void FUnLive2DViewEditor::InitUnLive2DViewEditor(const EToolkitMode::Type Mode, 
 		.UnLive2DBeingEdited(this, &FUnLive2DViewEditor::GetUnLive2DBeingEdited);
 
 	// Default layout Standalone_FlipbookEditor_Layout_v1
-	const TSharedRef<FTabManager::FLayout> StandaloneDefaultLayout = FTabManager::NewLayout("Standalone_UnLive2DViewEditor_Layout_v1.1")
+	const TSharedRef<FTabManager::FLayout> StandaloneDefaultLayout = FTabManager::NewLayout("Standalone_UnLive2DViewEditor_Layout_v1.2")
 		->AddArea
 		(
 			FTabManager::NewPrimaryArea()
@@ -132,6 +132,7 @@ void FUnLive2DViewEditor::InitUnLive2DViewEditor(const EToolkitMode::Type Mode, 
 					->SetSizeCoefficient(0.2f)
 					->AddTab(FUnLive2DViewEditorTabs::DetailsID, ETabState::OpenedTab)
 					->AddTab(FUnLive2DViewEditorTabs::ParameterGroupID, ETabState::OpenedTab)
+					->SetForegroundTab(FUnLive2DViewEditorTabs::DetailsID)
 				)
 			)
 		);

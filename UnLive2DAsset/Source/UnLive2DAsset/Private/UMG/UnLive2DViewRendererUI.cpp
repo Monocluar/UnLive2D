@@ -51,9 +51,12 @@ void UUnLive2DViewRendererUI::SynchronizeProperties()
 
 void UUnLive2DViewRendererUI::ReleaseSlateResources(bool bReleaseChildren)
 {
+	if (MySlateWidget.IsValid())
+	{
+		MySlateWidget->ReleaseRenderStateData();
+		MySlateWidget.Reset();
+	}
 	Super::ReleaseSlateResources(bReleaseChildren);
-
-	MySlateWidget.Reset();
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -30,6 +30,8 @@ public:
 
 	const UUnLive2D* GetUnLive2D() const;
 
+	void ReleaseRenderStateData();
+
 protected:
 
 	void InitUnLive2D();

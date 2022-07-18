@@ -156,6 +156,7 @@ int32 UUnLive2DAnimBlueprintNode_Base::GetNumSounds(const UPTRINT NodeAnimInstan
 	return NumSounds;
 }
 
+#if WITH_EDITOR
 void UUnLive2DAnimBlueprintNode_Base::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -178,7 +179,7 @@ void UUnLive2DAnimBlueprintNode_Base::AddReferencedObjects(UObject* InThis, FRef
 
 	Super::AddReferencedObjects(InThis, Collector);
 }
-
+#endif
 
 void UUnLive2DAnimBlueprintNode_Base::Serialize(FArchive& Ar)
 {
