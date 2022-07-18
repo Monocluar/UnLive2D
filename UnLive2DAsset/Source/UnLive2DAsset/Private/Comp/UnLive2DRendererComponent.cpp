@@ -242,15 +242,14 @@ void UUnLive2DRendererComponent::OnRegister()
 #endif
 }
 
-void UUnLive2DRendererComponent::DestroyComponent(bool bPromoteChildren /*= false*/)
+void UUnLive2DRendererComponent::OnUnregister()
 {
-	if (GetWorld() && !GetWorld()->IsEditorWorld())
+	if (GetWorld() && UnLive2DRander.IsValid())
 	{
 		UnLive2DRander.Reset();
 	}
 
-	Super::DestroyComponent(bPromoteChildren);
-
+	Super::OnUnregister();
 }
 
 #if WITH_EDITOR
@@ -279,6 +278,7 @@ void UUnLive2DRendererComponent::PostEditChangeProperty(FPropertyChangedEvent& P
 
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
+
 #endif
 
 void UUnLive2DRendererComponent::UpdateRenderer()

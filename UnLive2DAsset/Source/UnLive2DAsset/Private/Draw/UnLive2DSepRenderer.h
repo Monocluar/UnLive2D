@@ -69,6 +69,9 @@ public:
 	// 释放图片
 	void UnLoadTextures();
 
+	// 释放老材质
+	void UnOldMaterial();
+
 	// 获取图片
 	class UTexture2D* GetRandererStatesTexturesTextureIndex(const Csm::CubismModel* Live2DModel, const Csm::csmInt32& DrawableIndex) const;
 
