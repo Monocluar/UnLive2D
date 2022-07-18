@@ -609,9 +609,14 @@ void FUnLive2DRenderState::UpdateRenderBuffers()
 	{
 		check(IsInRenderingThread()); // 如果不是渲染线程请弄成渲染线程
 
-		if (!GetUnLive2D()->GetUnLive2DRawModel().IsValid()) return;
+		if (GetUnLive2D() == nullptr) return;
 
-		Csm::CubismModel* UnLive2DModel = GetUnLive2D()->GetUnLive2DRawModel().Pin()->GetModel();
+		TWeakPtr<FUnLive2DRawModel> WeakPtr = GetUnLive2D()->GetUnLive2DRawModel();
+
+		if (!WeakPtr.IsValid()) return;
+
+
+		Csm::CubismModel* UnLive2DModel = WeakPtr.Pin()->GetModel();
 
 		if (!UnLive2DModel->IsUsingMasking() || !UnLive2DClippingManager.IsValid()) return;
 
@@ -620,6 +625,7 @@ void FUnLive2DRenderState::UpdateRenderBuffers()
 		if (GetUseHighPreciseMask()) return;
 
 		UpdateMaskBufferRenderTarget(RHICmdList, UnLive2DModel, FeatureLevel);
+		if (!GetUnLive2D()->GetUnLive2DRawModel().IsValid()) return;
 		
 	});
 }

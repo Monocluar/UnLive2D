@@ -238,7 +238,12 @@ int32 SUnLive2DViewUI::OnPaint(const FPaintArgs& Args, const FGeometry& Allotted
 		// 限幅掩码・缓冲前处理方式的情况
 		UnLive2DRenderPtr->UpdateRenderBuffers();
 
-		const Csm::CubismModel* UnLive2DModel = UnLive2DWeak->GetUnLive2DRawModel().Pin()->GetModel();
+
+		TWeakPtr<FUnLive2DRawModel> WeakPtr = UnLive2DWeak->GetUnLive2DRawModel();
+
+		if (!WeakPtr.IsValid()) return LayerId;
+
+		const Csm::CubismModel* UnLive2DModel = WeakPtr.Pin()->GetModel();
 
 		const Csm::csmInt32 DrawableCount = UnLive2DModel->GetDrawableCount();
 		const Csm::csmInt32* RenderOrder = UnLive2DModel->GetDrawableRenderOrders();
