@@ -222,7 +222,7 @@ void FUnLive2DRawModel::OnUpDate(float InDeltaTime)
 
 	//通过拖拽改变
 	//通过拖拽调整脸部朝向
-	_model->AddParameterValue(ID_ParamAngleX, _dragX * 30); // 加-30到30的值
+	/*_model->AddParameterValue(ID_ParamAngleX, _dragX * 30); // 加-30到30的值
 	_model->AddParameterValue(ID_ParamAngleY, _dragY * 30);
 	_model->AddParameterValue(ID_ParamAngleZ, _dragX * _dragY * -30);
 
@@ -231,7 +231,7 @@ void FUnLive2DRawModel::OnUpDate(float InDeltaTime)
 
 	//通过拖曳调整眼睛方向
 	_model->AddParameterValue(ID_ParamEyeBallX, _dragX); // 从-1加1的值
-	_model->AddParameterValue(ID_ParamEyeBallY, _dragY);
+	_model->AddParameterValue(ID_ParamEyeBallY, _dragY);*/
 
 	// 呼吸
 	if (_breath != NULL)

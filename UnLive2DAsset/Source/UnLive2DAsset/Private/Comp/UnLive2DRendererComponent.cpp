@@ -208,11 +208,14 @@ void UUnLive2DRendererComponent::TickComponent(float DeltaTime, ELevelTick TickT
 
 	if (SourceUnLive2D == nullptr) return;
 
-	if (FUnLive2DRawModel* RawModel = SourceUnLive2D->GetUnLive2DRawModel().Pin().Get())
+	TWeakPtr<FUnLive2DRawModel> WeakPtr = GetUnLive2D()->GetUnLive2DRawModel();
+	if (WeakPtr.IsValid())
 	{
-		RawModel->OnUpDate(DeltaTime * SourceUnLive2D->PlayRate);
+
+		WeakPtr.Pin()->OnUpDate(DeltaTime * SourceUnLive2D->PlayRate);
 		UpdateRenderer();
 	}
+
 
 #endif
 }

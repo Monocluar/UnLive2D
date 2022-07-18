@@ -604,6 +604,7 @@ void FUnLive2DRenderState::UpdateRenderBuffers()
 	if (SelfWorld == nullptr) return;
 
 	ERHIFeatureLevel::Type FeatureLevel = SelfWorld->Scene->GetFeatureLevel();
+	if (!GetUnLive2D()->GetUnLive2DRawModel().IsValid()) return;
 
 	ENQUEUE_RENDER_COMMAND(UpdateRender)([this, FeatureLevel](FRHICommandListImmediate& RHICmdList)
 	{
@@ -625,7 +626,6 @@ void FUnLive2DRenderState::UpdateRenderBuffers()
 		if (GetUseHighPreciseMask()) return;
 
 		UpdateMaskBufferRenderTarget(RHICmdList, UnLive2DModel, FeatureLevel);
-		if (!GetUnLive2D()->GetUnLive2DRawModel().IsValid()) return;
 		
 	});
 }
@@ -729,7 +729,10 @@ void FUnLive2DRenderState::UpdateMaskBufferRenderTarget(FRHICommandListImmediate
 				const csmInt32 td_NumVertext = tp_Model->GetDrawableVertexCount(clipDrawIndex);
 
 				FIndexUnLiveBufferRHIRef IndexBufferRHI = MaskRenderBuffers.IndexBuffers.FindRef(clipDrawIndex);
+				if (!IndexBufferRHI.IsValid()) return;
+
 				FVertexUnLiveBufferRHIRef ScratchVertexBufferRHI = MaskRenderBuffers.VertexBuffers.FindRef(clipDrawIndex);
+				if (!ScratchVertexBufferRHI.IsValid()) return;
 #if UE_VERSION_OLDER_THAN(5,0,0)
 				FTextureRHIRef tsr_TextureRHI = tp_Texture->Resource->TextureRHI;
 #else
