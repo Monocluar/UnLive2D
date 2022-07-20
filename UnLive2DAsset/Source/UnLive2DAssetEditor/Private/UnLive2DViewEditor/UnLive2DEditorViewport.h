@@ -6,6 +6,7 @@
 
 class UUnLive2D;
 class FUnLive2DViewViewportClient;
+class FUnLive2DViewEditor;
 
 class SUnLive2DEditorViewport : public SEditorViewport, public ICommonEditorViewportToolbarInfoProvider
 {
@@ -41,4 +42,5 @@ private:
 
 	// Viewport client
 	TSharedPtr<FUnLive2DViewViewportClient> EditorViewportClient;
+
 };

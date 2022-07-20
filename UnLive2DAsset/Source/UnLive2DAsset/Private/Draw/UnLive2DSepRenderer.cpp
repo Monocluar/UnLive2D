@@ -173,25 +173,25 @@ FUnLive2DRenderState::~FUnLive2DRenderState()
 	UnOldMaterial();
 }
 
-void FUnLive2DRenderState::InitRender(TWeakObjectPtr<UUnLive2D> InNewUnLive2D)
+void FUnLive2DRenderState::InitRender(TWeakObjectPtr<UUnLive2D> InNewUnLive2D, TSharedPtr<FUnLive2DRawModel> InUnLive2DRawModel)
 {
-	if (!InNewUnLive2D.IsValid()) return;
+	if (!InNewUnLive2D.IsValid() || !InUnLive2DRawModel.IsValid()) return;
 
 	if (!OwnerCompWeak.IsValid() && !OwnerViewUIWeak.IsValid()) return;
 
 	UUnLive2D* SourceUnLive2D = InNewUnLive2D.Get();
 
-	InitRender(SourceUnLive2D);
+	InitRender(SourceUnLive2D, InUnLive2DRawModel);
 }
 
 
-void FUnLive2DRenderState::InitRender(const UUnLive2D* InNewUnLive2D)
+void FUnLive2DRenderState::InitRender(const UUnLive2D* InNewUnLive2D, TSharedPtr<FUnLive2DRawModel> InUnLive2DRawModel)
 {
 	if (InNewUnLive2D == nullptr) return;
 
 	if (!OwnerCompWeak.IsValid() && !OwnerViewUIWeak.IsValid()) return;
 
-	if (!InNewUnLive2D->GetUnLive2DRawModel().IsValid()) return;
+	if (!InUnLive2DRawModel.IsValid()) return;
 
 	if (UnLive2DClippingManager.IsValid())
 	{
@@ -199,11 +199,11 @@ void FUnLive2DRenderState::InitRender(const UUnLive2D* InNewUnLive2D)
 		UnOldMaterial();
 	}
 
-	LoadTextures();
+	LoadTextures(InUnLive2DRawModel);
 
-	Csm::CubismModel* UnLive2DModel = InNewUnLive2D->GetUnLive2DRawModel().Pin()->GetModel();
+	Csm::CubismModel* UnLive2DModel = InUnLive2DRawModel->GetModel();
 
-	InitRenderBuffers();
+	InitRenderBuffers(InUnLive2DRawModel);
 
 	UnLive2DClippingManager = MakeShared<CubismClippingManager_UE>();
 
@@ -250,7 +250,7 @@ bool FUnLive2DRenderState::GetUseHighPreciseMask() const
     return false;
 }
 
-void FUnLive2DRenderState::LoadTextures()
+void FUnLive2DRenderState::LoadTextures(TWeakPtr<FUnLive2DRawModel> InUnLive2DRawModel)
 {
 	if (!OwnerCompWeak.IsValid() && !OwnerViewUIWeak.IsValid()) return;
 
@@ -258,11 +258,9 @@ void FUnLive2DRenderState::LoadTextures()
 
 	if (SourceUnLive2D == nullptr) return;
 
-	const TWeakPtr<FUnLive2DRawModel> ModelWeakPtr = SourceUnLive2D->GetUnLive2DRawModel();
+	if (!InUnLive2DRawModel.IsValid()) return;
 
-	if (!ModelWeakPtr.IsValid()) return;
-
-	const TWeakPtr<Csm::ICubismModelSetting> ModelSettingWeakPtr = ModelWeakPtr.Pin()->GetModelSetting();
+	const TWeakPtr<Csm::ICubismModelSetting> ModelSettingWeakPtr = InUnLive2DRawModel.Pin()->GetModelSetting();
 
 	if (!ModelSettingWeakPtr.IsValid()) return;
 	TSharedPtr<Csm::ICubismModelSetting> ModelSetting = ModelSettingWeakPtr.Pin();
@@ -426,18 +424,19 @@ CubismClippingContext* FUnLive2DRenderState::GetClipContextInDrawableIndex(const
 	return nullptr;
 }
 
-void FUnLive2DRenderState::InitRenderBuffers()
+void FUnLive2DRenderState::InitRenderBuffers(TSharedPtr<FUnLive2DRawModel>& InUnLive2DRawModel)
 {
 	check(IsInGameThread());
 
-	ENQUEUE_RENDER_COMMAND(UnLiveRenderInit)([ThisSharedPtr = AsShared()](FRHICommandListImmediate& RHICmdList)
+	ENQUEUE_RENDER_COMMAND(UnLiveRenderInit)([ThisSharedPtr = AsShared(), InUnLive2DRawModel](FRHICommandListImmediate& RHICmdList)
 	{
 		check(IsInRenderingThread()); // 如果不是渲染线程请弄成渲染线程
 
+		if (!InUnLive2DRawModel.IsValid()) return;
 
 		if (!ThisSharedPtr->OwnerCompWeak.IsValid() && !ThisSharedPtr->OwnerViewUIWeak.IsValid()) return;
 
-		Csm::CubismModel* UnLive2DModel = ThisSharedPtr->GetUnLive2D()->GetUnLive2DRawModel().Pin()->GetModel();
+		Csm::CubismModel* UnLive2DModel = InUnLive2DRawModel->GetModel();
 
 		if (UnLive2DModel == nullptr) return;
 
@@ -586,7 +585,7 @@ FName FUnLive2DRenderState::GetDMaterialTextureParameterName() const
 	return FName();
 }
 
-void FUnLive2DRenderState::UpdateRenderBuffers()
+void FUnLive2DRenderState::UpdateRenderBuffers(TWeakPtr<FUnLive2DRawModel> InUnLive2DRawModel)
 {
 	check(IsInGameThread());
 
@@ -604,20 +603,15 @@ void FUnLive2DRenderState::UpdateRenderBuffers()
 	if (SelfWorld == nullptr) return;
 
 	ERHIFeatureLevel::Type FeatureLevel = SelfWorld->Scene->GetFeatureLevel();
-	if (!GetUnLive2D()->GetUnLive2DRawModel().IsValid()) return;
 
-	ENQUEUE_RENDER_COMMAND(UpdateRender)([this, FeatureLevel](FRHICommandListImmediate& RHICmdList)
+	ENQUEUE_RENDER_COMMAND(UpdateRender)([this, FeatureLevel, InUnLive2DRawModel](FRHICommandListImmediate& RHICmdList)
 	{
 		check(IsInRenderingThread()); // 如果不是渲染线程请弄成渲染线程
 
-		if (GetUnLive2D() == nullptr) return;
-
-		TWeakPtr<FUnLive2DRawModel> WeakPtr = GetUnLive2D()->GetUnLive2DRawModel();
-
-		if (!WeakPtr.IsValid()) return;
+		if (GetUnLive2D() == nullptr || !InUnLive2DRawModel.IsValid()) return;
 
 
-		Csm::CubismModel* UnLive2DModel = WeakPtr.Pin()->GetModel();
+		Csm::CubismModel* UnLive2DModel = InUnLive2DRawModel.Pin()->GetModel();
 
 		if (!UnLive2DModel->IsUsingMasking() || !UnLive2DClippingManager.IsValid()) return;
 

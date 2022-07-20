@@ -40,7 +40,7 @@ void OnMotionEnd(ACubismMotion* MotionData)
 	}
 }
 
-FUnLive2DRawModel::FUnLive2DRawModel(class UUnLive2D* Owner)
+FUnLive2DRawModel::FUnLive2DRawModel(const class UUnLive2D* Owner)
 	: Csm::CubismUserModel()
 	, OwnerLive2D(Owner)
 {

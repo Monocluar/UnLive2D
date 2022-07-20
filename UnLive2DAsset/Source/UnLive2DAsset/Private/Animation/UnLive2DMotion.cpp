@@ -5,6 +5,7 @@
 #include "Motion/CubismMotion.hpp"
 #endif
 #include "Animation/ActiveUnLive2DAnimBlueprint.h"
+#include "UnLive2DRendererComponent.h"
 
 UUnLive2DMotion::UUnLive2DMotion()
 {
@@ -96,14 +97,6 @@ void UUnLive2DMotion::Parse( FActiveUnLive2DAnimBlueprint& ActiveLive2DAnim, FUn
 	else
 	{
 
-	}
-}
-
-void UUnLive2DMotion::PlayMotion()
-{
-	if (UnLive2D)
-	{
-		UnLive2D->PlayMotion(this);
 	}
 }
 

@@ -47,6 +47,9 @@ public:
 
 	void SetUnLive2DAnimBeingEdited(UUnLive2DAnimBase* NewAnimBase);
 
+
+	TWeakObjectPtr<UUnLive2DRendererComponent> GetUnLive2DRenderComponent() const;
+
 private:
 	// Live2D动作
 	UUnLive2DAnimBase* UnLive2DAnimBeingEdited;

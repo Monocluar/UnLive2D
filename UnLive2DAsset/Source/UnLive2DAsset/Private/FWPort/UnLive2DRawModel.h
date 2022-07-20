@@ -15,7 +15,7 @@ class UUnLive2DExpression;
 class FUnLive2DRawModel : public CubismUserModel
 {
 public:
-    FUnLive2DRawModel(class UUnLive2D* Owner);
+    FUnLive2DRawModel(const class UUnLive2D* Owner);
     virtual ~FUnLive2DRawModel();
 
 private:
@@ -40,6 +40,8 @@ public:
     const char** GetLive2DModelParameterIds();
 
     const float* GetLive2DModelParameterValues();
+
+    FORCEINLINE const TWeakObjectPtr<const UUnLive2D> GetOwnerLive2D() const { return OwnerLive2D; };
 
 public:
 	// 拍打动画
@@ -115,7 +117,7 @@ private:
 
     TSharedPtr<CubismPhysics::Options> PhysicsData;
 
-    TWeakObjectPtr<UUnLive2D> OwnerLive2D;
+    TWeakObjectPtr<const UUnLive2D> OwnerLive2D;
 
 #if WITH_EDITOR
 private:

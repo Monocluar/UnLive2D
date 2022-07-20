@@ -208,11 +208,9 @@ void UUnLive2DRendererComponent::TickComponent(float DeltaTime, ELevelTick TickT
 
 	if (SourceUnLive2D == nullptr) return;
 
-	TWeakPtr<FUnLive2DRawModel> WeakPtr = GetUnLive2D()->GetUnLive2DRawModel();
-	if (WeakPtr.IsValid())
+	if (UnLive2DRawModel.IsValid())
 	{
-
-		WeakPtr.Pin()->OnUpDate(DeltaTime * SourceUnLive2D->PlayRate);
+		UnLive2DRawModel->OnUpDate(DeltaTime * SourceUnLive2D->PlayRate);
 		UpdateRenderer();
 	}
 
@@ -273,7 +271,7 @@ void UUnLive2DRendererComponent::PostEditChangeProperty(FPropertyChangedEvent& P
 				{
 					UnLive2DRander = MakeShared<FUnLive2DRenderState>(this);
 				}
-				UnLive2DRander->InitRender(SourceUnLive2D);
+				UnLive2DRander->InitRender(SourceUnLive2D, UnLive2DRawModel);
 			}
 			MarkRenderStateDirty();
 		}
@@ -286,17 +284,14 @@ void UUnLive2DRendererComponent::PostEditChangeProperty(FPropertyChangedEvent& P
 
 void UUnLive2DRendererComponent::UpdateRenderer()
 {
+	if (!UnLive2DRawModel.IsValid()) return;
 
-	TWeakPtr<FUnLive2DRawModel> WeakPtr = GetUnLive2D()->GetUnLive2DRawModel();
-
-	if (!WeakPtr.IsValid()) return;
-
-	Csm::CubismModel* UnLive2DModel = WeakPtr.Pin()->GetModel();
+	Csm::CubismModel* UnLive2DModel = UnLive2DRawModel->GetModel();
 
 	if (UnLive2DModel == nullptr || !UnLive2DRander.IsValid()) return;
 
 	// 限幅掩码・缓冲前处理方式的情况
-	UnLive2DRander->UpdateRenderBuffers();
+	UnLive2DRander->UpdateRenderBuffers(UnLive2DRawModel);
 	/*if (UnLive2DModel->IsUsingMasking() && UnLive2DClippingManager.IsValid())
 	{
 		UnLive2DClippingManager->SetupClippingContext()
@@ -345,16 +340,34 @@ void UUnLive2DRendererComponent::UpdateRenderer()
 
 void UUnLive2DRendererComponent::InitUnLive2D()
 {
-	if (!FSlateApplication::IsInitialized()) return;
-
 	UWorld* World = GetWorld();
 
 	if (World == nullptr || World->bIsTearingDown || SourceUnLive2D == nullptr ) return;
 
+
+	if (!UnLive2DRawModel.IsValid())
+	{
+		UnLive2DRawModel = SourceUnLive2D->CreateLive2DRawModel();
+		UnLive2DRawModel->OnMotionPlayEnd.BindUObject(this, &UUnLive2DRendererComponent::OnMotionPlayeEnd);
+	}
+	else
+	{
+		if (UnLive2DRawModel->GetOwnerLive2D().IsValid() && UnLive2DRawModel->GetOwnerLive2D().Get() != SourceUnLive2D)
+		{
+			UnLive2DRawModel.Reset();
+			UnLive2DRawModel = SourceUnLive2D->CreateLive2DRawModel();
+			UnLive2DRawModel->OnMotionPlayEnd.BindUObject(this, &UUnLive2DRendererComponent::OnMotionPlayeEnd);
+		}
+	}
+
 	if (!UnLive2DRander.IsValid())
 	{
 		UnLive2DRander = MakeShared<FUnLive2DRenderState>(this);
-		UnLive2DRander->InitRender(SourceUnLive2D);
+		UnLive2DRander->InitRender(SourceUnLive2D, UnLive2DRawModel);
+	}
+	else
+	{
+		UnLive2DRander->InitRender(SourceUnLive2D, UnLive2DRawModel);
 	}
 }
 
@@ -368,19 +381,55 @@ bool UUnLive2DRendererComponent::SetUnLive2D(UUnLive2D* NewUnLive2D)
 
 	SourceUnLive2D->OnUpDataUnLive2DProperty.BindUObject(this, &UUnLive2DRendererComponent::UpDataUnLive2DProperty);
 
-	if (UnLive2DRander.IsValid())
-	{
-		UnLive2DRander->InitRender(SourceUnLive2D);
-	}
-	else
-	{
-		InitUnLive2D();
-	}
+	InitUnLive2D();
 
-	SourceUnLive2D->SetOwnerObject(this);
+	//SourceUnLive2D->SetOwnerObject(this);
 
 	return true;
 }
+
+void UUnLive2DRendererComponent::PlayMotion(UUnLive2DMotion* InMotion)
+{
+	if (UnLive2DRawModel.IsValid())
+	{
+		UnLive2DRawModel->StartMotion(InMotion);
+	}
+}
+
+void UUnLive2DRendererComponent::PlayExpression(UUnLive2DExpression* InExpression)
+{
+	if (UnLive2DRawModel.IsValid())
+	{
+		UnLive2DRawModel->StartExpressions(InExpression);
+	}
+}
+
+#if WITH_EDITOR
+void UUnLive2DRendererComponent::GetModelParamterGroup()
+{
+	if (!UnLive2DRawModel.IsValid()) return;
+
+	Csm::CubismModel* UnLive2DModel = UnLive2DRawModel->GetModel();
+
+	if (UnLive2DModel == nullptr) return;
+
+	const Csm::csmInt32 ParameterCount = UnLive2DModel->GetParameterCount();
+
+	const csmChar** ParameterIds = UnLive2DRawModel->GetLive2DModelParameterIds();
+
+	TMap<FString, float> ParameterArr;
+
+	for (Csm::csmInt32 i = 0; i < ParameterCount; i++)
+	{
+		Csm::csmFloat32 Parameter = UnLive2DModel->GetParameterValue(i);
+		const char* ParameterIDName = ParameterIds[i];
+
+		ParameterArr.Add(FString(ParameterIDName), Parameter);
+	}
+
+	ParameterArr.Num();
+}
+#endif
 
 void UUnLive2DRendererComponent::UpDataUnLive2DProperty()
 {
@@ -395,5 +444,10 @@ void UUnLive2DRendererComponent::OnLevelRemovedFromWorld(ULevel* InLevel, UWorld
 	{
 		UnLive2DRander.Reset();
 	}
+}
+
+void UUnLive2DRendererComponent::OnMotionPlayeEnd_Implementation()
+{
+
 }
 

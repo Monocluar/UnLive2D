@@ -27,6 +27,8 @@
 #include "Misc/EngineVersionComparison.h"
 #include "AnimBlueprintGraph/UnLive2DAnimBlueprintEditorCommands.h"
 #include "GraphEditorActions.h"
+#include "UnLive2DViewportClient.h"
+#include "UnLive2DRendererComponent.h"
 
 const FName FUnLive2DAnimBlueprintEditorModes::AnimationBlueprintEditorMode("GraphName");
 const FName FUnLive2DAnimBlueprintEditorModes::AnimationBlueprintInterfaceEditorMode("Interface");
@@ -168,6 +170,15 @@ void FUnLive2DAnimationBlueprintEditor::PasteNodesHere(const FVector2D& Location
 bool FUnLive2DAnimationBlueprintEditor::GetBoundsForSelectedNodes(class FSlateRect& Rect, float Padding)
 {
 	return UnLive2DAnimBlueprintGraphEditor->GetBoundsForSelectedNodes( Rect, Padding);
+}
+
+TWeakObjectPtr<UUnLive2DRendererComponent> FUnLive2DAnimationBlueprintEditor::GetUnLive2DRenderComponent() const
+{
+	if (!ViewportPtr.IsValid()) return nullptr;
+	TSharedPtr<FUnLive2DViewportClient> UnLive2DViewportClient = StaticCastSharedPtr<FUnLive2DViewportClient>(ViewportPtr->GetViewportClient());
+	if (!UnLive2DViewportClient.IsValid()) return nullptr;
+
+	return UnLive2DViewportClient->GetUnLive2DRenderComponent();
 }
 
 FName FUnLive2DAnimationBlueprintEditor::GetToolkitFName() const
@@ -344,7 +355,7 @@ TSharedRef<SDockTab> FUnLive2DAnimationBlueprintEditor::SpawnTab_Viewport(const 
 {
 	return SNew(SDockTab)
 		[
-			SNew(SUnLive2DAnimBlueprintEditorViewport)
+			SAssignNew(ViewportPtr,SUnLive2DAnimBlueprintEditorViewport)
 			.UnLive2DAnimBlueprintEdited(this, &FUnLive2DAnimationBlueprintEditor::GetBlueprintObj)
 		];
 }
@@ -720,9 +731,9 @@ void FUnLive2DAnimationBlueprintEditor::PlayUnLive2DAnimBlueprint()
 {
 	if (UUnLive2DAnimBlueprintNode_MotionPlayer* SelectedMotion = Cast<UUnLive2DAnimBlueprintNode_MotionPlayer>(UnLive2DAnimBlueprintEdited->FirstNode))
 	{
-		if (SelectedMotion->GetUnLive2DMotion() == nullptr) return;
+		if (SelectedMotion->GetUnLive2DMotion() == nullptr || !GetUnLive2DRenderComponent().IsValid()) return;
 
-		SelectedMotion->GetUnLive2DMotion()->PlayMotion();
+		GetUnLive2DRenderComponent()->PlayMotion(SelectedMotion->GetUnLive2DMotion());
 	}
 	
 }
@@ -789,9 +800,9 @@ void FUnLive2DAnimationBlueprintEditor::PlaySingleNode(UEdGraphNode* Node)
 	{
 		if (UUnLive2DAnimBlueprintNode_MotionPlayer* SelectedMotion = Cast<UUnLive2DAnimBlueprintNode_MotionPlayer>(UnLive2DAnimBlueprintGraphNode->AnimBlueprintNode))
 		{
-			if (SelectedMotion->GetUnLive2DMotion() == nullptr) return;
+			if (SelectedMotion->GetUnLive2DMotion() == nullptr || !GetUnLive2DRenderComponent().IsValid()) return;
 
-			SelectedMotion->GetUnLive2DMotion()->PlayMotion();
+			GetUnLive2DRenderComponent()->PlayMotion(SelectedMotion->GetUnLive2DMotion());
 			
 		}
 	}

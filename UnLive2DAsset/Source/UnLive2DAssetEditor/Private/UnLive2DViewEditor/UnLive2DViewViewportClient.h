@@ -6,14 +6,13 @@
 class UUnLive2D;
 class UUnLive2DRendererComponent;
 class FCanvas;
+class SUnLive2DEditorViewport;
 
 class FUnLive2DViewViewportClient : public FUnLive2DViewportClient
 {
 public:
 	/** Constructor */
 	FUnLive2DViewViewportClient(TWeakObjectPtr<UUnLive2D> InUnLive2DBeingEdited);
-
-	virtual ~FUnLive2DViewViewportClient();
 
 protected:
 	// FViewportClient interface
@@ -50,14 +49,6 @@ protected:
 
 
 private:
-
-	TWeakObjectPtr<UUnLive2D> UnLive2DBeingEditedLastFrame;
-
-	TWeakObjectPtr<UUnLive2DRendererComponent> AnimatedRenderComponent;
-
-private:
-	// The preview scene
-	FPreviewScene OwnedPreviewScene;
 
 	// Should we show the sprite pivot?
 	bool bShowPivot;

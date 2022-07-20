@@ -12,6 +12,7 @@
 #include "Templates/SharedPointer.h"
 
 class SUnLive2DViewUI;
+class FUnLive2DRawModel;
 
 #if UE_VERSION_OLDER_THAN(5,0,0)
 typedef FMatrix FUnLiveMatrix;
@@ -56,15 +57,15 @@ public:
 
 public:
 
-	void InitRender(TWeakObjectPtr<class UUnLive2D> InNewUnLive2D);
+	void InitRender(TWeakObjectPtr<class UUnLive2D> InNewUnLive2D, TSharedPtr<FUnLive2DRawModel> InUnLive2DRawModel);
 
-	void InitRender(const UUnLive2D* InNewUnLive2D);
+	void InitRender(const UUnLive2D* InNewUnLive2D, TSharedPtr<FUnLive2DRawModel> InUnLive2DRawModel);
 
 	void NoLowPreciseMask(bool InVal) { bNoLowPreciseMask = InVal; }
 	bool GetUseHighPreciseMask() const;
 
 	// 图片加载
-	void LoadTextures();
+	void LoadTextures(TWeakPtr<FUnLive2DRawModel> InUnLive2DRawModel);
 
 	// 释放图片
 	void UnLoadTextures();
@@ -82,7 +83,7 @@ public:
 	class CubismClippingContext* GetClipContextInDrawableIndex(const Csm::csmUint32 DrawableIndex) const;
 
 	// 更新遮罩
-	void UpdateRenderBuffers();
+	void UpdateRenderBuffers(TWeakPtr<FUnLive2DRawModel> InUnLive2DRawModel);
 
 	// 更新遮罩纹理
 	void UpdateMaskBufferRenderTarget(FRHICommandListImmediate& RHICmdList, Csm::CubismModel* tp_Model, ERHIFeatureLevel::Type FeatureLevel);
@@ -99,7 +100,7 @@ public:
 protected:
 
 	// 初始化渲染
-	void InitRenderBuffers();
+	void InitRenderBuffers(TSharedPtr<FUnLive2DRawModel>& InUnLive2DRawModel);
 
 	const UUnLive2D* GetUnLive2D() const;
 

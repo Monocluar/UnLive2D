@@ -8,6 +8,7 @@
 
 class UUnLive2D;
 class UMaterialInterface;
+class FUnLive2DRawModel;
 
 UCLASS(ClassGroup = UnLive2D, meta = (BlueprintSpawnableComponent), hidecategories=(Material,Mesh))
 class UNLIVE2DASSET_API UUnLive2DRendererComponent : public UProceduralMeshComponent
@@ -41,8 +42,6 @@ protected:
 	UPROPERTY(Category = Live2D, EditAnywhere)
 		UUnLive2D* SourceUnLive2D;
 
-public:
-	TSharedPtr<class FUnLive2DRenderState> UnLive2DRander;
 
 public:
 	// Live2D颜色混合模式为CubismBlendMode_Normal使用的材质
@@ -68,6 +67,21 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Live2D")
 		UUnLive2D* GetUnLive2D(){ return SourceUnLive2D; }
 
+	// 播放动画
+	UFUNCTION(BlueprintCallable, Category = "Anim")
+		virtual void  PlayMotion(UUnLive2DMotion* InMotion);
+
+	UFUNCTION(BlueprintCallable, Category = "Anim")
+		virtual void PlayExpression(UUnLive2DExpression* InExpression);
+
+
+	FORCEINLINE TWeakPtr<FUnLive2DRawModel> GetUnLive2DRawModel() const { return UnLive2DRawModel; }
+
+#if WITH_EDITOR
+
+	void GetModelParamterGroup();
+#endif
+
 protected:
 
 	// 更新其他渲染参数
@@ -77,4 +91,16 @@ protected:
 	UFUNCTION()
 		void OnLevelRemovedFromWorld(ULevel* InLevel, UWorld* InWorld);
 
+	/** 动画播放完成 */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Anim")
+		void OnMotionPlayeEnd();
+
+private:
+
+	// Live2D模型设置模块
+	TSharedPtr<FUnLive2DRawModel> UnLive2DRawModel;
+
+public:
+	// Live2D渲染模块
+	TSharedPtr<class FUnLive2DRenderState> UnLive2DRander;
 };

@@ -42,17 +42,8 @@ public:
 	UPROPERTY(EditAnywhere, Category = Rendering)
 		FLinearColor TintColorAndOpacity;
 
-public:
-	// 播放动画
-	UFUNCTION(BlueprintCallable, Category = "Anim")
-		virtual void  PlayMotion(UUnLive2DMotion* InMotion);
-
-	UFUNCTION(BlueprintCallable, Category = "Anim")
-		virtual void PlayExpression(UUnLive2DExpression* InExpression);
 
 public:
-    // UnLive2D更新
-    FSimpleDelegate OnUpDataUnLive2D;
 
 	// 更新UnLive2D其他参数
 	FSimpleDelegate OnUpDataUnLive2DProperty;
@@ -63,17 +54,15 @@ protected:
 		void OnMotionPlayeEnd();
 
 public:
-    // 加载Live2D模型
-    void InitLive2D();
+
+	// 创建Live2D模型数据
+	TSharedPtr<FUnLive2DRawModel> CreateLive2DRawModel() const;
 
 #if WITH_EDITOR
 	// 加载Live2D文件数据
 	void LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& TexturePaths, TArray<FUnLive2DMotionData>& LoadMotionData, TMap<FString, FUnLiveByteData>& LoadExpressionData);
 
-	void GetModelParamterGroup();
 #endif
-
-    FORCEINLINE TWeakPtr<FUnLive2DRawModel> GetUnLive2DRawModel() const {return UnLive2DRawModel; }
 
     FORCEINLINE const FModelConfig& GetModelConfigData() { return ModelConfigData; }
 
@@ -93,17 +82,6 @@ public:
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
 
-
-public:
-
-	void SetOwnerObject(UObject* Owner);
-
-private:
-    // Live2D模型设置模块
-    TSharedPtr<FUnLive2DRawModel> UnLive2DRawModel;
-
-	// 附带该数据的渲染类（UnLive2DComponent 或其他）
-	TWeakObjectPtr<UObject> OwnerObject;
 
 protected:
 

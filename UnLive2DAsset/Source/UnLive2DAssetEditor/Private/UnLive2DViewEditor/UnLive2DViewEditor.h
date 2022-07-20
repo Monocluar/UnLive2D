@@ -9,6 +9,7 @@
 
 class SDockTab;
 class UUnLive2D;
+class UUnLive2DRendererComponent;
 
 class FUnLive2DViewEditor : public FWorkflowCentricApplication, public FGCObject, public FEditorUndoClient
 {
@@ -56,8 +57,9 @@ public:
 
 public:
 
-	UUnLive2D* GetUnLive2DBeingEdited() const { return UnLive2DBeingEdited; }
+	FORCEINLINE UUnLive2D* GetUnLive2DBeingEdited() const { return UnLive2DBeingEdited; }
 
+	FORCEINLINE TWeakObjectPtr<UUnLive2DRendererComponent> GetUnLive2DRenderComponent() const;
 protected:
 
 	TSharedRef<SDockTab> SpawnTab_Viewport(const FSpawnTabArgs& Args);

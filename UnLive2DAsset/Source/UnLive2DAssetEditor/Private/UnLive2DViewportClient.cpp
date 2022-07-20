@@ -4,6 +4,8 @@
 #include "ImageUtils.h"
 #include "CanvasTypes.h"
 #include "Misc/EngineVersionComparison.h"
+#include "UnLive2DRendererComponent.h"
+#include "UnLive2D.h"
 
 /*
 const FVector UnLive2DAxisX = FVector(1.0f, 0.0f, 0.0f);
@@ -12,14 +14,16 @@ FVector UnLive2DAxisX(1.0f, 0.0f, 0.0f);
 FVector UnLive2DAxisY(0.0f, 0.0f, 1.0f);
 FVector UnLive2DAxisZ(0.0f, 1.0f, 0.0f);*/
 
-FUnLive2DViewportClient::FUnLive2DViewportClient(const TWeakPtr<class SEditorViewport>& InEditorViewportWidget /*= nullptr*/)
+FUnLive2DViewportClient::FUnLive2DViewportClient(TWeakObjectPtr<UUnLive2D> InUnLive2DBeingEdited, const TWeakPtr<class SEditorViewport>& InEditorViewportWidget /*= nullptr*/)
 	: FEditorViewportClient(nullptr, nullptr, InEditorViewportWidget)
 	, CheckerboardTexture(nullptr)
 {
 	//bOwnsModeTools = true;
 	ZoomPos = FVector2D::ZeroVector;
 	ZoomAmount = 1.0f;
-	
+
+	UnLive2DBeingEditedLastFrame = InUnLive2DBeingEdited;
+	PreviewScene = &OwnedPreviewScene;
 
 	SetViewModes(VMI_Lit, VMI_Lit);
 	SetViewportType(LVT_OrthoXZ);
@@ -27,11 +31,15 @@ FUnLive2DViewportClient::FUnLive2DViewportClient(const TWeakPtr<class SEditorVie
 	bDeferZoomToUnLive2DIsInstant = true;
 
 	SetInitialViewTransform(LVT_Perspective, FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f).Rotation(), 0.0f);
+
+	AnimatedRenderComponent = NewObject<UUnLive2DRendererComponent>();
+	AnimatedRenderComponent->SetUnLive2D(UnLive2DBeingEditedLastFrame.Get());
+	PreviewScene->AddComponent(AnimatedRenderComponent.Get(), FTransform::Identity);
 }
 
 FUnLive2DViewportClient::~FUnLive2DViewportClient()
 {
-
+	AnimatedRenderComponent->DestroyComponent();
 }
 
 void FUnLive2DViewportClient::Tick(float DeltaSeconds)

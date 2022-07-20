@@ -11,15 +11,9 @@
 
 
 FUnLive2DViewViewportClient::FUnLive2DViewViewportClient(TWeakObjectPtr<UUnLive2D> InUnLive2DBeingEdited)
+	: FUnLive2DViewportClient(InUnLive2DBeingEdited)
 {
-	UnLive2DBeingEditedLastFrame = InUnLive2DBeingEdited;
-	PreviewScene = &OwnedPreviewScene;
-
 	SetRealtime(true);
-
-	AnimatedRenderComponent = NewObject<UUnLive2DRendererComponent>();
-	AnimatedRenderComponent->SetUnLive2D(UnLive2DBeingEditedLastFrame.Get());
-	PreviewScene->AddComponent(AnimatedRenderComponent.Get(), FTransform::Identity);
 
 	bShowPivot = true;
 	bShowSockets = true;
@@ -34,10 +28,6 @@ FUnLive2DViewViewportClient::FUnLive2DViewViewportClient(TWeakObjectPtr<UUnLive2
 
 }
 
-FUnLive2DViewViewportClient::~FUnLive2DViewViewportClient()
-{
-	AnimatedRenderComponent->DestroyComponent();
-}
 
 void FUnLive2DViewViewportClient::Draw(const FSceneView* View, FPrimitiveDrawInterface* PDI)
 {

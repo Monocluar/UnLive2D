@@ -8,6 +8,8 @@
 #include "IUnLive2DAssetFamily.h"
 #include "Misc/EngineVersionComparison.h"
 #include "SUnLive2DParameterGroup.h"
+#include "UnLive2DRendererComponent.h"
+#include "UnLive2DViewportClient.h"
 
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
@@ -76,6 +78,16 @@ FString FUnLive2DViewEditor::GetReferencerName() const
 	return TEXT("FUnLive2DViewEditor");
 }
 
+TWeakObjectPtr<UUnLive2DRendererComponent> FUnLive2DViewEditor::GetUnLive2DRenderComponent() const
+{
+
+	if (!ViewportPtr.IsValid()) return nullptr;
+	TSharedPtr<FUnLive2DViewportClient> UnLive2DViewportClient = StaticCastSharedPtr<FUnLive2DViewportClient>(ViewportPtr->GetViewportClient());
+	if (!UnLive2DViewportClient.IsValid()) return nullptr;
+
+	return UnLive2DViewportClient->GetUnLive2DRenderComponent();
+}
+
 void FUnLive2DViewEditor::InitUnLive2DViewEditor(const EToolkitMode::Type Mode, const TSharedPtr< IToolkitHost >& InitToolkitHost, UUnLive2D* InitUnLive2D)
 {
 	//GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->CloseOtherEditors(InitUnLive2D, this); // 关闭其他的Live2D编辑器
@@ -94,6 +106,7 @@ void FUnLive2DViewEditor::InitUnLive2DViewEditor(const EToolkitMode::Type Mode, 
 
 	ViewportPtr = SNew(SUnLive2DEditorViewport)
 		.UnLive2DBeingEdited(this, &FUnLive2DViewEditor::GetUnLive2DBeingEdited);
+
 
 	// Default layout Standalone_FlipbookEditor_Layout_v1
 	const TSharedRef<FTabManager::FLayout> StandaloneDefaultLayout = FTabManager::NewLayout("Standalone_UnLive2DViewEditor_Layout_v1.2")

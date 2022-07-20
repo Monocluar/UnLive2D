@@ -47,14 +47,7 @@ void SUnLive2DViewUI::SetUnLive2D(const UUnLive2D* InUnLive2D)
 {
 	UnLive2DWeak = InUnLive2D;
 
-	if (UnLive2DRenderPtr.IsValid())
-	{
-		UnLive2DRenderPtr->InitRender(InUnLive2D);
-	}
-	else
-	{
-		InitUnLive2D();
-	}
+	InitUnLive2D();
 	
 }
 
@@ -75,10 +68,32 @@ void SUnLive2DViewUI::InitUnLive2D()
 {
 	if (!FSlateApplication::IsInitialized()) return;
 
-	if (!UnLive2DRenderPtr.IsValid() && UnLive2DWeak.IsValid())
+	if (!UnLive2DWeak.IsValid()) return;
+
+
+	if (!UnLive2DRawModel.IsValid())
+	{
+		UnLive2DRawModel = UnLive2DWeak->CreateLive2DRawModel();
+		//UnLive2DRawModel->OnMotionPlayEnd.BindUObject(this, &SUnLive2DViewUI::OnMotionPlayeEnd);
+	}
+	else
+	{
+		if (UnLive2DRawModel->GetOwnerLive2D().IsValid() && UnLive2DRawModel->GetOwnerLive2D().Get() != UnLive2DWeak.Get())
+		{
+			UnLive2DRawModel.Reset();
+			UnLive2DRawModel = UnLive2DWeak->CreateLive2DRawModel();
+			//UnLive2DRawModel->OnMotionPlayEnd.BindUObject(this, &SUnLive2DViewUI::OnMotionPlayeEnd);
+		}
+	}
+
+	if (!UnLive2DRenderPtr.IsValid())
 	{
 		UnLive2DRenderPtr = MakeShared<FUnLive2DRenderState>(SharedThis(this));
-		UnLive2DRenderPtr->InitRender(UnLive2DWeak.Get());
+		UnLive2DRenderPtr->InitRender(UnLive2DWeak.Get(), UnLive2DRawModel);
+	}
+	else
+	{
+		UnLive2DRenderPtr->InitRender(UnLive2DWeak.Get(), UnLive2DRawModel);
 	}
 }
 
@@ -86,7 +101,7 @@ void SUnLive2DViewUI::UpDateMesh(const FGeometry& AllottedGeometry, int32 Drawab
 {
 	//TArray<SlateIndex> Live2DIndexData;
 
-	const Csm::CubismModel* UnLive2DModel = UnLive2DWeak->GetUnLive2DRawModel().Pin()->GetModel();
+	const Csm::CubismModel* UnLive2DModel = UnLive2DRawModel->GetModel();
 
 	csmFloat32 Opacity = UnLive2DModel->GetDrawableOpacity(DrawableIndex); // 获取不透明度
 
@@ -220,12 +235,9 @@ void SUnLive2DViewUI::Flush(int32 LayerId, FSlateWindowElementList& OutDrawEleme
 void SUnLive2DViewUI::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
 {
 	SLeafWidget::Tick(AllottedGeometry, InCurrentTime, InDeltaTime);
-	if (!UnLive2DWeak.IsValid()) return;
+	if (!UnLive2DWeak.IsValid() || !UnLive2DRawModel.IsValid()) return;
 
-	if (FUnLive2DRawModel* RawModel = UnLive2DWeak->GetUnLive2DRawModel().Pin().Get())
-	{
-		RawModel->OnUpDate(InDeltaTime * UnLive2DWeak->PlayRate);
-	}
+	UnLive2DRawModel->OnUpDate(InDeltaTime * UnLive2DWeak->PlayRate);
 }
 
 int32 SUnLive2DViewUI::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyCullingRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const
@@ -236,14 +248,11 @@ int32 SUnLive2DViewUI::OnPaint(const FPaintArgs& Args, const FGeometry& Allotted
 		SUnLive2DViewUI* ThisPtr = const_cast<SUnLive2DViewUI*>(this);
 
 		// 限幅掩码・缓冲前处理方式的情况
-		UnLive2DRenderPtr->UpdateRenderBuffers();
+		UnLive2DRenderPtr->UpdateRenderBuffers(UnLive2DRawModel);
 
+		if (!UnLive2DRawModel.IsValid()) return LayerId;
 
-		TWeakPtr<FUnLive2DRawModel> WeakPtr = UnLive2DWeak->GetUnLive2DRawModel();
-
-		if (!WeakPtr.IsValid()) return LayerId;
-
-		const Csm::CubismModel* UnLive2DModel = WeakPtr.Pin()->GetModel();
+		const Csm::CubismModel* UnLive2DModel = UnLive2DRawModel->GetModel();
 
 		const Csm::csmInt32 DrawableCount = UnLive2DModel->GetDrawableCount();
 		const Csm::csmInt32* RenderOrder = UnLive2DModel->GetDrawableRenderOrders();

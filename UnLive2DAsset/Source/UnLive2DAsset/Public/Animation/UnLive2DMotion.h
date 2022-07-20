@@ -43,8 +43,6 @@ public:
 
 	virtual void Parse(struct FActiveUnLive2DAnimBlueprint& ActiveLive2DAnim, struct FUnLive2DAnimParseParameters& ParseParams, const UPTRINT NodeAnimInstanceHash) override;
 
-	void PlayMotion();
-
 private:
 
 	struct FUnLive2DAnimInstance& HandleStart(struct FActiveUnLive2DAnimBlueprint& ActiveLive2DAnim, const UPTRINT NodeAnimInstanceHash) const;

@@ -1,5 +1,6 @@
 #include "SUnLive2DParameterGroup.h"
 #include "UnLive2D.h"
+#include "UnLive2DRendererComponent.h"
 
 void SUnLive2DParameterGroup::Construct(const FArguments& InArgs, TSharedPtr<FUnLive2DViewEditor> InUnLive2DEditor)
 {
@@ -12,7 +13,13 @@ void SUnLive2DParameterGroup::Construct(const FArguments& InArgs, TSharedPtr<FUn
 
 	if (UnLive2D == nullptr) return;
 
-	UnLive2D->GetModelParamterGroup();
+#if WITH_EDITOR
+	if (InUnLive2DEditor->GetUnLive2DRenderComponent().IsValid())
+	{
+		InUnLive2DEditor->GetUnLive2DRenderComponent()->GetModelParamterGroup();
+	}
+#endif
+	
 
 }
 

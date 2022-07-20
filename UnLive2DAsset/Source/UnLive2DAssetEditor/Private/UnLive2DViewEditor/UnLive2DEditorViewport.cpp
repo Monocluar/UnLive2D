@@ -2,6 +2,7 @@
 #include "UnLive2DViewViewportClient.h"
 #include "SUnLive2DEditorViewportToolbar.h"
 #include "Framework/MultiBox/MultiBoxExtender.h"
+#include "UnLive2DViewEditor.h"
 
 void SUnLive2DEditorViewport::Construct(const FArguments& InArgs)
 {

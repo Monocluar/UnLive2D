@@ -9,6 +9,8 @@
 #include "UnLive2D.h"
 #include "Misc/EngineVersionComparison.h"
 #include "Animation/UnLive2DExpression.h"
+#include "UnLive2DViewportClient.h"
+#include "UnLive2DRendererComponent.h"
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
 
@@ -239,6 +241,16 @@ void FUnLive2DAnimBaseViewEditor::SetUnLive2DAnimBeingEdited(UUnLive2DAnimBase* 
 	}
 }
 
+TWeakObjectPtr<UUnLive2DRendererComponent> FUnLive2DAnimBaseViewEditor::GetUnLive2DRenderComponent() const
+{
+	if (!ViewportPtr.IsValid()) return nullptr;
+
+	TSharedPtr<FUnLive2DViewportClient> UnLive2DViewportClient = StaticCastSharedPtr<FUnLive2DViewportClient>(ViewportPtr->GetViewportClient());
+	if (!UnLive2DViewportClient.IsValid()) return nullptr;
+
+	return UnLive2DViewportClient->GetUnLive2DRenderComponent();
+}
+
 void FUnLive2DAnimBaseViewEditor::BindCommands()
 {
 
@@ -271,15 +283,17 @@ void FUnLive2DAnimBaseViewEditor::ExtendToolbar()
 
 void FUnLive2DAnimBaseViewEditor::UpDataAnimBase()
 {
-	if (UnLive2DAnimBeingEdited == nullptr || UnLive2DAnimBeingEdited->UnLive2D == nullptr) return;
+	if (UnLive2DAnimBeingEdited == nullptr || UnLive2DAnimBeingEdited->UnLive2D == nullptr || !GetUnLive2DRenderComponent().IsValid()) return;
 
 	if (UUnLive2DMotion* Motion = Cast<UUnLive2DMotion>(UnLive2DAnimBeingEdited))
 	{
-		UnLive2DAnimBeingEdited->UnLive2D->PlayMotion(Motion);
+		//UnLive2DAnimBeingEdited->UnLive2D->PlayMotion(Motion);
+		GetUnLive2DRenderComponent()->PlayMotion(Motion);
 	}
 	else if (UUnLive2DExpression* Expression = Cast<UUnLive2DExpression>(UnLive2DAnimBeingEdited))
 	{
-		UnLive2DAnimBeingEdited->UnLive2D->PlayExpression(Expression);
+		//UnLive2DAnimBeingEdited->UnLive2D->PlayExpression(Expression);
+		GetUnLive2DRenderComponent()->PlayExpression(Expression);
 	}
 }
 

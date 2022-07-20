@@ -1,33 +1,19 @@
 #include "UnLive2DMotionViewportClient.h"
 #include "UnLive2DRendererComponent.h"
 #include "Animation/UnLive2DAnimBase.h"
+#include "SUnLive2DMotionEditorViewport.h"
 
 FUnLive2DAnimBaseViewportClient::FUnLive2DAnimBaseViewportClient(TWeakObjectPtr<UUnLive2DAnimBase> InUnLive2DAnimBaseBegingEdited)
+	: FUnLive2DViewportClient(InUnLive2DAnimBaseBegingEdited->UnLive2D)
 {
 	UnLive2DAnimBaseBeingEditedLastFrame = InUnLive2DAnimBaseBegingEdited;
-	PreviewScene = &OwnedPreviewScene;
 
 	SetRealtime(true);
-
-	if (InUnLive2DAnimBaseBegingEdited.IsValid())
-	{
-		AnimatedRenderComponent = NewObject<UUnLive2DRendererComponent>();
-		AnimatedRenderComponent->SetUnLive2D(InUnLive2DAnimBaseBegingEdited->UnLive2D);
-		PreviewScene->AddComponent(AnimatedRenderComponent.Get(), FTransform::Identity);
-	}
 
 	DrawHelper.bDrawGrid = false;
 
 	EngineShowFlags.DisableAdvancedFeatures();
 	EngineShowFlags.SetCompositeEditorPrimitives(true);
-}
-
-FUnLive2DAnimBaseViewportClient::~FUnLive2DAnimBaseViewportClient()
-{
-	if (AnimatedRenderComponent.IsValid())
-	{
-		AnimatedRenderComponent->DestroyComponent();
-	}
 }
 
 void FUnLive2DAnimBaseViewportClient::Tick(float DeltaSeconds)

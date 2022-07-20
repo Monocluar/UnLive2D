@@ -59,6 +59,8 @@ protected:
 	// UnLive2D 渲染模块
 	TSharedPtr<class FUnLive2DRenderState> UnLive2DRenderPtr;
 
+	// Live2D模型设置模块
+	TSharedPtr<class FUnLive2DRawModel> UnLive2DRawModel;
 private:
 
 	struct FCustomVertsData

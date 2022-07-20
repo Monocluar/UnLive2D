@@ -34,61 +34,27 @@ void UUnLive2D::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEve
 		}
 	}
 
-	if ((PropertyChangedEvent.ChangeType & EPropertyChangeType::Interactive) == 0 )
-	{
-		InitLive2D();
-	}
 	 
 }
 #endif
-
-
-void UUnLive2D::SetOwnerObject(UObject* Owner)
-{
-	OwnerObject = Owner;
-}
 
 void UUnLive2D::OnMotionPlayeEnd_Implementation()
 {
 }
 
-void UUnLive2D::PlayMotion(UUnLive2DMotion* InMotion)
+
+TSharedPtr<FUnLive2DRawModel> UUnLive2D::CreateLive2DRawModel() const
 {
-	if (UnLive2DRawModel.IsValid())
-	{
-		UnLive2DRawModel->StartMotion(InMotion);
-	}
-}
+	if (Live2DFileData.Live2DModelData.Num() == 0) return nullptr;
 
-void UUnLive2D::PlayExpression(UUnLive2DExpression* InExpression)
-{
-	if (UnLive2DRawModel.IsValid())
-	{
-		UnLive2DRawModel->StartExpressions(InExpression);
-	}
-}
-
-void UUnLive2D::InitLive2D()
-{
-	if (UnLive2DRawModel.IsValid()) return;
-
-	/*if (SourceFilePath.FilePath.IsEmpty()) return;*/
-	if (Live2DFileData.Live2DModelData.Num() == 0) return;
-
-	UnLive2DRawModel = MakeShared<FUnLive2DRawModel>(this);
-
-	const bool ReadSuc = UnLive2DRawModel->LoadAsset(Live2DFileData);
+	TSharedPtr<FUnLive2DRawModel> UnLive2DRawModel = MakeShared<FUnLive2DRawModel>(this);
+	const bool ReadSuc = UnLive2DRawModel->LoadAsset(Live2DFileData); 
 	if (!ReadSuc)
 	{
 		UnLive2DRawModel.Reset();
 	}
-	UnLive2DRawModel->OnMotionPlayEnd.BindUObject(this, &UUnLive2D::OnMotionPlayeEnd);
 
-	if (OnUpDataUnLive2D.IsBound())
-	{
-		OnUpDataUnLive2D.Execute();
-	}
-
+	return UnLive2DRawModel;
 }
 
 #if WITH_EDITOR
@@ -96,31 +62,6 @@ void UUnLive2D::LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString
 {
 	Live2DFileData = FUnLive2DRawModel::LoadLive2DFileDataFormPath(InPath, TexturePaths, LoadMotionData, LoadExpressionData);
 
-}
-
-void UUnLive2D::GetModelParamterGroup()
-{
-	if (!UnLive2DRawModel.IsValid()) return;
-
-	Csm::CubismModel* UnLive2DModel = UnLive2DRawModel->GetModel();
-
-	if (UnLive2DModel == nullptr) return;
-
-	const Csm::csmInt32 ParameterCount = UnLive2DModel->GetParameterCount();
-
-	const csmChar** ParameterIds = UnLive2DRawModel->GetLive2DModelParameterIds();
-
-	TMap<FString, float> ParameterArr;
-
-	for (Csm::csmInt32 i = 0; i < ParameterCount; i++)
-	{
-		Csm::csmFloat32 Parameter = UnLive2DModel->GetParameterValue(i);
-		const char* ParameterIDName = ParameterIds[i];
-
-		ParameterArr.Add(FString(ParameterIDName),Parameter);
-	}
-
-	ParameterArr.Num();
 }
 
 #endif
@@ -132,7 +73,7 @@ const FUnLive2DLoadData* UUnLive2D::GetUnLive2DLoadData()
 
 void UUnLive2D::OnTap(const FVector2D& TapPosition)
 {
-	if (!UnLive2DRawModel.IsValid()) return;
+	//if (!UnLive2DRawModel.IsValid()) return;
 
 	/*FVector2D PointPos = TapPosition / DrawSize;
 
@@ -141,7 +82,7 @@ void UUnLive2D::OnTap(const FVector2D& TapPosition)
 
 void UUnLive2D::OnDrag(const FVector2D& DragPosition)
 {
-	if (!UnLive2DRawModel.IsValid()) return;
+	//if (!UnLive2DRawModel.IsValid()) return;
 
 	/*FVector2D PointPos = DragPosition / DrawSize;
 
@@ -152,7 +93,6 @@ void UUnLive2D::PostLoad()
 {
 	Super::PostLoad();
 
-	InitLive2D();
 }
 
 #undef LOCTEXT_NAMESPACE

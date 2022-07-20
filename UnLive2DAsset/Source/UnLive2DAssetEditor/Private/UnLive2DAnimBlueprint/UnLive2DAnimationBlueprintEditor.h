@@ -121,6 +121,9 @@ public:
 	 */
 	virtual bool GetBoundsForSelectedNodes(class FSlateRect& Rect, float Padding);
 
+
+	FORCEINLINE TWeakObjectPtr<UUnLive2DRendererComponent> GetUnLive2DRenderComponent() const;
+
 private:
 
 	void BindCommands();
@@ -246,4 +249,6 @@ private:
 
 	/** Properties tab */
 	TSharedPtr<class IDetailsView> UnLive2DAnimProperties;
+
+	TSharedPtr<class SUnLive2DAnimBlueprintEditorViewport> ViewportPtr;
 };

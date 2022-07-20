@@ -1,20 +1,14 @@
 #include "UnLive2DAnimBlueprintViewportClient.h"
 #include "UnLive2DRendererComponent.h"
 #include "Animation/UnLive2DAnimBlueprint.h"
+#include "SUnLive2DAnimBlueprintEditorViewport.h"
 
 FUnLive2DAnimBlueprintViewportClient::FUnLive2DAnimBlueprintViewportClient(TWeakObjectPtr<UUnLive2DAnimBlueprint> InUnLive2DAnimBlueprintEdited)
+	: FUnLive2DViewportClient(InUnLive2DAnimBlueprintEdited->TargetUnLive2D)
 {
 	UnLive2DAnimBlueprintEditedLastFrame = InUnLive2DAnimBlueprintEdited;
-	PreviewScene = &OwnedPreviewScene;
 
 	SetRealtime(true);
-
-	if (InUnLive2DAnimBlueprintEdited.IsValid())
-	{
-		AnimatedRenderComponent = NewObject<UUnLive2DRendererComponent>();
-		AnimatedRenderComponent->SetUnLive2D(InUnLive2DAnimBlueprintEdited->TargetUnLive2D);
-		PreviewScene->AddComponent(AnimatedRenderComponent.Get(), FTransform::Identity);
-	}
 
 	DrawHelper.bDrawGrid = false;
 
@@ -22,13 +16,6 @@ FUnLive2DAnimBlueprintViewportClient::FUnLive2DAnimBlueprintViewportClient(TWeak
 	EngineShowFlags.SetCompositeEditorPrimitives(true);
 }
 
-FUnLive2DAnimBlueprintViewportClient::~FUnLive2DAnimBlueprintViewportClient()
-{
-	if (AnimatedRenderComponent.IsValid())
-	{
-		AnimatedRenderComponent->DestroyComponent();
-	}
-}
 
 void FUnLive2DAnimBlueprintViewportClient::Tick(float DeltaSeconds)
 {
