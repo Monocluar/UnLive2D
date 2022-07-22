@@ -102,10 +102,16 @@ void FUnLive2DViewportClient::DestroyCheckerboardTexture()
 {
 	if (CheckerboardTexture)
 	{
-		if (CheckerboardTexture->GetResource())
-		{
-			CheckerboardTexture->ReleaseResource();
-		}
+
+#if UE_VERSION_OLDER_THAN(4,27,0)
+	if (CheckerboardTexture->Resource)
+#else
+	if (CheckerboardTexture->GetResource())
+#endif
+	{
+		CheckerboardTexture->ReleaseResource();
+	}
+		
 #if UE_VERSION_OLDER_THAN(5,0,0)
 		CheckerboardTexture->MarkPendingKill();
 #else

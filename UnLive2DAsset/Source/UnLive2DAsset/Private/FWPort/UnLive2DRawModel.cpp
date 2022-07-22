@@ -282,13 +282,14 @@ FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& I
 	FPaths::Split(InPath, FileHomeDir, FileName, FileExtentsion);
 	LoadData.Live2DModelData = FileData;
 	CubismModelSettingJson* JsonData = new CubismModelSettingJson(FileData.GetData(), FileData.Num());
-
+	FString PlayerName;
 	// 立体模块
 	if (strcmp(JsonData->GetModelFileName(), "") != 0)
 	{
 		csmString Path = JsonData->GetModelFileName();
+		PlayerName = UTF8_TO_TCHAR(Path.GetRawString());
 
-		FString CubismModelPath = FileHomeDir / UTF8_TO_TCHAR(Path.GetRawString());
+		FString CubismModelPath = FileHomeDir / PlayerName;
 
 		TArray<uint8> CubismModelFile;
 		const bool ReadSuc = FFileHelper::LoadFileToArray(CubismModelFile, *CubismModelPath);

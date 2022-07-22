@@ -31,16 +31,11 @@ struct FUnLive2DSlateMaterialBrush : public FSlateBrush
 	}
 };
 
-void SUnLive2DViewUI::Construct(const FArguments& InArgs)
+void SUnLive2DViewUI::Construct(const FArguments& InArgs, UUnLive2DViewRendererUI* InRendererUI)
 {
-	OwnerWidget = InArgs._OwnerWidget;
+	OwnerWidget = InRendererUI;
 
 	InitUnLive2D();
-}
-
-SUnLive2DViewUI::~SUnLive2DViewUI()
-{
-	UnLive2DRenderPtr.Reset();
 }
 
 void SUnLive2DViewUI::SetUnLive2D(const UUnLive2D* InUnLive2D)
@@ -58,9 +53,23 @@ const UUnLive2D* SUnLive2DViewUI::GetUnLive2D() const
 
 void SUnLive2DViewUI::ReleaseRenderStateData()
 {
-	if (UnLive2DRenderPtr.IsValid())
+	UnLive2DRenderPtr.Reset();
+	UnLive2DRawModel.Reset();
+}
+
+void SUnLive2DViewUI::PlayMotion(class UUnLive2DMotion* InMotion)
+{
+	if (UnLive2DRawModel.IsValid())
 	{
-		UnLive2DRenderPtr.Reset();
+		UnLive2DRawModel->StartMotion(InMotion);
+	}
+}
+
+void SUnLive2DViewUI::PlayExpression(class UUnLive2DExpression* InExpression)
+{
+	if (UnLive2DRawModel.IsValid())
+	{
+		UnLive2DRawModel->StartExpressions(InExpression);
 	}
 }
 
@@ -69,7 +78,6 @@ void SUnLive2DViewUI::InitUnLive2D()
 	if (!FSlateApplication::IsInitialized()) return;
 
 	if (!UnLive2DWeak.IsValid()) return;
-
 
 	if (!UnLive2DRawModel.IsValid())
 	{

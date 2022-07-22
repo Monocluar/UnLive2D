@@ -56,7 +56,8 @@ class FUnLive2DMaskShader : public FGlobalShader
 public:
 	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
 	{
-		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
+		//return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
+		return true;
 	}
 
 	static void ModifyCompilationEnvironment(const FGlobalShaderPermutationParameters& Parameters, FShaderCompilerEnvironment& OutEnvironment)
@@ -585,6 +586,20 @@ FName FUnLive2DRenderState::GetDMaterialTextureParameterName() const
 	return FName();
 }
 
+void FUnLive2DRenderState::UnLive2DFillMaskParameter(CubismClippingContext* clipContext, FUnLiveMatrix& ts_MartixForMask, FUnLiveVector4& ts_BaseColor, FUnLiveVector4& ts_ChanelFlag)
+{
+	// チャンネル
+	const csmInt32 channelNo = clipContext->_layoutChannelNo;
+	// チャンネルをRGBAに変換
+	Csm::Rendering::CubismRenderer::CubismTextureColor* colorChannel = UnLive2DClippingManager->GetChannelFlagAsColor(channelNo);
+
+	csmRectF* rect = clipContext->_layoutBounds;
+
+	ts_MartixForMask = ConvertCubismMatrix(clipContext->_matrixForMask);
+	ts_BaseColor = FUnLiveVector4(rect->X * 2.0f - 1.0f, rect->Y * 2.0f - 1.0f, rect->GetRight() * 2.0f - 1.0f, rect->GetBottom() * 2.0f - 1.0f);
+	ts_ChanelFlag = FUnLiveVector4(colorChannel->R, colorChannel->G, colorChannel->B, colorChannel->A);
+}
+
 void FUnLive2DRenderState::UpdateRenderBuffers(TWeakPtr<FUnLive2DRawModel> InUnLive2DRawModel)
 {
 	check(IsInGameThread());
@@ -622,20 +637,6 @@ void FUnLive2DRenderState::UpdateRenderBuffers(TWeakPtr<FUnLive2DRawModel> InUnL
 		UpdateMaskBufferRenderTarget(RHICmdList, UnLive2DModel, FeatureLevel);
 		
 	});
-}
-
-void UnLive2DFillMaskParameter(CubismClippingContext* clipContext, CubismClippingManager_UE* _clippingManager, FUnLiveMatrix& ts_MartixForMask, FUnLiveVector4& ts_BaseColor, FUnLiveVector4& ts_ChanelFlag)
-{
-	// チャンネル
-	const csmInt32 channelNo = clipContext->_layoutChannelNo;
-	// チャンネルをRGBAに変換
-	Csm::Rendering::CubismRenderer::CubismTextureColor* colorChannel = _clippingManager->GetChannelFlagAsColor(channelNo);
-
-	csmRectF* rect = clipContext->_layoutBounds;
-
-	ts_MartixForMask = ConvertCubismMatrix(clipContext->_matrixForMask);
-	ts_BaseColor = FUnLiveVector4(rect->X * 2.0f - 1.0f, rect->Y * 2.0f - 1.0f, rect->GetRight() * 2.0f - 1.0f, rect->GetBottom() * 2.0f - 1.0f);
-	ts_ChanelFlag = FUnLiveVector4(colorChannel->R, colorChannel->G, colorChannel->B, colorChannel->A);
 }
 
 void FUnLive2DRenderState::UpdateMaskBufferRenderTarget(FRHICommandListImmediate& RHICmdList, Csm::CubismModel* tp_Model, ERHIFeatureLevel::Type FeatureLevel)
@@ -746,7 +747,7 @@ void FUnLive2DRenderState::UpdateMaskBufferRenderTarget(FRHICommandListImmediate
 				FUnLiveVector4 ts_BaseColor;
 				FUnLiveVector4 ts_ChanelFlag;
 
-				UnLive2DFillMaskParameter(clipContext, UnLive2DClippingManager.Get(), ts_MartixForMask, ts_BaseColor, ts_ChanelFlag);
+				UnLive2DFillMaskParameter(clipContext, ts_MartixForMask, ts_BaseColor, ts_ChanelFlag);
 
 				VertexShader->SetParameters(RHICmdList, VertexShader.GetVertexShader(), ts_MartixForMask, ts_BaseColor, ts_ChanelFlag, tsr_TextureRHI);
 				PixelShader->SetParameters(RHICmdList, PixelShader.GetPixelShader(), ts_MartixForMask, ts_BaseColor, ts_ChanelFlag, tsr_TextureRHI);

@@ -71,6 +71,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Anim")
 		virtual void  PlayMotion(UUnLive2DMotion* InMotion);
 
+	// 播放表情
 	UFUNCTION(BlueprintCallable, Category = "Anim")
 		virtual void PlayExpression(UUnLive2DExpression* InExpression);
 

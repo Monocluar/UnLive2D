@@ -9,16 +9,17 @@
 
 class SUnLive2DViewUI;
 class UUnLive2D;
+class UUnLive2DMotion;
+class UUnLive2DExpression;
 
 UCLASS()
 class UNLIVE2DASSET_API UUnLive2DViewRendererUI : public UWidget
 {
 	GENERATED_UCLASS_BODY()
 
-
-public:
+protected:
 	// UnLive2D资源
-	UPROPERTY(Category = Live2D, EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, Category = Live2D)
 		UUnLive2D* SourceUnLive2D;
 
 public:
@@ -35,12 +36,27 @@ public:
 		UMaterialInterface* UnLive2DMultiplyMaterial;
 
 	// 材质读取图片参数名
-	UPROPERTY(Category = Rendering, EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Rendering)
 		FName TextureParameterName;
 
-protected:
+public:
+
+
+	// 播放动画
+	UFUNCTION(BlueprintCallable, Category = "Anim")
+		virtual void  PlayMotion(UUnLive2DMotion* InMotion);
+
+	// 播放表情
+	UFUNCTION(BlueprintCallable, Category = "Anim")
+		virtual void PlayExpression(UUnLive2DExpression* InExpression);
+
 #if WITH_EDITOR
+protected:
 	virtual const FText GetPaletteCategory() override;
+#endif
+
+#if	WITH_ACCESSIBILITY
+	virtual TSharedPtr<SWidget> GetAccessibleWidget() const override;
 #endif
 
 protected:

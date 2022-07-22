@@ -131,7 +131,7 @@ UObject* UUnLive2DFactory::FactoryCreateFile(UClass* InClass, UObject* InParent,
 			{
 				FAssetToolsModule& AssetToolsModule = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools");
 
-				const FString TargetTexturePath = FPackageName::GetLongPackagePath(InParent->GetOutermost()->GetPathName()) / TEXT("Textures");
+				const FString TargetTexturePath = FPackageName::GetLongPackagePath(InParent->GetOutermost()->GetPathName()) / InName.ToString() / TEXT("Textures");
 
 				TArray<UObject*> ImportedAssets = AssetToolsModule.Get().ImportAssets(TexturePaths, TargetTexturePath);
 
@@ -149,7 +149,7 @@ UObject* UUnLive2DFactory::FactoryCreateFile(UClass* InClass, UObject* InParent,
 				
 				for (FUnLive2DMotionData& Item : LoadMotionDataArr)
 				{
-					UUnLive2DMotion* Motion = CreateAsset<UUnLive2DMotion>(InParent->GetOutermost()->GetPathName(), TEXT("Motions"), Item.GetFPathName());
+					UUnLive2DMotion* Motion = CreateAsset<UUnLive2DMotion>(InParent->GetOutermost()->GetPathName(), InName.ToString() / TEXT("Motions"), Item.GetFPathName());
 					Motion->SetLive2DMotionData(Item);
 					Motion->UnLive2D = UnLive2DPtr;
 				}
@@ -159,7 +159,7 @@ UObject* UUnLive2DFactory::FactoryCreateFile(UClass* InClass, UObject* InParent,
 			{
 				for (auto& Item : LoadExpressionArr)
 				{
-					UUnLive2DExpression* Expression = CreateAsset<UUnLive2DExpression>(InParent->GetOutermost()->GetPathName(), TEXT("Expression"), Item.Key);
+					UUnLive2DExpression* Expression = CreateAsset<UUnLive2DExpression>(InParent->GetOutermost()->GetPathName(), InName.ToString() / TEXT("Expression"), Item.Key);
 					Expression->SetLive2DExpressionData(Item.Value);
 					Expression->UnLive2D = UnLive2DPtr;
 				}

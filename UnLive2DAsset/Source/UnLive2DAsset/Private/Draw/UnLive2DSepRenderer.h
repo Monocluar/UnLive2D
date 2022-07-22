@@ -43,7 +43,7 @@ public:
 	}
 };
 
-class FUnLive2DRenderState : public TSharedFromThis<FUnLive2DRenderState>	
+class FUnLive2DRenderState : public TSharedFromThis<FUnLive2DRenderState>
 {
 public:
 
@@ -107,6 +107,8 @@ protected:
 	UMaterialInstanceDynamic* GetUnLive2DMaterial(int32 InModeIndex) const;
 
 	FORCEINLINE FName GetDMaterialTextureParameterName() const;
+
+	void UnLive2DFillMaskParameter(class CubismClippingContext* clipContext, FUnLiveMatrix& ts_MartixForMask, FUnLiveVector4& ts_BaseColor, FUnLiveVector4& ts_ChanelFlag);
 
 private:
 

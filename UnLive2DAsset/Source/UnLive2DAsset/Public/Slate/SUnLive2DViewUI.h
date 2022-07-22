@@ -7,6 +7,7 @@
 #include "Widgets/DeclarativeSyntaxSupport.h"
 #include "UnLive2DViewRendererUI.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "UObject/GCObject.h"
 
 class UUnLive2D;
 
@@ -14,15 +15,11 @@ class UNLIVE2DASSET_API SUnLive2DViewUI : public SLeafWidget
 {
 public:
 	SLATE_BEGIN_ARGS(SUnLive2DViewUI)
-		: _OwnerWidget(nullptr)
 	{}
-	SLATE_ARGUMENT(UUnLive2DViewRendererUI*, OwnerWidget)
 	SLATE_END_ARGS()
 
 public:
-	void Construct( const FArguments& InArgs );
-
-	virtual ~SUnLive2DViewUI();
+	void Construct( const FArguments& InArgs , class UUnLive2DViewRendererUI* InRendererUI);
 
 public:
 
@@ -31,6 +28,10 @@ public:
 	const UUnLive2D* GetUnLive2D() const;
 
 	void ReleaseRenderStateData();
+
+	void  PlayMotion(class UUnLive2DMotion* InMotion);
+
+	void PlayExpression(class UUnLive2DExpression* InExpression);
 
 protected:
 
