@@ -31,6 +31,8 @@ const csmChar* HitAreaNameBody = "Body";
 
 TWeakObjectPtr<UUnLive2DMotion> CurrentPlayMotion = nullptr;
 
+static bool bInitPlay = false;
+
 void OnMotionEnd(ACubismMotion* MotionData)
 {
 	UE_LOG(LogUnLive2D, Log, TEXT("播放动画完成"));
@@ -57,6 +59,8 @@ FUnLive2DRawModel::FUnLive2DRawModel(const class UUnLive2D* Owner)
 
 	Live2DModelSetting = nullptr;
 	PhysicsData = nullptr;
+
+	bPlayBreath = true;
 }
 
 FUnLive2DRawModel::~FUnLive2DRawModel()
@@ -187,23 +191,24 @@ void FUnLive2DRawModel::OnUpDate(float InDeltaTime)
 		return;
 	}
 
-	// 装入上次保存的状态
-	_model->LoadParameters();
+	if (!bInitPlay)
+	{
+		// 装入上次保存的状态
+		_model->LoadParameters();
+	}
 
 	// 动作是否完成
 	if (_motionManager->IsFinished())
 	{
 		OnMotionPlayEnd.ExecuteIfBound();
 
-		// 没有动作的时候，从Idle动作组里面随机选择一个播放
-		//StartRandomMotion(MotionGroupIdle, PriorityIdle);
 	}
 	else
 	{
 		MotionUpdated = _motionManager->UpdateMotion(_model, InDeltaTime); // 更新动作
 	}
 
-	_model->SaveParameters(); // 保存状态
+	//_model->SaveParameters(); // 保存状态
 
 	// 眨眼
 	if (!MotionUpdated)
@@ -220,21 +225,8 @@ void FUnLive2DRawModel::OnUpDate(float InDeltaTime)
 		_expressionManager->UpdateMotion(_model, InDeltaTime); // 通过表情更新参数（相对变化）
 	}
 
-	//通过拖拽改变
-	//通过拖拽调整脸部朝向
-	/*_model->AddParameterValue(ID_ParamAngleX, _dragX * 30); // 加-30到30的值
-	_model->AddParameterValue(ID_ParamAngleY, _dragY * 30);
-	_model->AddParameterValue(ID_ParamAngleZ, _dragX * _dragY * -30);
-
-	//通过拖曳调整身体方向
-	_model->AddParameterValue(ID_ParamBodyAngleX, _dragX * 10); // 加-10到10的值
-
-	//通过拖曳调整眼睛方向
-	_model->AddParameterValue(ID_ParamEyeBallX, _dragX); // 从-1加1的值
-	_model->AddParameterValue(ID_ParamEyeBallY, _dragY);*/
-
 	// 呼吸
-	if (_breath != NULL)
+	if (_breath != NULL && bPlayBreath)
 	{
 		_breath->UpdateParameters(_model, InDeltaTime);
 	}
@@ -246,7 +238,7 @@ void FUnLive2DRawModel::OnUpDate(float InDeltaTime)
 	}
 
 	// 唇型设置
-	if (_lipSync)
+	/*if (_lipSync)
 	{
 		csmFloat32 value = 0; // 实时进行唇型同步时，从系统取得音量，在0～1的范围内输入值。
 
@@ -254,7 +246,7 @@ void FUnLive2DRawModel::OnUpDate(float InDeltaTime)
 		{
 			_model->AddParameterValue(LipSyncIds[i], value, 0.8f);
 		}
-	}
+	}*/
 
 	// 姿势设置
 	if (_pose != NULL)
@@ -620,6 +612,11 @@ float FUnLive2DRawModel::StartExpressions(UUnLive2DExpression* InExpressions)
 	_expressionManager->StartMotionPriority(FindPtr, false, PriorityForce);
 
 	return 0.f;
+}
+
+void FUnLive2DRawModel::SetBreathAnimAutoPlay(bool bNewBreathPlay)
+{
+	bPlayBreath = bNewBreathPlay;
 }
 
 Csm::CubismMotionQueueEntryHandle FUnLive2DRawModel::StartRandomMotion(const Csm::csmChar* Group, Csm::csmInt32 Priority)

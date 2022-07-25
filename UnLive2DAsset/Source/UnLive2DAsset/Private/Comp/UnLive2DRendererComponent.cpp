@@ -405,7 +405,39 @@ void UUnLive2DRendererComponent::PlayExpression(UUnLive2DExpression* InExpressio
 }
 
 #if WITH_EDITOR
-void UUnLive2DRendererComponent::GetModelParamterGroup()
+bool UUnLive2DRendererComponent::GetModelParamterGroup(TArray<FUnLive2DParameterData>& ParameterArr)
+{
+	if (!UnLive2DRawModel.IsValid()) return false;
+
+	Csm::CubismModel* UnLive2DModel = UnLive2DRawModel->GetModel();
+
+	UnLive2DRawModel->SetBreathAnimAutoPlay(false);
+
+	if (UnLive2DModel == nullptr) return false;
+
+	ParameterArr.Empty();
+
+	const Csm::csmInt32 ParameterCount = UnLive2DModel->GetParameterCount();
+
+	const csmChar** ParameterIds = UnLive2DRawModel->GetLive2DModelParameterIds();
+
+	for (Csm::csmInt32 i = 0; i < ParameterCount; i++)
+	{
+		const char* ParameterIDName = ParameterIds[i];
+
+		ParameterArr.Add(FUnLive2DParameterData(
+		i,
+		ParameterIDName,
+		UnLive2DModel->GetParameterValue(i), // 当前值
+		UnLive2DModel->GetParameterDefaultValue(i), // 默认值
+		UnLive2DModel->GetParameterMinimumValue(i), // 最小值
+		UnLive2DModel->GetParameterMaximumValue(i))); // 最大值
+	}
+
+	return true;
+}
+
+void UUnLive2DRendererComponent::SetModelParamterValue(int32  ParameterID, float NewParameter)
 {
 	if (!UnLive2DRawModel.IsValid()) return;
 
@@ -413,22 +445,11 @@ void UUnLive2DRendererComponent::GetModelParamterGroup()
 
 	if (UnLive2DModel == nullptr) return;
 
-	const Csm::csmInt32 ParameterCount = UnLive2DModel->GetParameterCount();
+	UnLive2DModel->SetParameterValue(ParameterID, NewParameter);
 
-	const csmChar** ParameterIds = UnLive2DRawModel->GetLive2DModelParameterIds();
-
-	TMap<FString, float> ParameterArr;
-
-	for (Csm::csmInt32 i = 0; i < ParameterCount; i++)
-	{
-		Csm::csmFloat32 Parameter = UnLive2DModel->GetParameterValue(i);
-		const char* ParameterIDName = ParameterIds[i];
-
-		ParameterArr.Add(FString(ParameterIDName), Parameter);
-	}
-
-	ParameterArr.Num();
+	UnLive2DModel->SaveParameters();
 }
+
 #endif
 
 void UUnLive2DRendererComponent::UpDataUnLive2DProperty()

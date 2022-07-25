@@ -62,6 +62,9 @@ public:
     // 播放Live2D表情
     float StartExpressions(UUnLive2DExpression* InExpressions);
 
+    // 设置闲置呼吸动画播放
+    void SetBreathAnimAutoPlay(bool bNewBreathPlay);
+
 private:
 
     // 释放动画系统
@@ -118,6 +121,8 @@ private:
     TSharedPtr<CubismPhysics::Options> PhysicsData;
 
     TWeakObjectPtr<const UUnLive2D> OwnerLive2D;
+
+    bool bPlayBreath;
 
 #if WITH_EDITOR
 private:

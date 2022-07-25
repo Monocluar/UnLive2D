@@ -4,6 +4,11 @@
 #include "CoreMinimal.h"
 #include "Components/MeshComponent.h"
 #include "ProceduralMeshComponent.h"
+
+#if WITH_EDITOR
+#include "CubismBpLib.h"
+#endif // WITH_EDITOR
+
 #include "UnLive2DRendererComponent.generated.h"
 
 class UUnLive2D;
@@ -79,8 +84,9 @@ public:
 	FORCEINLINE TWeakPtr<FUnLive2DRawModel> GetUnLive2DRawModel() const { return UnLive2DRawModel; }
 
 #if WITH_EDITOR
+	 bool GetModelParamterGroup(TArray<FUnLive2DParameterData>& ParameterArr);
 
-	void GetModelParamterGroup();
+	 void SetModelParamterValue(int32  ParameterID, float NewParameter);
 #endif
 
 protected:
