@@ -40,8 +40,6 @@ public:
 		FName TextureParameterName;
 
 public:
-
-
 	// 播放动画
 	UFUNCTION(BlueprintCallable, Category = "Anim")
 		virtual void  PlayMotion(UUnLive2DMotion* InMotion);
@@ -49,6 +47,16 @@ public:
 	// 播放表情
 	UFUNCTION(BlueprintCallable, Category = "Anim")
 		virtual void PlayExpression(UUnLive2DExpression* InExpression);
+
+public:
+
+	FORCEINLINE const UUnLive2D* GetUnLive2D() const { return SourceUnLive2D; };
+
+protected:
+
+	virtual void SlateUpDataRender(TWeakPtr<class FUnLive2DRawModel> InUnLive2DRawModel);
+
+	void InitUnLive2DRender();
 
 #if WITH_EDITOR
 protected:
@@ -70,4 +78,8 @@ protected:
 
 	TSharedPtr<SUnLive2DViewUI> MySlateWidget;
 
+	// UnLive2D 渲染模块
+	TSharedPtr<class FUnLive2DRenderState> UnLive2DRenderPtr;
+
+	friend class SUnLive2DViewUI;
 };

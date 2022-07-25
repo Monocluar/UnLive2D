@@ -153,7 +153,7 @@ FUnLive2DRenderState::FUnLive2DRenderState(UUnLive2DRendererComponent* InComp)
 {
 }
 
-FUnLive2DRenderState::FUnLive2DRenderState(TSharedRef<SUnLive2DViewUI> InViewUI)
+FUnLive2DRenderState::FUnLive2DRenderState(UUnLive2DViewRendererUI* InViewUI)
 	: UnLive2DClippingManager(nullptr)
 	, bNoLowPreciseMask(false)
 	, OwnerViewUIWeak(InViewUI)
@@ -503,7 +503,7 @@ const UUnLive2D* FUnLive2DRenderState::GetUnLive2D() const
 	}
 	else if (OwnerViewUIWeak.IsValid())
 	{
-		return OwnerViewUIWeak.Pin()->GetUnLive2D();
+		return OwnerViewUIWeak->GetUnLive2D();
 	}
 
 	return nullptr;
@@ -524,9 +524,9 @@ UMaterialInstanceDynamic* FUnLive2DRenderState::GetUnLive2DMaterial(int32 InMode
 			break;
 		}
 		
-		if (OwnerViewUIWeak.Pin()->OwnerWidget.IsValid())
+		if (OwnerViewUIWeak.IsValid())
 		{
-			MatDynamic = UMaterialInstanceDynamic::Create(OwnerViewUIWeak.Pin()->OwnerWidget->UnLive2DNormalMaterial, OwnerViewUIWeak.Pin()->OwnerWidget.Get());
+			MatDynamic = UMaterialInstanceDynamic::Create(OwnerViewUIWeak->UnLive2DNormalMaterial, OwnerViewUIWeak.Get());
 			break;
 		}
 	}
@@ -539,9 +539,9 @@ UMaterialInstanceDynamic* FUnLive2DRenderState::GetUnLive2DMaterial(int32 InMode
 			break;
 		}
 
-		if (OwnerViewUIWeak.Pin()->OwnerWidget.IsValid())
+		if (OwnerViewUIWeak.IsValid())
 		{
-			MatDynamic = UMaterialInstanceDynamic::Create(OwnerViewUIWeak.Pin()->OwnerWidget->UnLive2DAdditiveMaterial, OwnerViewUIWeak.Pin()->OwnerWidget.Get());
+			MatDynamic = UMaterialInstanceDynamic::Create(OwnerViewUIWeak->UnLive2DAdditiveMaterial, OwnerViewUIWeak.Get());
 			break;
 		}
 	}
@@ -554,9 +554,9 @@ UMaterialInstanceDynamic* FUnLive2DRenderState::GetUnLive2DMaterial(int32 InMode
 			break;
 		}
 
-		if (OwnerViewUIWeak.Pin()->OwnerWidget.IsValid())
+		if (OwnerViewUIWeak.IsValid())
 		{
-			MatDynamic = UMaterialInstanceDynamic::Create(OwnerViewUIWeak.Pin()->OwnerWidget->UnLive2DMultiplyMaterial, OwnerViewUIWeak.Pin()->OwnerWidget.Get());
+			MatDynamic = UMaterialInstanceDynamic::Create(OwnerViewUIWeak->UnLive2DMultiplyMaterial, OwnerViewUIWeak.Get());
 			break;
 		}
 	}
@@ -578,9 +578,9 @@ FName FUnLive2DRenderState::GetDMaterialTextureParameterName() const
 		return OwnerCompWeak->TextureParameterName;
 	}
 
-	if (OwnerViewUIWeak.Pin()->OwnerWidget.IsValid())
+	if (OwnerViewUIWeak.IsValid())
 	{
-		return OwnerViewUIWeak.Pin()->OwnerWidget->TextureParameterName;
+		return OwnerViewUIWeak->TextureParameterName;
 	}
 
 	return FName();
@@ -610,9 +610,9 @@ void FUnLive2DRenderState::UpdateRenderBuffers(TWeakPtr<FUnLive2DRawModel> InUnL
 	{
 		SelfWorld = OwnerCompWeak->GetWorld();
 	}
-	else if (OwnerViewUIWeak.IsValid() && OwnerViewUIWeak.Pin()->OwnerWidget.IsValid())
+	else if (OwnerViewUIWeak.IsValid() && OwnerViewUIWeak.IsValid())
 	{
-		SelfWorld = OwnerViewUIWeak.Pin()->OwnerWidget->GetWorld();
+		SelfWorld = OwnerViewUIWeak->GetWorld();
 	}
 
 	if (SelfWorld == nullptr) return;

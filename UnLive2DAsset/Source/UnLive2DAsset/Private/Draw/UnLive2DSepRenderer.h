@@ -11,7 +11,7 @@
 #include "UnLive2DRendererComponent.h"
 #include "Templates/SharedPointer.h"
 
-class SUnLive2DViewUI;
+class UUnLive2DViewRendererUI;
 class FUnLive2DRawModel;
 
 #if UE_VERSION_OLDER_THAN(5,0,0)
@@ -51,7 +51,7 @@ public:
 
 	FUnLive2DRenderState(UUnLive2DRendererComponent* InComp);
 
-	FUnLive2DRenderState(TSharedRef<SUnLive2DViewUI> InViewUI);
+	FUnLive2DRenderState(UUnLive2DViewRendererUI* InViewUI);
 
 	~FUnLive2DRenderState();
 
@@ -124,6 +124,7 @@ private:
 	bool bNoLowPreciseMask; // 是否有高精度遮罩
 
 	TWeakObjectPtr<UUnLive2DRendererComponent> OwnerCompWeak;
+	TWeakObjectPtr<UUnLive2DViewRendererUI> OwnerViewUIWeak;
 
 	TMap<int32, UMaterialInstanceDynamic*> UnLive2DToNormalBlendMaterial; // CubismBlendMode_Normal普通动态材质
 	TMap<int32, UMaterialInstanceDynamic*> UnLive2DToAdditiveBlendMaterial; // CubismBlendMode_Additive叠加动态材质
@@ -131,5 +132,4 @@ private:
 
 	mutable FUnLive2DRenderBuffers MaskRenderBuffers;
 
-	TWeakPtr<SUnLive2DViewUI> OwnerViewUIWeak;
 };

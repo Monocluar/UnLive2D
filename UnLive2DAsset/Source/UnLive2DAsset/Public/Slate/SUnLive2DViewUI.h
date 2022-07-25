@@ -8,14 +8,18 @@
 #include "UnLive2DViewRendererUI.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "UObject/GCObject.h"
+#include "FWPort/UnLive2DRawModel.h"
 
 class UUnLive2D;
+
+DECLARE_DELEGATE_OneParam(FOnUpDataRender, TWeakPtr<FUnLive2DRawModel>);
 
 class UNLIVE2DASSET_API SUnLive2DViewUI : public SLeafWidget
 {
 public:
 	SLATE_BEGIN_ARGS(SUnLive2DViewUI)
 	{}
+	SLATE_EVENT(FOnUpDataRender, OnUpDataRender)
 	SLATE_END_ARGS()
 
 public:
@@ -24,8 +28,6 @@ public:
 public:
 
 	void SetUnLive2D(const UUnLive2D* InUnLive2D);
-
-	const UUnLive2D* GetUnLive2D() const;
 
 	void ReleaseRenderStateData();
 
@@ -53,15 +55,11 @@ public:
 
 	TWeakObjectPtr<class UUnLive2DViewRendererUI> OwnerWidget;
 
-protected:
-	// Live2D资源
-	TWeakObjectPtr<const UUnLive2D> UnLive2DWeak;
-
-	// UnLive2D 渲染模块
-	TSharedPtr<class FUnLive2DRenderState> UnLive2DRenderPtr;
-
 	// Live2D模型设置模块
 	TSharedPtr<class FUnLive2DRawModel> UnLive2DRawModel;
+
+	// 渲染回调
+	FOnUpDataRender OnUpDataRender;
 private:
 
 	struct FCustomVertsData
@@ -88,5 +86,8 @@ private:
 	};
 
 	TArray<FCustomVertsData> UnLive2DCustomVertsData;
+
+
+	friend UUnLive2DViewRendererUI;
 
 };
