@@ -68,6 +68,8 @@ void SUnLive2DViewUI::InitUnLive2D()
 {
 	if (!FSlateApplication::IsInitialized()) return;
 
+	if (OwnerWidget->SourceUnLive2D == nullptr) return;
+
 	if (!UnLive2DRawModel.IsValid())
 	{
 		UnLive2DRawModel = OwnerWidget->SourceUnLive2D->CreateLive2DRawModel();
@@ -228,7 +230,7 @@ void SUnLive2DViewUI::Flush(int32 LayerId, FSlateWindowElementList& OutDrawEleme
 void SUnLive2DViewUI::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
 {
 	SLeafWidget::Tick(AllottedGeometry, InCurrentTime, InDeltaTime);
-	if (!UnLive2DRawModel.IsValid()) return;
+	if (!UnLive2DRawModel.IsValid() || OwnerWidget->SourceUnLive2D == nullptr) return;
 
 	UnLive2DRawModel->OnUpDate(InDeltaTime * OwnerWidget->SourceUnLive2D->PlayRate);
 }
