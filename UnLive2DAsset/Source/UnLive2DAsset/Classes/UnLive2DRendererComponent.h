@@ -15,6 +15,7 @@ class UUnLive2D;
 class UMaterialInterface;
 class FUnLive2DRawModel;
 
+
 UCLASS(ClassGroup = UnLive2D, meta = (BlueprintSpawnableComponent), hidecategories=(Material,Mesh))
 class UNLIVE2DASSET_API UUnLive2DRendererComponent : public UProceduralMeshComponent
 {
@@ -87,6 +88,8 @@ public:
 	 bool GetModelParamterGroup(TArray<FUnLive2DParameterData>& ParameterArr);
 
 	 void SetModelParamterValue(int32  ParameterID, float NewParameter);
+
+	 bool GetModelParamterIDData(FName ParameterStr, FUnLive2DParameterData& Parameter);
 #endif
 
 protected:

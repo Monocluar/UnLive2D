@@ -1,4 +1,4 @@
-#include "SUnLive2DParameterGroup.h"
+﻿#include "SUnLive2DParameterGroup.h"
 #include "UnLive2D.h"
 #include "UnLive2DRendererComponent.h"
 #include "Widgets/Input/SSearchBox.h"
@@ -6,22 +6,20 @@
 #include "Widgets/Input/SSpinBox.h"
 #include "Widgets/Notifications/SNotificationList.h"
 #include "Framework/Notifications/NotificationManager.h"
+#include "IUnLive2DParameterEditorAsset.h"
+#include "Animation/UnLive2DAnimBase.h"
 
 #define LOCTEXT_NAMESPACE "UnLive2DAssetEditor"
 
 static const FName UnLive2DParameterNameLabel("Parameter Name");
 static const FName UnLive2DParameterValueLabel("Parameter Value");
 
-void SUnLive2DParameterGroup::Construct(const FArguments& InArgs, TSharedPtr<FUnLive2DViewEditor> InUnLive2DEditor)
+void SUnLive2DParameterGroup::Construct(const FArguments& InArgs, TSharedPtr<IUnLive2DParameterEditorAsset> InUnLive2DEditor)
 {
 	UnLive2DEditorPtr = InUnLive2DEditor;
 
 	bShowAllParameter = true;
 	if (!UnLive2DEditorPtr.IsValid()) return;
-
-	UUnLive2D* UnLive2D = UnLive2DEditorPtr.Pin()->GetUnLive2DBeingEdited();
-
-	if (UnLive2D == nullptr) return;
 
 	ChildSlot
 	[
@@ -48,7 +46,7 @@ void SUnLive2DParameterGroup::Construct(const FArguments& InArgs, TSharedPtr<FUn
 		[
 			SAssignNew(UnLive2DParameterListView, SUnLive2DParameterType)
 			.ListItemsSource(&UnLive2DParameterList)
-			.OnGenerateRow(this, &SUnLive2DParameterGroup::GenerateUnLive2DParameterRow)
+			.OnGenerateRow(this, &SUnLive2DParameterGroup::GenerateUnLive2DParameterRow, UnLive2DEditorPtr.Pin()->GetUnLive2DParameterAssetType())
 			.OnContextMenuOpening(this, &SUnLive2DParameterGroup::OnGetContextMenuContent)
 			.ItemHeight(22.0f)
 			.SelectionMode(ESelectionMode::Multi)
@@ -71,6 +69,18 @@ void SUnLive2DParameterGroup::Construct(const FArguments& InArgs, TSharedPtr<FUn
 	{
 		CreateUnLive2DParameterList(FilterText.ToString(), true);
 	}
+}
+
+void SUnLive2DParameterGroup::Construct(const FArguments& InArgs, TSharedPtr<IUnLive2DParameterEditorAsset> InUnLive2DEditor, TWeakObjectPtr<UUnLive2DAnimBase> InUnLive2DAnimBase)
+{
+	UnLive2DAnimBaseWeak = InUnLive2DAnimBase;
+	SUnLive2DParameterGroup::Construct(InArgs, InUnLive2DEditor);
+}
+
+void SUnLive2DParameterGroup::UpDataUnLive2DAnimBase(TWeakObjectPtr<UUnLive2DAnimBase> InUnLive2DAnimBase)
+{
+	UnLive2DAnimBaseWeak = InUnLive2DAnimBase;
+	CreateUnLive2DParameterList(FilterText.ToString(), true);
 }
 
 void SUnLive2DParameterGroup::OnFilterTextChanged(const FText& SearchText)
@@ -100,9 +110,9 @@ void SUnLive2DParameterGroup::OnSelectionChanged(TSharedPtr<FUnLive2DParameterIn
 
 }
 
-TSharedRef<ITableRow> SUnLive2DParameterGroup::GenerateUnLive2DParameterRow(TSharedPtr<FUnLive2DParameterInfo> InInfo, const TSharedRef<STableViewBase>& OwnerTable)
+TSharedRef<ITableRow> SUnLive2DParameterGroup::GenerateUnLive2DParameterRow(TSharedPtr<FUnLive2DParameterInfo> InInfo, const TSharedRef<STableViewBase>& OwnerTable, EUnLive2DParameterAssetType::Type ParameterAssetType)
 {
-	return SNew(SUnLive2DParameterListRow, OwnerTable, SharedThis(this))
+	return SNew(SUnLive2DParameterListRow, OwnerTable, SharedThis(this), ParameterAssetType)
 		.Item(InInfo);
 }
 
@@ -121,7 +131,9 @@ void SUnLive2DParameterGroup::CreateUnLive2DParameterList(const FString& SearchT
 #if WITH_EDITOR
 
 	TWeakObjectPtr<UUnLive2DRendererComponent> Comp = UnLive2DEditorPtr.Pin()->GetUnLive2DRenderComponent();
-	if (UnLive2DParameterByUID.Num() != ParameterArr.Num())
+
+	EUnLive2DParameterAssetType::Type ParameterAssetType = UnLive2DEditorPtr.Pin()->GetUnLive2DParameterAssetType();
+	if (ParameterAssetType == EUnLive2DParameterAssetType::UnLive2D && UnLive2DParameterByUID.Num() != ParameterArr.Num())
 	{
 		UnLive2DParameterByUID.SetNum(ParameterArr.Num());
 
@@ -136,6 +148,27 @@ void SUnLive2DParameterGroup::CreateUnLive2DParameterList(const FString& SearchT
 
 				TSharedRef<FUnLive2DParameterInfo> NewInfo = FUnLive2DParameterInfo::Create(Comp, SmartName, Item);
 
+				UnLive2DParameterByUID[UIDIndex] = NewInfo;
+			}
+			UIDIndex++;
+		}
+	}
+	else if (ParameterAssetType == EUnLive2DParameterAssetType::UnLive2DExpression && UnLive2DAnimBaseWeak.IsValid())
+	{
+		TArray<FUnLive2DParameterData_Expression> ExpressionParameterArr;
+		if (!UnLive2DAnimBaseWeak->GetAnimParamterGroup(Comp, ExpressionParameterArr)) return;
+
+		UnLive2DParameterByUID.SetNum(ExpressionParameterArr.Num());
+
+		int32 UIDIndex = 0;
+		for (FUnLive2DParameterData_Expression& Item : ExpressionParameterArr)
+		{
+			if (!UnLive2DParameterByUID[UIDIndex].IsValid())
+			{
+				FSmartName SmartName;
+				SmartName.UID = Item.ParameterID;
+				SmartName.DisplayName = Item.ParameterName;
+				TSharedRef<FUnLive2DParameterInfo> NewInfo = FUnLive2DParameterInfo::Create(Comp, SmartName, Item, Item.BlendType, UnLive2DAnimBaseWeak);
 				UnLive2DParameterByUID[UIDIndex] = NewInfo;
 			}
 			UIDIndex++;
@@ -217,10 +250,16 @@ TSharedRef<FUnLive2DParameterInfo> FUnLive2DParameterInfo::Create(TWeakObjectPtr
 	return MakeShareable(new FUnLive2DParameterInfo(InEditableUnLive2D, InSmartName, ParameterData));
 }
 
-void SUnLive2DParameterListRow::Construct(const FArguments& InArgs, const TSharedRef<STableViewBase>& InOwnerTableView, TWeakPtr<SUnLive2DParameterGroup> InParameterGroupPtr)
+TSharedRef<FUnLive2DParameterInfo> FUnLive2DParameterInfo::Create(TWeakObjectPtr<UUnLive2DRendererComponent>& InEditableUnLive2D, const FSmartName& InSmartName, FUnLive2DParameterData& ParameterData, EUnLive2DExpressionBlendType::Type InUnLive2DExpressionBlendType, TWeakObjectPtr<UUnLive2DAnimBase>& InUnLive2DAnimBase)
+{
+	return MakeShareable(new FUnLive2DParameterInfo(InEditableUnLive2D, InSmartName, ParameterData, InUnLive2DExpressionBlendType, InUnLive2DAnimBase));
+}
+
+void SUnLive2DParameterListRow::Construct(const FArguments& InArgs, const TSharedRef<STableViewBase>& InOwnerTableView, TWeakPtr<SUnLive2DParameterGroup> InParameterGroupPtr, EUnLive2DParameterAssetType::Type ParameterAssetType)
 {
 	Item = InArgs._Item;
 	UnLive2DParameterGroupPtr = InParameterGroupPtr;
+	UnLive2DParameterAssetType = ParameterAssetType;
 	SMultiColumnTableRow< TSharedPtr<FUnLive2DParameterInfo> >::Construct(FSuperRowType::FArguments(), InOwnerTableView);
 }
 
@@ -233,7 +272,7 @@ TSharedRef<SWidget> SUnLive2DParameterListRow::GenerateWidgetForColumn(const FNa
 	{
 		return SNew(SVerticalBox)
 			+ SVerticalBox::Slot()
-			.AutoHeight()
+			.FillHeight(1.f)
 			.Padding(4)
 			.VAlign(VAlign_Center)
 			[
@@ -247,11 +286,11 @@ TSharedRef<SWidget> SUnLive2DParameterListRow::GenerateWidgetForColumn(const FNa
 	}
 	else if (ColumnName == UnLive2DParameterValueLabel)
 	{
-		return SNew(SVerticalBox)
+		TSharedPtr<SVerticalBox> VerticalBox = SNew(SVerticalBox)
 			+ SVerticalBox::Slot()
 			.AutoHeight()
 			.Padding(0.0f, 1.0f)
-			.VAlign(VAlign_Center)
+			.VAlign(VAlign_Fill)
 			[
 				SNew(SSpinBox<float>)
 				.MinSliderValue(Item->ParameterData.ParameterMinValue)
@@ -262,6 +301,25 @@ TSharedRef<SWidget> SUnLive2DParameterListRow::GenerateWidgetForColumn(const FNa
 				.OnValueChanged(this, &SUnLive2DParameterListRow::OnUnLive2DParameterChanged)
 				.OnValueCommitted(this, &SUnLive2DParameterListRow::OnUnLive2DParameterValueCommitted)
 			];
+
+		if (UnLive2DParameterAssetType == EUnLive2DParameterAssetType::UnLive2DExpression)
+		{
+			UnLive2DExpressionBlendType = Item->UnLive2DExpressionBlendType;
+
+			VerticalBox->AddSlot()
+			[
+				SNew(SComboButton)
+				.OnGetMenuContent(this, &SUnLive2DParameterListRow::OnGetShowOverrideTypeMenu)
+				.ContentPadding(2)
+				.ButtonContent()
+				[
+					SNew(STextBlock)
+					.Text(this, &SUnLive2DParameterListRow::GetOverrideTypeDropDownText)
+				]
+			];
+		}
+
+		return VerticalBox.ToSharedRef();
 	}
 
 	return SNullWidget::NullWidget;
@@ -300,7 +358,17 @@ void SUnLive2DParameterListRow::OnUnLive2DParameterChanged(float NewParameter)
 
 	Item->ParameterData.ParameterValue = NewParameter;
 
-	Item->EditableUnLive2DComp->SetModelParamterValue(Item->ParameterData.ParameterID, NewParameter);
+	if (UnLive2DParameterAssetType == EUnLive2DParameterAssetType::UnLive2DExpression)
+	{
+		if (!Item->UnLive2DAnimBaseWeak.IsValid()) return;
+
+		Item->UnLive2DAnimBaseWeak->SetAnimParamterValue(Item->ParameterData.ParameterName, NewParameter);
+
+	}
+	else if (UnLive2DParameterAssetType == EUnLive2DParameterAssetType::UnLive2D)
+	{
+		Item->EditableUnLive2DComp->SetModelParamterValue(Item->ParameterData.ParameterID, NewParameter);
+	}
 }
 
 void SUnLive2DParameterListRow::OnUnLive2DParameterValueCommitted(float NewParameter, ETextCommit::Type CommitType)
@@ -311,8 +379,59 @@ void SUnLive2DParameterListRow::OnUnLive2DParameterValueCommitted(float NewParam
 
 		Item->ParameterData.ParameterValue = NewParameter;
 
-		Item->EditableUnLive2DComp->SetModelParamterValue(Item->ParameterData.ParameterID, NewParameter);
+		if (UnLive2DParameterAssetType == EUnLive2DParameterAssetType::UnLive2DExpression)
+		{
+			if (!Item->UnLive2DAnimBaseWeak.IsValid()) return;
+
+			Item->UnLive2DAnimBaseWeak->SetAnimParamterValue(Item->ParameterData.ParameterName, NewParameter);
+			
+		}
+		else if (UnLive2DParameterAssetType == EUnLive2DParameterAssetType::UnLive2D)
+		{
+			Item->EditableUnLive2DComp->SetModelParamterValue(Item->ParameterData.ParameterID, NewParameter);
+		}
 	}
+}
+
+TSharedRef<SWidget> SUnLive2DParameterListRow::OnGetShowOverrideTypeMenu()
+{
+	FMenuBuilder MenuBuilder(true, NULL);
+
+	auto CreateAction = [&MenuBuilder, this](EUnLive2DExpressionBlendType::Type InType, FString Name)
+	{
+		FUIAction NoAction(FExecuteAction::CreateSP(this, &SUnLive2DParameterListRow::HandleOverrideTypeChange, InType));
+		MenuBuilder.AddMenuEntry(FText::FromString(Name), FText(), FSlateIcon(), NoAction);
+	};
+
+	CreateAction(EUnLive2DExpressionBlendType::ExpressionBlendType_Add, TEXT("Add"));
+	CreateAction(EUnLive2DExpressionBlendType::ExpressionBlendType_Multiply, TEXT("Multiply"));
+	CreateAction(EUnLive2DExpressionBlendType::ExpressionBlendType_Overwrite, TEXT("Overwrite"));
+
+	return MenuBuilder.MakeWidget();
+}
+
+void SUnLive2DParameterListRow::HandleOverrideTypeChange(EUnLive2DExpressionBlendType::Type BlendType)
+{
+	UnLive2DExpressionBlendType = BlendType;
+}
+
+FText SUnLive2DParameterListRow::GetOverrideTypeDropDownText() const
+{
+	FText DropDownText;
+	switch (UnLive2DExpressionBlendType)
+	{
+	case EUnLive2DExpressionBlendType::ExpressionBlendType_Add:
+		DropDownText = FText::FromString(TEXT("Add"));
+		break;
+	case EUnLive2DExpressionBlendType::ExpressionBlendType_Multiply:
+		DropDownText = FText::FromString(TEXT("Multiply"));
+		break;
+	case EUnLive2DExpressionBlendType::ExpressionBlendType_Overwrite:
+		DropDownText = FText::FromString(TEXT("Overwrite"));
+		break;
+	}
+
+	return DropDownText;
 }
 
 #undef LOCTEXT_NAMESPACE

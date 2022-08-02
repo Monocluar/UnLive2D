@@ -1,13 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Toolkits/AssetEditorToolkit.h"
-#include "WorkflowOrientedApp/WorkflowCentricApplication.h"
-#include "EditorUndoClient.h"
+#include "IUnLive2DParameterEditorAsset.h"
 
 class UUnLive2DAnimBase;
 
-class FUnLive2DAnimBaseViewEditor : public FWorkflowCentricApplication, public FGCObject, public FEditorUndoClient
+class FUnLive2DAnimBaseViewEditor : public IUnLive2DParameterEditorAsset
 {
 public:
 	FUnLive2DAnimBaseViewEditor();
@@ -47,8 +45,10 @@ public:
 
 	void SetUnLive2DAnimBeingEdited(UUnLive2DAnimBase* NewAnimBase);
 
+	virtual UUnLive2D* GetUnLive2DBeingEdited() const override;
+	virtual TWeakObjectPtr<UUnLive2DRendererComponent> GetUnLive2DRenderComponent() const override;
 
-	TWeakObjectPtr<UUnLive2DRendererComponent> GetUnLive2DRenderComponent() const;
+	virtual EUnLive2DParameterAssetType::Type GetUnLive2DParameterAssetType() const override;
 
 private:
 	// Live2D动作
@@ -63,8 +63,11 @@ private:
 	// UnLive2D动作资源列表
 	TSharedPtr<class SUnLive2DAnimBaseAssetBrowser> UnLive2DAnimAssetListPtr;
 
-
+	// 视口
 	TSharedPtr<class SUnLive2DAnimBaseEditorViewport> ViewportPtr;
+
+	// UnLive2D动作参数组
+	TSharedPtr<class SUnLive2DParameterGroup> UnLive2DParameterGroupPtr;
 
 public:
 	/** 在全局撤消/重做时触发多播委托*/
@@ -80,6 +83,7 @@ protected:
 	TSharedRef<SDockTab> SpawnTab_Viewport(const FSpawnTabArgs& Args);
 	TSharedRef<SDockTab> SpawnTab_Details(const FSpawnTabArgs& Args);
 	TSharedRef<SDockTab> SpawnTab_AssetBrowser(const FSpawnTabArgs& Args);
+	TSharedRef<SDockTab> SpawnTab_ParameterGroup(const FSpawnTabArgs& Args);
 
 	TSharedPtr<SDockTab> OpenNewAnimBaseDocumentTab(UUnLive2DAnimBase* InAnimBase);
 };

@@ -1,4 +1,4 @@
-#include "UnLive2DMotionViewEditor.h"
+﻿#include "UnLive2DMotionViewEditor.h"
 #include "UnLive2DManagerModule.h"
 #include "SSingleObjectDetailsPanel.h"
 #include "IUnLive2DAssetFamily.h"
@@ -11,6 +11,7 @@
 #include "Animation/UnLive2DExpression.h"
 #include "UnLive2DViewportClient.h"
 #include "UnLive2DRendererComponent.h"
+#include "UnLive2DParameterEditor/SUnLive2DParameterGroup.h"
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
 
@@ -20,11 +21,13 @@ struct FUnLive2DMotionViewEditorTabs
 	static const FName DetailsID;
 	static const FName ViewportID;
 	static const FName AssetBrowserTab;
+	static const FName ParmeterGroupID;
 };
 
 const FName FUnLive2DMotionViewEditorTabs::DetailsID(TEXT("Details"));
 const FName FUnLive2DMotionViewEditorTabs::ViewportID(TEXT("Viewport"));
 const FName FUnLive2DMotionViewEditorTabs::AssetBrowserTab(TEXT("AssetBrowserTab"));
+const FName FUnLive2DMotionViewEditorTabs::ParmeterGroupID(TEXT("ParmeterGroupID"));
 
 class SUnLive2DMotionPropertiesTabBody : public SSingleObjectDetailsPanel
 {
@@ -87,7 +90,7 @@ void FUnLive2DAnimBaseViewEditor::InitUnLive2DAnimViewEditor(const EToolkitMode:
 
 	const FName MotionViewEditorAppIdentifier = FName(TEXT("AnimBaseViewEditorApp"));
 
-	const TSharedRef<FTabManager::FLayout> StandaloneDefaultLayout = FTabManager::NewLayout("Standalone_UnLive2DAnimBaseViewEditor_Layout_v1")
+	const TSharedRef<FTabManager::FLayout> StandaloneDefaultLayout = FTabManager::NewLayout("Standalone_UnLive2DAnimBaseViewEditor_Layout_v1.1")
 		->AddArea
 		(
 			FTabManager::NewPrimaryArea()
@@ -125,11 +128,15 @@ void FUnLive2DAnimBaseViewEditor::InitUnLive2DAnimViewEditor(const EToolkitMode:
 						FTabManager::NewStack()
 						->SetSizeCoefficient(0.6f)
 						->AddTab(FUnLive2DMotionViewEditorTabs::DetailsID, ETabState::OpenedTab)
+						->AddTab(FUnLive2DMotionViewEditorTabs::ParmeterGroupID, ETabState::OpenedTab)
+						->SetForegroundTab(FUnLive2DMotionViewEditorTabs::DetailsID)
+
 					)
 					->Split
 					(
 						FTabManager::NewStack()
 						->SetSizeCoefficient(0.4f)
+						->SetHideTabWell(true)
 						->AddTab(FUnLive2DMotionViewEditorTabs::AssetBrowserTab, ETabState::OpenedTab)
 					)
 				)
@@ -164,6 +171,11 @@ void FUnLive2DAnimBaseViewEditor::RegisterTabSpawners(const TSharedRef<FTabManag
 		.SetDisplayName(LOCTEXT("AssetBrowserTab", "AssetBrowser"))
 		.SetGroup(WorkspaceMenuCategoryRef)
 		.SetIcon(FSlateIcon(FEditorStyle::GetStyleSetName(), "LevelEditor.Tabs.ContentBrowser"));
+
+	InTabManager->RegisterTabSpawner(FUnLive2DMotionViewEditorTabs::ParmeterGroupID, FOnSpawnTab::CreateSP(this, &FUnLive2DAnimBaseViewEditor::SpawnTab_ParameterGroup))
+		.SetDisplayName(LOCTEXT("ParameterGroupTabLabel", "ParameterGroup"))
+		.SetGroup(WorkspaceMenuCategoryRef)
+		.SetIcon(FSlateIcon(FEditorStyle::GetStyleSetName(), "Persona.Tabs.AnimCurvePreviewer"));
 }
 
 void FUnLive2DAnimBaseViewEditor::UnregisterTabSpawners(const TSharedRef<FTabManager>& InTabManager)
@@ -173,6 +185,7 @@ void FUnLive2DAnimBaseViewEditor::UnregisterTabSpawners(const TSharedRef<FTabMan
 	InTabManager->UnregisterTabSpawner(FUnLive2DMotionViewEditorTabs::ViewportID);
 	InTabManager->UnregisterTabSpawner(FUnLive2DMotionViewEditorTabs::DetailsID);
 	InTabManager->UnregisterTabSpawner(FUnLive2DMotionViewEditorTabs::AssetBrowserTab);
+	InTabManager->UnregisterTabSpawner(FUnLive2DMotionViewEditorTabs::ParmeterGroupID);
 }
 
 void FUnLive2DAnimBaseViewEditor::PostUndo(bool bSuccess)
@@ -225,6 +238,13 @@ void FUnLive2DAnimBaseViewEditor::AddReferencedObjects(FReferenceCollector& Coll
 	Collector.AddReferencedObject(UnLive2DAnimBeingEdited);
 }
 
+UUnLive2D* FUnLive2DAnimBaseViewEditor::GetUnLive2DBeingEdited() const
+{
+	if (UnLive2DAnimBeingEdited == nullptr) return nullptr;
+
+	return UnLive2DAnimBeingEdited->UnLive2D;
+}
+
 void FUnLive2DAnimBaseViewEditor::SetUnLive2DAnimBeingEdited(UUnLive2DAnimBase* NewAnimBase)
 {
 	if ((NewAnimBase != UnLive2DAnimBeingEdited) && (NewAnimBase != nullptr))
@@ -238,6 +258,8 @@ void FUnLive2DAnimBaseViewEditor::SetUnLive2DAnimBeingEdited(UUnLive2DAnimBase* 
 		UnLive2DAnimAssetListPtr->SelectAsset(NewAnimBase);
 
 		OpenNewAnimBaseDocumentTab(NewAnimBase);
+
+		UnLive2DParameterGroupPtr->UpDataUnLive2DAnimBase(NewAnimBase);
 	}
 }
 
@@ -249,6 +271,11 @@ TWeakObjectPtr<UUnLive2DRendererComponent> FUnLive2DAnimBaseViewEditor::GetUnLiv
 	if (!UnLive2DViewportClient.IsValid()) return nullptr;
 
 	return UnLive2DViewportClient->GetUnLive2DRenderComponent();
+}
+
+EUnLive2DParameterAssetType::Type FUnLive2DAnimBaseViewEditor::GetUnLive2DParameterAssetType() const
+{
+	return UnLive2DAnimBeingEdited->IsA<UUnLive2DMotion>() ? EUnLive2DParameterAssetType::UnLive2DMotion : EUnLive2DParameterAssetType::UnLive2DExpression;
 }
 
 void FUnLive2DAnimBaseViewEditor::BindCommands()
@@ -330,6 +357,16 @@ TSharedRef<SDockTab> FUnLive2DAnimBaseViewEditor::SpawnTab_AssetBrowser(const FS
 			//SNew(SUnLive2DMotionPropertiesTabBody, SharedThis(this))
 			UnLive2DAnimAssetListPtr.ToSharedRef()
 		];
+}
+
+TSharedRef<SDockTab> FUnLive2DAnimBaseViewEditor::SpawnTab_ParameterGroup(const FSpawnTabArgs& Args)
+{
+	return SNew(SDockTab)
+		.Label(LOCTEXT("ParameterGroupTab_Title", "_ParameterGroup"))
+		[
+			SAssignNew(UnLive2DParameterGroupPtr, SUnLive2DParameterGroup, SharedThis(this), GetUnLive2DAnimBaseEdited())
+		];
+
 }
 
 TSharedPtr<SDockTab> FUnLive2DAnimBaseViewEditor::OpenNewAnimBaseDocumentTab(UUnLive2DAnimBase* InAnimBase)

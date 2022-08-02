@@ -1,17 +1,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Toolkits/AssetEditorToolkit.h"
 #include "ITransportControl.h"
-#include "EditorUndoClient.h"
 #include "Framework/Commands/UICommandList.h"
-#include "WorkflowOrientedApp/WorkflowCentricApplication.h"
+#include "IUnLive2DParameterEditorAsset.h"
 
 class SDockTab;
 class UUnLive2D;
 class UUnLive2DRendererComponent;
 
-class FUnLive2DViewEditor : public FWorkflowCentricApplication, public FGCObject, public FEditorUndoClient
+class FUnLive2DViewEditor : public IUnLive2DParameterEditorAsset
 {
 public:
 
@@ -57,9 +55,11 @@ public:
 
 public:
 
-	FORCEINLINE UUnLive2D* GetUnLive2DBeingEdited() const { return UnLive2DBeingEdited; }
+	virtual UUnLive2D* GetUnLive2DBeingEdited() const override { return UnLive2DBeingEdited; }
 
-	FORCEINLINE TWeakObjectPtr<UUnLive2DRendererComponent> GetUnLive2DRenderComponent() const;
+	virtual TWeakObjectPtr<UUnLive2DRendererComponent> GetUnLive2DRenderComponent() const override;
+
+	virtual EUnLive2DParameterAssetType::Type GetUnLive2DParameterAssetType() const override { return EUnLive2DParameterAssetType::UnLive2D; }
 protected:
 
 	TSharedRef<SDockTab> SpawnTab_Viewport(const FSpawnTabArgs& Args);

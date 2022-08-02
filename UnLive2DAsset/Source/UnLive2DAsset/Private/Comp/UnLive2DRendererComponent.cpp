@@ -18,6 +18,10 @@
 #include "Math/Vector4.h"
 #endif
 
+#if WITH_EDITOR
+#include "Id/CubismIdManager.hpp"
+#endif
+
 using namespace Csm;
 
 #if UE_VERSION_OLDER_THAN(5,0,0)
@@ -448,6 +452,25 @@ void UUnLive2DRendererComponent::SetModelParamterValue(int32  ParameterID, float
 	UnLive2DModel->SetParameterValue(ParameterID, NewParameter);
 
 	UnLive2DModel->SaveParameters();
+}
+
+bool UUnLive2DRendererComponent::GetModelParamterIDData(FName ParameterStr, FUnLive2DParameterData& Parameter)
+{
+	FDateTime A = FDateTime();
+	const CubismIdHandle ParameterId = CubismFramework::GetIdManager()->GetId(TCHAR_TO_UTF8(*ParameterStr.ToString())); // 参数标识
+	Csm::CubismModel* UnLive2DModel = UnLive2DRawModel->GetModel();
+	if (UnLive2DModel == nullptr) return false;
+
+	int32 ID = UnLive2DModel->GetParameterIndex(ParameterId);
+	Parameter = (FUnLive2DParameterData(
+		ID,
+		ParameterStr,
+		UnLive2DModel->GetParameterValue(ID), // 当前值
+		UnLive2DModel->GetParameterDefaultValue(ID), // 默认值
+		UnLive2DModel->GetParameterMinimumValue(ID), // 最小值
+		UnLive2DModel->GetParameterMaximumValue(ID))); // 最大值
+
+	return true;
 }
 
 #endif

@@ -7,7 +7,7 @@
 #include "UnLive2DManagerModule.h"
 #include "IUnLive2DAssetFamily.h"
 #include "Misc/EngineVersionComparison.h"
-#include "SUnLive2DParameterGroup.h"
+#include "UnLive2DParameterEditor/SUnLive2DParameterGroup.h"
 #include "UnLive2DRendererComponent.h"
 #include "UnLive2DViewportClient.h"
 

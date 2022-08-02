@@ -11,25 +11,24 @@ class UTexture2D;
 #if WITH_EDITOR
 struct UNLIVE2DASSET_API FUnLive2DParameterData
 {
-
 public:
 	// Live2D参数ID
-	const int32 ParameterID;
+	int32 ParameterID;
 
 	// Live2D参数名
-	const FName ParameterName;
+	FName ParameterName;
 
 	// 参数值
 	float ParameterValue;
 
 	// 参数默认值
-	const float ParameterDefaultValue;
+	float ParameterDefaultValue;
 
 	// 参数最小值
-	const float ParameterMinValue;
+	float ParameterMinValue;
 
 	// 参数最大值
-	const float ParameterMaxValue;
+	float ParameterMaxValue;
 
 
 public:
@@ -58,6 +57,35 @@ public:
 		, ParameterMaxValue(InParameterMaxValue)
 	{
 	}
+	
+};
+
+namespace EUnLive2DExpressionBlendType
+{
+	enum Type
+	{
+		ExpressionBlendType_Add = 0,        ///< 加
+		ExpressionBlendType_Multiply = 1,   ///< 乘
+		ExpressionBlendType_Overwrite = 2   ///< 覆盖
+	};
+}
+
+
+struct UNLIVE2DASSET_API FUnLive2DParameterData_Expression : public FUnLive2DParameterData
+{
+public:
+	EUnLive2DExpressionBlendType::Type BlendType;
+
+public:
+	FUnLive2DParameterData_Expression()
+		: FUnLive2DParameterData()
+		, BlendType(EUnLive2DExpressionBlendType::ExpressionBlendType_Add)
+	{}
+
+	FUnLive2DParameterData_Expression(FUnLive2DParameterData& InParameterData, EUnLive2DExpressionBlendType::Type InBlendType)
+		: FUnLive2DParameterData(InParameterData)
+		, BlendType(InBlendType)
+	{}
 };
 #endif // WITH_EDITOR
 

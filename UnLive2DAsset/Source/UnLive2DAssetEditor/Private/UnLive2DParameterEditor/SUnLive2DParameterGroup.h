@@ -1,14 +1,15 @@
-
+ï»¿
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UnLive2DViewEditor.h"
 #include "Widgets/SCompoundWidget.h"
 #include "CubismBpLib.h"
 #include "Widgets/Views/STableViewBase.h"
+#include "IUnLive2DParameterEditorAsset.h"
 
 class UUnLive2DRendererComponent;
 struct FUnLive2DParameterData;
+class UUnLive2DAnimBase;
 
 class FUnLive2DParameterInfo
 {
@@ -16,10 +17,14 @@ public:
 	FSmartName SmartName;
 	FUnLive2DParameterData ParameterData;
 	TWeakObjectPtr<UUnLive2DRendererComponent> EditableUnLive2DComp;
-	TSharedPtr<SInlineEditableTextBlock> EditableText; // ÁĞ±íÖĞµÄ¿É±à¼­ÎÄ±¾¿ò£¬ÓÃÓÚ´Ó¹ØÁª²Ëµ¥ÖĞ¾Û½¹
+	TSharedPtr<SInlineEditableTextBlock> EditableText; // åˆ—è¡¨ä¸­çš„å¯ç¼–è¾‘æ–‡æœ¬æ¡†ï¼Œç”¨äºä»å…³è”èœå•ä¸­èšç„¦
 	bool bShown;
+	EUnLive2DExpressionBlendType::Type UnLive2DExpressionBlendType;
+	TWeakObjectPtr<UUnLive2DAnimBase> UnLive2DAnimBaseWeak;
 
 	static TSharedRef<FUnLive2DParameterInfo> Create(TWeakObjectPtr<UUnLive2DRendererComponent>& InEditableUnLive2D, const FSmartName& InSmartName, FUnLive2DParameterData& ParameterData);
+
+	static TSharedRef<FUnLive2DParameterInfo> Create(TWeakObjectPtr<UUnLive2DRendererComponent>& InEditableUnLive2D, const FSmartName& InSmartName, FUnLive2DParameterData& ParameterData, EUnLive2DExpressionBlendType::Type InUnLive2DExpressionBlendType, TWeakObjectPtr<UUnLive2DAnimBase>& InUnLive2DAnimBase);
 
 protected:
 	FUnLive2DParameterInfo(TWeakObjectPtr<UUnLive2DRendererComponent>& EditableUnLive2DComp, const FSmartName& InSmartName, FUnLive2DParameterData& ParameterData)
@@ -27,7 +32,18 @@ protected:
 		, ParameterData(MoveTemp(ParameterData))
 		, EditableUnLive2DComp(EditableUnLive2DComp)
 		, bShown(false)
+		, UnLive2DAnimBaseWeak(nullptr)
 	{}
+
+	FUnLive2DParameterInfo(TWeakObjectPtr<UUnLive2DRendererComponent>& EditableUnLive2DComp, const FSmartName& InSmartName, FUnLive2DParameterData& ParameterData, EUnLive2DExpressionBlendType::Type InUnLive2DExpressionBlendType, TWeakObjectPtr<UUnLive2DAnimBase>& InUnLive2DAnimBase)
+		: SmartName(InSmartName)
+		, ParameterData(MoveTemp(ParameterData))
+		, EditableUnLive2DComp(EditableUnLive2DComp)
+		, bShown(false)
+		, UnLive2DExpressionBlendType(InUnLive2DExpressionBlendType)
+		, UnLive2DAnimBaseWeak(InUnLive2DAnimBase)
+	{}
+
 };
 
 typedef SListView< TSharedPtr<FUnLive2DParameterInfo> > SUnLive2DParameterType;
@@ -40,8 +56,14 @@ public:
 
 public:
 
-	void Construct(const FArguments& InArgs, TSharedPtr<FUnLive2DViewEditor> InUnLive2DEditor);
+	void Construct(const FArguments& InArgs, TSharedPtr<IUnLive2DParameterEditorAsset> InUnLive2DEditor);
 
+
+	void Construct(const FArguments& InArgs, TSharedPtr<IUnLive2DParameterEditorAsset> InUnLive2DEditor, TWeakObjectPtr<UUnLive2DAnimBase> InUnLive2DAnimBase);
+
+public:
+	
+	void UpDataUnLive2DAnimBase(TWeakObjectPtr<UUnLive2DAnimBase> InUnLive2DAnimBase);
 
 protected:
 	
@@ -49,12 +71,12 @@ protected:
 	void OnFilterTextCommitted(const FText& SearchText, ETextCommit::Type CommitInfo);
 
 protected:
-	// ÓÒ¼ü²Ëµ¥
+	// å³é”®èœå•
 	TSharedPtr<SWidget> OnGetContextMenuContent() const;
-	// Ñ¡Ôñ²ÎÊı
+	// é€‰æ‹©å‚æ•°
 	void OnSelectionChanged(TSharedPtr<FUnLive2DParameterInfo> InItem, ESelectInfo::Type SelectInfo);
-	// ²ÎÊı¼¯´´½¨
-	TSharedRef<ITableRow> GenerateUnLive2DParameterRow(TSharedPtr<FUnLive2DParameterInfo> InInfo, const TSharedRef<STableViewBase>& OwnerTable);
+	// å‚æ•°é›†åˆ›å»º
+	TSharedRef<ITableRow> GenerateUnLive2DParameterRow(TSharedPtr<FUnLive2DParameterInfo> InInfo, const TSharedRef<STableViewBase>& OwnerTable, EUnLive2DParameterAssetType::Type ParameterAssetType);
 
 private:
 
@@ -64,35 +86,39 @@ private:
 
 public:
 
-	// ·ÃÎÊÆ÷£¬ÒÔ±ãÎÒÃÇµÄĞĞ¿ÉÒÔ»ñÈ¡ÓÃÓÚ¸ßÁÁÏÔÊ¾µÄfiltertext
+	// è®¿é—®å™¨ï¼Œä»¥ä¾¿æˆ‘ä»¬çš„è¡Œå¯ä»¥è·å–ç”¨äºé«˜äº®æ˜¾ç¤ºçš„filtertext
 	FORCEINLINE FText& GetFilterText() { return FilterText; }
 
 	virtual void OnNameCommitted(const FText& NewName, ETextCommit::Type CommitType, TSharedPtr<FUnLive2DParameterInfo> Item);
 
 private:
 
-	TWeakPtr<class FUnLive2DViewEditor> UnLive2DEditorPtr;
+	TWeakPtr<class IUnLive2DParameterEditorAsset> UnLive2DEditorPtr;
 
-	// ²ÎÊı¼¯
+	// å‚æ•°é›†
 	TArray<FUnLive2DParameterData> ParameterArr;
 
-	// ËÑË÷¿ò
+	// æœç´¢æ¡†
 	TSharedPtr<SSearchBox>	NameFilterBox;
 
-	// Õ¹Ê¾³öÀ´µÄ²ÎÊı
+	// å±•ç¤ºå‡ºæ¥çš„å‚æ•°
 	TArray< TSharedPtr<FUnLive2DParameterInfo> > UnLive2DParameterList;
 
-	// ËùÓĞµÄ²ÎÊı¼¯
+	// æ‰€æœ‰çš„å‚æ•°é›†
 	TArray< TSharedPtr<FUnLive2DParameterInfo> > UnLive2DParameterByUID;
 
-	// ²ÎÊı¼¯
+	// å‚æ•°é›†
 	TSharedPtr<SUnLive2DParameterType>  UnLive2DParameterListView;
 
-	/** ÊäÈëNameFilterBoxµÄµ±Ç°ÎÄ±¾ */
+	/** è¾“å…¥NameFilterBoxçš„å½“å‰æ–‡æœ¬ */
 	FText FilterText;
 
-	// ÊÇ·ñÕ¹Ê¾ËùÓĞ²ÎÊı×é
+	// æ˜¯å¦å±•ç¤ºæ‰€æœ‰å‚æ•°ç»„
 	bool bShowAllParameter;
+
+
+protected:
+	TWeakObjectPtr<UUnLive2DAnimBase> UnLive2DAnimBaseWeak;
 };
 
 class SUnLive2DParameterListRow : public SMultiColumnTableRow< TSharedPtr<FUnLive2DParameterInfo> >
@@ -104,10 +130,9 @@ public:
 
 public:
 
-	void Construct(const FArguments& InArgs, const TSharedRef<STableViewBase>& OwnerTableView, TWeakPtr<SUnLive2DParameterGroup> InParameterGroupPtr);
+	void Construct(const FArguments& InArgs, const TSharedRef<STableViewBase>& OwnerTableView, TWeakPtr<SUnLive2DParameterGroup> InParameterGroupPtr, EUnLive2DParameterAssetType::Type ParameterAssetType);
 
 	virtual TSharedRef<SWidget> GenerateWidgetForColumn(const FName& ColumnName) override;
-
 
 protected:
 
@@ -124,8 +149,17 @@ protected:
 	void OnUnLive2DParameterChanged(float NewParameter);
 	void OnUnLive2DParameterValueCommitted(float NewParameter, ETextCommit::Type CommitType);
 
+
+	TSharedRef<SWidget> OnGetShowOverrideTypeMenu();
+	void HandleOverrideTypeChange(EUnLive2DExpressionBlendType::Type BlendType);
+	FText GetOverrideTypeDropDownText() const;
+
 private:
 	TSharedPtr<FUnLive2DParameterInfo> Item;
 
 	TWeakPtr<SUnLive2DParameterGroup> UnLive2DParameterGroupPtr;
+
+	EUnLive2DParameterAssetType::Type UnLive2DParameterAssetType;
+
+	EUnLive2DExpressionBlendType::Type UnLive2DExpressionBlendType;
 };

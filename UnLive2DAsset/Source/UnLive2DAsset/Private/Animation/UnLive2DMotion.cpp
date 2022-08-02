@@ -1,7 +1,7 @@
 #include "Animation/UnLive2DMotion.h"
-#include "Misc/FileHelper.h"
 
 #if WITH_EDITOR
+#include "Misc/FileHelper.h"
 #include "Motion/CubismMotion.hpp"
 #endif
 #include "Animation/ActiveUnLive2DAnimBlueprint.h"

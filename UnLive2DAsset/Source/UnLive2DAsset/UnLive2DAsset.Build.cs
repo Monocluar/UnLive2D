@@ -36,6 +36,7 @@ public class UnLive2DAsset : ModuleRules
                 "RenderCore",
                 "Projects",
 				"RigVM",
+                "Json",
                 "CubismSdkForNative"
 				// ... add private dependencies that you statically link with here ...	
 			}
