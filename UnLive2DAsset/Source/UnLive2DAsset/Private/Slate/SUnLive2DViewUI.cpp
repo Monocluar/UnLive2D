@@ -163,39 +163,36 @@ void SUnLive2DViewUI::UpDateMesh(const FGeometry& AllottedGeometry, int32 Drawab
 			FVector2D MaskUV = FVector2D(ClipPosition.X, 1 + ClipPosition.Y);
 			MaskUV /= ClipPosition.W;
 
-			VertexIndexData->Color = FColor(255 * ChanelFlag.X, 255 * ChanelFlag.Y, 255 * ChanelFlag.Z, Opacity * 255);
+			VertexIndexData->Color = FColor(255 * ChanelFlag.X, 255 * ChanelFlag.Y, 255 * ChanelFlag.Z, 255 * ChanelFlag.W);
 
 #if UE_VERSION_OLDER_THAN(5,0,0)
-			VertexIndexData->SetTexCoords(FVector4(UV, MaskUV));
+			VertexIndexData->MaterialTexCoords = MaskUV;
 #else
-			VertexIndexData->SetTexCoords(FVector4f(UV.X, UV.Y, MaskUV.X, MaskUV.Y));
+			VertexIndexData->MaterialTexCoords = FVector2f(MaskUV.X, MaskUV.Y);
 #endif
 
 		}
 		else
 		{
 #if UE_VERSION_OLDER_THAN(5,0,0)
-			VertexIndexData->SetTexCoords(FVector4(UV, UV));
+			VertexIndexData->MaterialTexCoords = UV;
 #else
-			VertexIndexData->SetTexCoords(FVector4f(UV.X, UV.Y, UV.X, UV.Y));
+			VertexIndexData->MaterialTexCoords = FVector2f(UV.X, UV.Y);
 #endif
-			VertexIndexData->Color = FColor(255, 255, 255, Opacity * 255);
+			VertexIndexData->Color = FColor(255, 255, 255, 255);
 		}
 
 		
 		FVector2D NewPos = Transform.TransformPoint(FVector2D(Position.X, Position.Y) * SetupScale * FVector2D(1.f, -1.f) + (WidgetSize / 2));
 
 #if UE_VERSION_OLDER_THAN(5,0,0)
+		VertexIndexData->SetTexCoords(FVector4(UV.X, UV.Y, Opacity, Opacity));
 		VertexIndexData->SetPosition(NewPos);
 #else
+		VertexIndexData->SetTexCoords(FVector4f(UV.X, UV.Y, Opacity, Opacity));
 		VertexIndexData->SetPosition(FVector2f(NewPos.X, NewPos.Y));
 #endif
 
-#if UE_VERSION_OLDER_THAN(5,0,0)
-		VertexIndexData->MaterialTexCoords = UV;
-#else
-		VertexIndexData->MaterialTexCoords = FVector2f(UV.X, UV.Y);
-#endif
 		VertexIndexData->PixelSize[0] = 1;
 		VertexIndexData->PixelSize[1] = 1;
 	}

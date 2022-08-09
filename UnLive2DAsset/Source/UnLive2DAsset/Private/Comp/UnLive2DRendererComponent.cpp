@@ -46,15 +46,18 @@ public:
 
 	TArray<FVector2D> InterlottingLive2DUV1;
 
+	TArray<FVector2D> InterlottingLive2DUV2;
+
 	UMaterialInstanceDynamic* InterlottingDynamicMat;
 
 public:
-	FUnLive2DMeshSectionData(TArray<FVector>& Live2DVertexs, TArray<int32>& Live2DIndices, TArray<FVector2D>& Live2DUVs, TArray<FColor>& Live2DColors, TArray<FVector2D>& Live2DUV1, UMaterialInstanceDynamic* DynamicMat)
+	FUnLive2DMeshSectionData(TArray<FVector>& Live2DVertexs, TArray<int32>& Live2DIndices, TArray<FVector2D>& Live2DUVs, TArray<FColor>& Live2DColors, TArray<FVector2D>& Live2DUV1, TArray<FVector2D>& Live2DUV2, UMaterialInstanceDynamic* DynamicMat)
 		: InterlottingLive2DVertexs(MoveTemp(Live2DVertexs))
 		, InterlottingLive2DIndices(MoveTemp(Live2DIndices))
 		, InterlottingLive2DUVs(MoveTemp(Live2DUVs))
 		, InterlottingLive2DColors(MoveTemp(Live2DColors))
 		, InterlottingLive2DUV1(MoveTemp(Live2DUV1))
+		, InterlottingLive2DUV2(MoveTemp(Live2DUV2))
 		, InterlottingDynamicMat(DynamicMat)
 	{}
 
@@ -65,13 +68,12 @@ public:
 
 TArray<FUnLive2DMeshSectionData> UnLive2DMeshSectionData;
 
-
 void DrawMeshMeshSection(UUnLive2DRendererComponent* UnLive2DRendererComponent)
 {
 	for (int32 i = 0; i < UnLive2DMeshSectionData.Num(); i++)
 	{
 		UnLive2DRendererComponent->SetMaterial(i, UnLive2DMeshSectionData[i].InterlottingDynamicMat);
-		UnLive2DRendererComponent->CreateMeshSection(i, UnLive2DMeshSectionData[i].InterlottingLive2DVertexs, UnLive2DMeshSectionData[i].InterlottingLive2DIndices, TArray<FVector>(),	UnLive2DMeshSectionData[i].InterlottingLive2DUVs, UnLive2DMeshSectionData[i].InterlottingLive2DUV1, TArray<FVector2D>(), TArray<FVector2D>(), UnLive2DMeshSectionData[i].InterlottingLive2DColors, TArray<FProcMeshTangent>(), false);
+		UnLive2DRendererComponent->CreateMeshSection(i, UnLive2DMeshSectionData[i].InterlottingLive2DVertexs, UnLive2DMeshSectionData[i].InterlottingLive2DIndices, TArray<FVector>(),	UnLive2DMeshSectionData[i].InterlottingLive2DUVs, UnLive2DMeshSectionData[i].InterlottingLive2DUV1, UnLive2DMeshSectionData[i].InterlottingLive2DUV2, TArray<FVector2D>(), UnLive2DMeshSectionData[i].InterlottingLive2DColors, TArray<FProcMeshTangent>(), false);
 	}
 
 	UnLive2DMeshSectionData.Empty();
@@ -79,7 +81,8 @@ void DrawMeshMeshSection(UUnLive2DRendererComponent* UnLive2DRendererComponent)
 
 void DrawSepMask_Normal(UUnLive2DRendererComponent* UnLive2DRendererComponent, Csm::CubismModel* Live2DModel, const Csm::csmInt32 DrawableIndex, class CubismClippingContext* ClipContext)
 {
-	float DepthOffset = 0 ; //深度
+	float DepthOffset = 0.f; //深度
+
 
 	csmFloat32 Opacity = Live2DModel->GetDrawableOpacity(DrawableIndex); // 获取不透明度
 	if (Opacity <= 0.f) return;
@@ -134,15 +137,15 @@ void DrawSepMask_Normal(UUnLive2DRendererComponent* UnLive2DRendererComponent, C
 			MaskUV /= ClipPosition.W;
 
 			MeshSectionData->InterlottingLive2DUV1.Add(MaskUV);
-			MeshSectionData->InterlottingLive2DColors.Add(FColor(ChanelFlag.X * 255, ChanelFlag.Y * 255, ChanelFlag.Z * 255, Opacity * 255));
+			MeshSectionData->InterlottingLive2DColors.Add(FColor(ChanelFlag.X * 255, ChanelFlag.Y * 255, ChanelFlag.Z * 255, ChanelFlag.W * 255));
 
 		}
 		else
 		{
-			MeshSectionData->InterlottingLive2DColors.Add(FColor(255, 255, 255, Opacity * 255));
+			MeshSectionData->InterlottingLive2DColors.Add(FColor::White);
 		}
 
-
+		MeshSectionData->InterlottingLive2DUV2.Add(FVector2D(Opacity, Opacity));
 		MeshSectionData->InterlottingLive2DVertexs.Add(FVector(Position.X * 100, DepthOffset, Position.Y * 100));
 		MeshSectionData->InterlottingLive2DUVs.Add(FVector2D(UVArray[VertexIndex * 2], 1 - UVArray[VertexIndex * 2 + 1]));// UE UV坐标与Live2D的Y坐标是相反的
 	}
