@@ -55,5 +55,11 @@ public class UnLive2DAsset : ModuleRules
             PrivateIncludePathModuleNames.Add("UnLive2DAssetEditor");
             DynamicallyLoadedModuleNames.Add("UnLive2DAssetEditor");
         }
+	
+	if(Target.Platform == UnrealTargetPlatform.Android)
+	{
+            string PluginPath = Utils.MakePathRelativeTo(ModuleDirectory, Target.RelativeEnginePath);
+            AdditionalPropertiesForReceipt.Add(new ReceiptProperty("AndroidPlugin", Path.Combine(PluginPath, "UnLive2DAsset_APL.xml")));
+	}
     }
 }
