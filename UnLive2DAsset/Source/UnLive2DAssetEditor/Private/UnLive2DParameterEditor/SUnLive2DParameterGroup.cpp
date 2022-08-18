@@ -8,11 +8,38 @@
 #include "Framework/Notifications/NotificationManager.h"
 #include "IUnLive2DParameterEditorAsset.h"
 #include "Animation/UnLive2DAnimBase.h"
+#include "Animation/UnLive2DExpression.h"
+#include "SUnLive2DAddParameterWidget.h"
 
 #define LOCTEXT_NAMESPACE "UnLive2DAssetEditor"
 
-static const FName UnLive2DParameterNameLabel("Parameter Name");
-static const FName UnLive2DParameterValueLabel("Parameter Value");
+FReply SUnLive2DParameterGroup::OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent)
+{
+	if (InKeyEvent.GetKey() == EKeys::Delete)
+	{
+		if (!UnLive2DEditorPtr.IsValid() || !UnLive2DEditorPtr.Pin()->GetUnLive2DParameterAddParameterData()) return FReply::Unhandled();
+
+		if (!UnLive2DParameterListView.IsValid()) return FReply::Unhandled();
+
+		for (TSharedPtr<FUnLive2DParameterInfo>& Item : UnLive2DParameterListView->GetSelectedItems())
+		{
+			
+			if (UnLive2DAddNewParameterList.Contains(Item))
+			{
+				UnLive2DAddNewParameterList.Remove(Item);
+			}
+			else
+			{
+				UnLive2DRemoveNewParameterList.Add(Item);
+			}
+		}
+		CreateUnLive2DParameterList(FilterText.ToString(), false);
+		UnLive2DParameterListView->RequestListRefresh();
+		//OnSaveUnLiveParameterData();
+	}
+
+	return FReply::Unhandled();
+}
 
 void SUnLive2DParameterGroup::Construct(const FArguments& InArgs, TSharedPtr<IUnLive2DParameterEditorAsset> InUnLive2DEditor)
 {
@@ -21,10 +48,20 @@ void SUnLive2DParameterGroup::Construct(const FArguments& InArgs, TSharedPtr<IUn
 	bShowAllParameter = true;
 	if (!UnLive2DEditorPtr.IsValid()) return;
 
+	TSharedPtr<SHorizontalBox> HorizontalBoxPanel;
+
 	ChildSlot
 	[
 		SNew(SVerticalBox)
-		
+
+
+		+ SVerticalBox::Slot()
+		.HAlign(HAlign_Center)
+		.AutoHeight()
+		[
+			SAssignNew(HorizontalBoxPanel, SHorizontalBox)
+		]
+
 		+ SVerticalBox::Slot()
 		.AutoHeight()
 		.Padding(0, 2)
@@ -42,7 +79,7 @@ void SUnLive2DParameterGroup::Construct(const FArguments& InArgs, TSharedPtr<IUn
 		]
 
 		+ SVerticalBox::Slot()
-		.FillHeight(1.0f)
+		.FillHeight(1.f)
 		[
 			SAssignNew(UnLive2DParameterListView, SUnLive2DParameterType)
 			.ListItemsSource(&UnLive2DParameterList)
@@ -63,7 +100,40 @@ void SUnLive2DParameterGroup::Construct(const FArguments& InArgs, TSharedPtr<IUn
 				.DefaultLabel(LOCTEXT("UnLive2DParameterValue", "Value"))
 			)
 		]
+
 	];
+
+	if (UnLive2DEditorPtr.Pin()->GetUnLive2DParameterAddParameterData()) // 添加参数
+	{
+		HorizontalBoxPanel->AddSlot()
+		.VAlign(VAlign_Center)
+		.AutoWidth()
+		.Padding(5.f)
+		[
+			SNew(SButton)
+			.OnClicked(this, &SUnLive2DParameterGroup::OnAddParameterUnLiveData)
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("UnLive2DAddParameterData", "AddParameter"))
+			]
+		];
+	}
+
+	if (UnLive2DEditorPtr.Pin()->GetUnLive2DParameterHasSaveData()) //保存按钮
+	{
+		HorizontalBoxPanel->AddSlot()
+		.VAlign(VAlign_Center)
+		.AutoWidth()
+		.Padding(5.f)
+		[
+			SNew(SButton)
+			.OnClicked(this, &SUnLive2DParameterGroup::OnSaveUnLiveParameterData)
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("UnLive2DParameterSaverData", "SaverData"))
+			]
+		];
+	}
 
 	if (InitParameterGroupData())
 	{
@@ -83,6 +153,7 @@ void SUnLive2DParameterGroup::UpDataUnLive2DAnimBase(TWeakObjectPtr<UUnLive2DAni
 	CreateUnLive2DParameterList(FilterText.ToString(), true);
 }
 
+
 void SUnLive2DParameterGroup::OnFilterTextChanged(const FText& SearchText)
 {
 	FilterText = SearchText;
@@ -93,6 +164,75 @@ void SUnLive2DParameterGroup::OnFilterTextChanged(const FText& SearchText)
 void SUnLive2DParameterGroup::OnFilterTextCommitted(const FText& SearchText, ETextCommit::Type CommitInfo)
 {
 	CreateUnLive2DParameterList(FilterText.ToString(), true);
+}
+
+FReply SUnLive2DParameterGroup::OnSaveUnLiveParameterData()
+{
+	if (!UnLive2DAnimBaseWeak.IsValid()) return FReply::Unhandled();
+
+	if (UUnLive2DExpression* Expression = Cast<UUnLive2DExpression>(UnLive2DAnimBaseWeak.Get()))
+	{
+		for (TSharedPtr<FUnLive2DParameterInfo>& Parameter : UnLive2DParameterByUID)
+		{
+			if (UnLive2DRemoveNewParameterList.Contains(Parameter))
+			{
+				Expression->RemoveExpressionDataValue(Parameter->ParameterData.ParameterName);
+			}
+			else
+			{
+				if (!Parameter->bParameterModify) continue;
+				Expression->SetExpressionDataValue(Parameter->ParameterData.ParameterName, Parameter->ParameterData.ParameterValue, Parameter->UnLive2DExpressionBlendType);
+			}
+			
+		}
+
+		for (TSharedPtr<FUnLive2DParameterInfo>& AddParameter : UnLive2DAddNewParameterList)
+		{
+			Expression->AddExpressionDataValue(AddParameter->ParameterData.ParameterName, AddParameter->ParameterData.ParameterValue, AddParameter->UnLive2DExpressionBlendType);
+		}
+
+		Expression->SaveExpressionData();
+
+		UnLive2DParameterByUID.Append(UnLive2DAddNewParameterList);
+		
+		UnLive2DAddNewParameterList.Empty();
+		UnLive2DRemoveNewParameterList.Empty();
+	}
+	return FReply::Handled();
+}
+
+FReply SUnLive2DParameterGroup::OnAddParameterUnLiveData()
+{
+	TSharedPtr<SUnLive2DAddParameterWidget> AddParameterWidget = SNew(SUnLive2DAddParameterWidget, SharedThis(this), UnLive2DEditorPtr.Pin()->GetUnLive2DRenderComponent());
+
+	if (AddParameterWidget->ConfigureProperties())
+	{
+		bool bIsHasRemove = false;
+		AddParameterWidget->SelectParameterInfo->UnLive2DAnimBaseWeak = UnLive2DAnimBaseWeak;
+		UnLive2DRemoveNewParameterList.RemoveAllSwap([SelectParameterInfo = AddParameterWidget->SelectParameterInfo, &bIsHasRemove](TSharedPtr<FUnLive2DParameterInfo>& A)
+		{
+			if (A->SmartName.DisplayName == SelectParameterInfo->SmartName.DisplayName)
+			{
+				A->ParameterData = SelectParameterInfo->ParameterData;
+				A->bParameterModify = true;
+				A->UnLive2DAnimBaseWeak = SelectParameterInfo->UnLive2DAnimBaseWeak;
+				A->UnLive2DExpressionBlendType = SelectParameterInfo->UnLive2DExpressionBlendType;
+				bIsHasRemove = true;
+				return true;
+			}
+			return false;
+		});
+
+		if (!bIsHasRemove)
+		{
+			UnLive2DAddNewParameterList.Add(AddParameterWidget->SelectParameterInfo);
+		}
+
+		CreateUnLive2DParameterList(FilterText.ToString(), false);
+		UnLive2DParameterListView->RequestListRefresh();
+	}
+
+	return FReply::Handled();
 }
 
 TSharedPtr<SWidget> SUnLive2DParameterGroup::OnGetContextMenuContent() const
@@ -112,7 +252,7 @@ void SUnLive2DParameterGroup::OnSelectionChanged(TSharedPtr<FUnLive2DParameterIn
 
 TSharedRef<ITableRow> SUnLive2DParameterGroup::GenerateUnLive2DParameterRow(TSharedPtr<FUnLive2DParameterInfo> InInfo, const TSharedRef<STableViewBase>& OwnerTable, EUnLive2DParameterAssetType::Type ParameterAssetType)
 {
-	return SNew(SUnLive2DParameterListRow, OwnerTable, SharedThis(this), ParameterAssetType)
+	return SNew(SUnLive2DParameterListRow, OwnerTable, this, ParameterAssetType)
 		.Item(InInfo);
 }
 
@@ -153,7 +293,7 @@ void SUnLive2DParameterGroup::CreateUnLive2DParameterList(const FString& SearchT
 			UIDIndex++;
 		}
 	}
-	else if (ParameterAssetType == EUnLive2DParameterAssetType::UnLive2DExpression && UnLive2DAnimBaseWeak.IsValid())
+	else if (ParameterAssetType == EUnLive2DParameterAssetType::UnLive2DExpression && UnLive2DAnimBaseWeak.IsValid() && !UnLive2DParameterByUID.IsValidIndex(0))
 	{
 		TArray<FUnLive2DParameterData_Expression> ExpressionParameterArr;
 		if (!UnLive2DAnimBaseWeak->GetAnimParamterGroup(Comp, ExpressionParameterArr)) return;
@@ -179,6 +319,7 @@ void SUnLive2DParameterGroup::CreateUnLive2DParameterList(const FString& SearchT
 	TMap<FName, float> ActiveParameter;
 	for (TSharedPtr<FUnLive2DParameterInfo>& Item : UnLive2DParameterByUID)
 	{
+		if (UnLive2DRemoveNewParameterList.Contains(Item)) continue;
 		FSmartName SmartName = Item->SmartName;
 		bool bAddToList = true;
 		if (!FilterText.IsEmpty())
@@ -205,12 +346,36 @@ void SUnLive2DParameterGroup::CreateUnLive2DParameterList(const FString& SearchT
 		}
 	}
 
+	for (TSharedPtr<FUnLive2DParameterInfo>& Item : UnLive2DAddNewParameterList)
+	{
+		FSmartName SmartName = Item->SmartName;
+		bool bAddToList = true;
+		if (!FilterText.IsEmpty())
+		{
+			if (!SmartName.DisplayName.ToString().Contains(*FilterText.ToString()))
+			{
+				bAddToList = false;
+			}
+
+		}
+
+		if (Item->bShown != bAddToList)
+		{
+			Item->bShown = bAddToList;
+			bDirty = true;
+		}
+
+		if (bAddToList)
+		{
+			UnLive2DParameterList.Add(Item);
+		}
+	}
+
 	if (bDirty)
 	{
 		// Sort final list
 		/*UnLive2DParameterList.Sort([](const TSharedPtr<FUnLive2DParameterInfo>& A, const TSharedPtr<FUnLive2DParameterInfo>& B) 
 		{ return (A.Get()->SmartName.DisplayName.Compare(B.Get()->SmartName.DisplayName) < 0); });*/
-
 		UnLive2DParameterListView->RequestListRefresh();
 	}
 #endif
@@ -245,193 +410,21 @@ void SUnLive2DParameterGroup::OnNameCommitted(const FText& InNewName, ETextCommi
 	}
 }
 
-TSharedRef<FUnLive2DParameterInfo> FUnLive2DParameterInfo::Create(TWeakObjectPtr<UUnLive2DRendererComponent>& InEditableUnLive2D, const FSmartName& InSmartName, FUnLive2DParameterData& ParameterData)
+
+TArray< TSharedPtr<FUnLive2DParameterInfo> > SUnLive2DParameterGroup::GetAllUnLive2DParameterByUID() const
 {
-	return MakeShareable(new FUnLive2DParameterInfo(InEditableUnLive2D, InSmartName, ParameterData));
-}
+	TArray<TSharedPtr<FUnLive2DParameterInfo>> ParameterInfo;
 
-TSharedRef<FUnLive2DParameterInfo> FUnLive2DParameterInfo::Create(TWeakObjectPtr<UUnLive2DRendererComponent>& InEditableUnLive2D, const FSmartName& InSmartName, FUnLive2DParameterData& ParameterData, EUnLive2DExpressionBlendType::Type InUnLive2DExpressionBlendType, TWeakObjectPtr<UUnLive2DAnimBase>& InUnLive2DAnimBase)
-{
-	return MakeShareable(new FUnLive2DParameterInfo(InEditableUnLive2D, InSmartName, ParameterData, InUnLive2DExpressionBlendType, InUnLive2DAnimBase));
-}
-
-void SUnLive2DParameterListRow::Construct(const FArguments& InArgs, const TSharedRef<STableViewBase>& InOwnerTableView, TWeakPtr<SUnLive2DParameterGroup> InParameterGroupPtr, EUnLive2DParameterAssetType::Type ParameterAssetType)
-{
-	Item = InArgs._Item;
-	UnLive2DParameterGroupPtr = InParameterGroupPtr;
-	UnLive2DParameterAssetType = ParameterAssetType;
-	SMultiColumnTableRow< TSharedPtr<FUnLive2DParameterInfo> >::Construct(FSuperRowType::FArguments(), InOwnerTableView);
-}
-
-
-TSharedRef<SWidget> SUnLive2DParameterListRow::GenerateWidgetForColumn(const FName& ColumnName)
-{
-	if (!UnLive2DParameterGroupPtr.IsValid()) return SNullWidget::NullWidget;
-
-	if (ColumnName == UnLive2DParameterNameLabel)
+	for (const TSharedPtr<FUnLive2DParameterInfo>& Item : UnLive2DParameterByUID)
 	{
-		return SNew(SVerticalBox)
-			+ SVerticalBox::Slot()
-			.FillHeight(1.f)
-			.Padding(4)
-			.VAlign(VAlign_Center)
-			[
-				SAssignNew(Item->EditableText, SInlineEditableTextBlock)
-				.OnTextCommitted(UnLive2DParameterGroupPtr.Pin().Get(), &SUnLive2DParameterGroup::OnNameCommitted, Item)
-				.ColorAndOpacity(this, &SUnLive2DParameterListRow::GetItemTextColor)
-				.IsSelected(this, &SUnLive2DParameterListRow::IsSelected)
-				.Text(this, &SUnLive2DParameterListRow::GetItemName)
-				.HighlightText(this, &SUnLive2DParameterListRow::GetFilterText)
-			];
-	}
-	else if (ColumnName == UnLive2DParameterValueLabel)
-	{
-		TSharedPtr<SVerticalBox> VerticalBox = SNew(SVerticalBox)
-			+ SVerticalBox::Slot()
-			.AutoHeight()
-			.Padding(0.0f, 1.0f)
-			.VAlign(VAlign_Fill)
-			[
-				SNew(SSpinBox<float>)
-				.MinSliderValue(Item->ParameterData.ParameterMinValue)
-				.MaxSliderValue(Item->ParameterData.ParameterMaxValue)
-				.MinValue(Item->ParameterData.ParameterMinValue)
-				.MaxValue(Item->ParameterData.ParameterMaxValue)
-				.Value(this, &SUnLive2DParameterListRow::GetParameterValue)
-				.OnValueChanged(this, &SUnLive2DParameterListRow::OnUnLive2DParameterChanged)
-				.OnValueCommitted(this, &SUnLive2DParameterListRow::OnUnLive2DParameterValueCommitted)
-			];
+		if (UnLive2DRemoveNewParameterList.Contains(Item)) continue;
 
-		if (UnLive2DParameterAssetType == EUnLive2DParameterAssetType::UnLive2DExpression)
-		{
-			UnLive2DExpressionBlendType = Item->UnLive2DExpressionBlendType;
-
-			VerticalBox->AddSlot()
-			[
-				SNew(SComboButton)
-				.OnGetMenuContent(this, &SUnLive2DParameterListRow::OnGetShowOverrideTypeMenu)
-				.ContentPadding(2)
-				.ButtonContent()
-				[
-					SNew(STextBlock)
-					.Text(this, &SUnLive2DParameterListRow::GetOverrideTypeDropDownText)
-				]
-			];
-		}
-
-		return VerticalBox.ToSharedRef();
+		ParameterInfo.Add(Item);
 	}
 
-	return SNullWidget::NullWidget;
-}
+	ParameterInfo.Append(UnLive2DAddNewParameterList);
 
-float SUnLive2DParameterListRow::GetParameterValue() const
-{
-	return Item->ParameterData.ParameterValue;
-}
-
-FSlateColor SUnLive2DParameterListRow::GetItemTextColor() const
-{
-	if (IsSelected())
-	{
-		return FLinearColor(0, 0, 0);
-	}
-
-	return FLinearColor(1, 1, 1);
-}
-
-FText SUnLive2DParameterListRow::GetItemName() const
-{
-	return FText::FromName(Item->ParameterData.ParameterName);
-}
-
-FText SUnLive2DParameterListRow::GetFilterText() const
-{
-	if (!UnLive2DParameterGroupPtr.IsValid()) return FText::GetEmpty();
-
-	return UnLive2DParameterGroupPtr.Pin()->GetFilterText();
-}
-
-void SUnLive2DParameterListRow::OnUnLive2DParameterChanged(float NewParameter)
-{
-	if (!Item->EditableUnLive2DComp.IsValid()) return;
-
-	Item->ParameterData.ParameterValue = NewParameter;
-
-	if (UnLive2DParameterAssetType == EUnLive2DParameterAssetType::UnLive2DExpression)
-	{
-		if (!Item->UnLive2DAnimBaseWeak.IsValid()) return;
-
-		Item->UnLive2DAnimBaseWeak->SetAnimParamterValue(Item->ParameterData.ParameterName, NewParameter);
-
-	}
-	else if (UnLive2DParameterAssetType == EUnLive2DParameterAssetType::UnLive2D)
-	{
-		Item->EditableUnLive2DComp->SetModelParamterValue(Item->ParameterData.ParameterID, NewParameter);
-	}
-}
-
-void SUnLive2DParameterListRow::OnUnLive2DParameterValueCommitted(float NewParameter, ETextCommit::Type CommitType)
-{
-	if (CommitType == ETextCommit::OnEnter || CommitType == ETextCommit::OnUserMovedFocus)
-	{
-		if (!Item->EditableUnLive2DComp.IsValid()) return;
-
-		Item->ParameterData.ParameterValue = NewParameter;
-
-		if (UnLive2DParameterAssetType == EUnLive2DParameterAssetType::UnLive2DExpression)
-		{
-			if (!Item->UnLive2DAnimBaseWeak.IsValid()) return;
-
-			Item->UnLive2DAnimBaseWeak->SetAnimParamterValue(Item->ParameterData.ParameterName, NewParameter);
-			
-		}
-		else if (UnLive2DParameterAssetType == EUnLive2DParameterAssetType::UnLive2D)
-		{
-			Item->EditableUnLive2DComp->SetModelParamterValue(Item->ParameterData.ParameterID, NewParameter);
-		}
-	}
-}
-
-TSharedRef<SWidget> SUnLive2DParameterListRow::OnGetShowOverrideTypeMenu()
-{
-	FMenuBuilder MenuBuilder(true, NULL);
-
-	auto CreateAction = [&MenuBuilder, this](EUnLive2DExpressionBlendType::Type InType, FString Name)
-	{
-		FUIAction NoAction(FExecuteAction::CreateSP(this, &SUnLive2DParameterListRow::HandleOverrideTypeChange, InType));
-		MenuBuilder.AddMenuEntry(FText::FromString(Name), FText(), FSlateIcon(), NoAction);
-	};
-
-	CreateAction(EUnLive2DExpressionBlendType::ExpressionBlendType_Add, TEXT("Add"));
-	CreateAction(EUnLive2DExpressionBlendType::ExpressionBlendType_Multiply, TEXT("Multiply"));
-	CreateAction(EUnLive2DExpressionBlendType::ExpressionBlendType_Overwrite, TEXT("Overwrite"));
-
-	return MenuBuilder.MakeWidget();
-}
-
-void SUnLive2DParameterListRow::HandleOverrideTypeChange(EUnLive2DExpressionBlendType::Type BlendType)
-{
-	UnLive2DExpressionBlendType = BlendType;
-}
-
-FText SUnLive2DParameterListRow::GetOverrideTypeDropDownText() const
-{
-	FText DropDownText;
-	switch (UnLive2DExpressionBlendType)
-	{
-	case EUnLive2DExpressionBlendType::ExpressionBlendType_Add:
-		DropDownText = FText::FromString(TEXT("Add"));
-		break;
-	case EUnLive2DExpressionBlendType::ExpressionBlendType_Multiply:
-		DropDownText = FText::FromString(TEXT("Multiply"));
-		break;
-	case EUnLive2DExpressionBlendType::ExpressionBlendType_Overwrite:
-		DropDownText = FText::FromString(TEXT("Overwrite"));
-		break;
-	}
-
-	return DropDownText;
+	return ParameterInfo;
 }
 
 #undef LOCTEXT_NAMESPACE

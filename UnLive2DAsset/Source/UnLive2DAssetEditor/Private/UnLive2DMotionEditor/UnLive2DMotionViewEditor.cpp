@@ -278,6 +278,16 @@ EUnLive2DParameterAssetType::Type FUnLive2DAnimBaseViewEditor::GetUnLive2DParame
 	return UnLive2DAnimBeingEdited->IsA<UUnLive2DMotion>() ? EUnLive2DParameterAssetType::UnLive2DMotion : EUnLive2DParameterAssetType::UnLive2DExpression;
 }
 
+bool FUnLive2DAnimBaseViewEditor::GetUnLive2DParameterHasSaveData() const
+{
+	return !UnLive2DAnimBeingEdited->IsA<UUnLive2DMotion>();
+}
+
+bool FUnLive2DAnimBaseViewEditor::GetUnLive2DParameterAddParameterData() const
+{
+	return !UnLive2DAnimBeingEdited->IsA<UUnLive2DMotion>();
+}
+
 void FUnLive2DAnimBaseViewEditor::BindCommands()
 {
 

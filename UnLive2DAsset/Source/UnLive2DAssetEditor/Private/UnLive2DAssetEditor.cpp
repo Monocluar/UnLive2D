@@ -19,6 +19,8 @@
 #include "RigVMCore/RigVMStruct.h"
 #include "AnimBlueprintGraph/UnLive2DAnimBlueprintGraphNodeFactory.h"
 #include "UnLive2DExpressionAction.h"
+#include "ISettingsModule.h"
+#include "UnLive2DSetting.h"
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
 
@@ -32,6 +34,10 @@ void FUnLive2DAssetEditorModule::StartupModule()
 void FUnLive2DAssetEditorModule::ShutdownModule()
 {
 
+	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
+	{
+		SettingsModule->UnregisterSettings("Project", "Plugins", "UnLive2DAsset");
+	}
 	FUnLive2DEditorStyle::Shutdown();
 	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
 	// we call this function before unloading the module.
@@ -57,6 +63,12 @@ void FUnLive2DAssetEditorModule::OnPostEngineInit()
 	AssetTools.RegisterAssetTypeActions(MakeShareable(new FUnLive2DMotionTypeAction(GameAssetCategory)));
 	AssetTools.RegisterAssetTypeActions(MakeShareable(new FUnLive2DExpressionAction(GameAssetCategory)));
 	AssetTools.RegisterAssetTypeActions(MakeShareable(new FUnLive2DAnimBlurprintTypeAction(GameAssetCategory)));
+
+	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
+	{
+		SettingsModule->RegisterSettings("Project", "Plugins", "UnLive2DAsset", LOCTEXT("RuntimeSettingsName", "UnLive2D Settings"),
+			LOCTEXT("RuntimeSettingsDescription", "Configure the UnLive2DAsset plugin"), GetMutableDefault<UUnLive2DSetting>());
+	}
 
 }
 

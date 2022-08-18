@@ -19,10 +19,18 @@ public:
 protected:
 	virtual bool GetAnimParamterGroup(TWeakObjectPtr<class UUnLive2DRendererComponent>& ObsComp, TArray<struct FUnLive2DParameterData_Expression>& ParameterArr) override;
 
-	virtual void SetAnimParamterValue(FName ParameterStr, float NewParameter) override;
+public:
+	void SetAnimParamterValue(TWeakObjectPtr<class UUnLive2DRendererComponent>& ObsComp, int32 ParameterID, float NewParameter, EUnLive2DExpressionBlendType::Type NewType);
 
-	virtual void SetAnimParamterBlendType(FName ParameterStr, float NewParameter) override;
+	void SetAnimParamterBlendType(TWeakObjectPtr<class UUnLive2DRendererComponent>& ObsComp, int32 ParameterID, float DefaultParameter, EUnLive2DExpressionBlendType::Type NewType);
 
+	void SetExpressionDataValue(FName ParameterStr, float NewParameter, EUnLive2DExpressionBlendType::Type NewType);
+
+	void AddExpressionDataValue(FName ParameterStr, float NewParameter, EUnLive2DExpressionBlendType::Type NewType);
+
+	void RemoveExpressionDataValue(FName ParameterStr);
+
+	void SaveExpressionData();
 #endif
 
 public:

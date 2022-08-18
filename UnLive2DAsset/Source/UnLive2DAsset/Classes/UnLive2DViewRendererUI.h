@@ -35,10 +35,6 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
 		UMaterialInterface* UnLive2DMultiplyMaterial;
 
-	// 材质读取图片参数名
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Rendering)
-		FName TextureParameterName;
-
 public:
 	// 播放动画
 	UFUNCTION(BlueprintCallable, Category = "Anim")

@@ -573,17 +573,7 @@ UMaterialInstanceDynamic* FUnLive2DRenderState::GetUnLive2DMaterial(int32 InMode
 
 FName FUnLive2DRenderState::GetDMaterialTextureParameterName() const
 {
-	if (OwnerCompWeak.IsValid())
-	{
-		return OwnerCompWeak->TextureParameterName;
-	}
-
-	if (OwnerViewUIWeak.IsValid())
-	{
-		return OwnerViewUIWeak->TextureParameterName;
-	}
-
-	return FName();
+	return FName("UnLive2D");
 }
 
 void FUnLive2DRenderState::UnLive2DFillMaskParameter(CubismClippingContext* clipContext, FUnLiveMatrix& ts_MartixForMask, FUnLiveVector4& ts_BaseColor, FUnLiveVector4& ts_ChanelFlag)

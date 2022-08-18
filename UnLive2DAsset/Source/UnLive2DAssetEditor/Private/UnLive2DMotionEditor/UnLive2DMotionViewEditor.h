@@ -50,6 +50,10 @@ public:
 
 	virtual EUnLive2DParameterAssetType::Type GetUnLive2DParameterAssetType() const override;
 
+	virtual bool GetUnLive2DParameterHasSaveData() const  override;
+
+	virtual bool GetUnLive2DParameterAddParameterData() const override;
+
 private:
 	// Live2D动作
 	UUnLive2DAnimBase* UnLive2DAnimBeingEdited;

@@ -13,6 +13,7 @@
 #include "UObject/ConstructorHelpers.h"
 #include "Materials/MaterialInterface.h"
 #include "Framework/Application/SlateApplication.h"
+#include "UnLive2DSetting.h"
 
 #if !UE_VERSION_OLDER_THAN(5,0,0)
 #include "Math/Vector4.h"
@@ -158,7 +159,7 @@ void DrawSepMask_Normal(UUnLive2DRendererComponent* UnLive2DRendererComponent, C
 
 	for (int32 VertexIndex = 0; VertexIndex < VertexIndexCount; ++VertexIndex)
 	{
-		MeshSectionData->InterlottingLive2DIndices.AddDefaulted_GetRef() = InterlottingIndiceIndex + (int32)IndicesArray[VertexIndex];
+		MeshSectionData->InterlottingLive2DIndices.Add(InterlottingIndiceIndex + (int32)IndicesArray[VertexIndex]);
 	}
 
 }
@@ -184,16 +185,13 @@ UUnLive2DRendererComponent::UUnLive2DRendererComponent(const FObjectInitializer&
 	bTickInEditor = true;
 	bAutoActivate = true;
 
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> NormalMaterial(TEXT("/UnLive2DAsset/Mesh/UnLive2DPassNormalMaterial"));
-	UnLive2DNormalMaterial = NormalMaterial.Object;
+	const UUnLive2DSetting* Setting = GetDefault<UUnLive2DSetting>();
+	UnLive2DNormalMaterial = Cast<UMaterialInterface>(Setting->DefaultUnLive2DNormalMaterial_Mesh.TryLoad());
 
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> AdditiveMaterial(TEXT("/UnLive2DAsset/Mesh/UnLive2DPassAdditiveMaterial"));
-	UnLive2DAdditiveMaterial = AdditiveMaterial.Object;
+	UnLive2DAdditiveMaterial = Cast<UMaterialInterface>(Setting->DefaultUnLive2DAdditiveMaterial_Mesh.TryLoad());
 
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> MultiplyMaterial(TEXT("/UnLive2DAsset/Mesh/UnLive2DPassMultiplyMaterial"));
-	UnLive2DMultiplyMaterial = MultiplyMaterial.Object;
+	UnLive2DMultiplyMaterial = Cast<UMaterialInterface>(Setting->DefaultUnLive2DMultiplyMaterial_Mesh.TryLoad());
 
-	TextureParameterName = TEXT("UnLive2D");
 }
 
 
@@ -444,7 +442,7 @@ bool UUnLive2DRendererComponent::GetModelParamterGroup(TArray<FUnLive2DParameter
 	return true;
 }
 
-void UUnLive2DRendererComponent::SetModelParamterValue(int32  ParameterID, float NewParameter)
+void UUnLive2DRendererComponent::SetModelParamterValue(int32  ParameterID, float NewParameter, EUnLive2DExpressionBlendType::Type BlendType)
 {
 	if (!UnLive2DRawModel.IsValid()) return;
 
@@ -452,19 +450,33 @@ void UUnLive2DRendererComponent::SetModelParamterValue(int32  ParameterID, float
 
 	if (UnLive2DModel == nullptr) return;
 
-	UnLive2DModel->SetParameterValue(ParameterID, NewParameter);
+	switch (BlendType)
+	{
+	case EUnLive2DExpressionBlendType::ExpressionBlendType_Add:
+		UnLive2DModel->AddParameterValue(ParameterID, NewParameter);
+		break;
+	case EUnLive2DExpressionBlendType::ExpressionBlendType_Multiply:
+		UnLive2DModel->MultiplyParameterValue(ParameterID, NewParameter);
+		break;
+	case EUnLive2DExpressionBlendType::ExpressionBlendType_Overwrite:
+		UnLive2DModel->SetParameterValue(ParameterID, NewParameter);
+		break;
+	}
 
 	UnLive2DModel->SaveParameters();
 }
 
 bool UUnLive2DRendererComponent::GetModelParamterIDData(FName ParameterStr, FUnLive2DParameterData& Parameter)
 {
-	FDateTime A = FDateTime();
 	const CubismIdHandle ParameterId = CubismFramework::GetIdManager()->GetId(TCHAR_TO_UTF8(*ParameterStr.ToString())); // 参数标识
 	Csm::CubismModel* UnLive2DModel = UnLive2DRawModel->GetModel();
 	if (UnLive2DModel == nullptr) return false;
 
-	int32 ID = UnLive2DModel->GetParameterIndex(ParameterId);
+	int32 ID;
+	if (!GetModelParamterID(ParameterStr, ID))
+	{
+		return false;
+	}
 	Parameter = (FUnLive2DParameterData(
 		ID,
 		ParameterStr,
@@ -473,6 +485,17 @@ bool UUnLive2DRendererComponent::GetModelParamterIDData(FName ParameterStr, FUnL
 		UnLive2DModel->GetParameterMinimumValue(ID), // 最小值
 		UnLive2DModel->GetParameterMaximumValue(ID))); // 最大值
 
+	return true;
+}
+
+bool UUnLive2DRendererComponent::GetModelParamterID(FName ParameterStr, int32& ParameterID)
+{
+	const CubismIdHandle ParameterHandle = CubismFramework::GetIdManager()->GetId(TCHAR_TO_UTF8(*ParameterStr.ToString())); // 参数标识
+	Csm::CubismModel* UnLive2DModel = UnLive2DRawModel->GetModel();
+	if (UnLive2DModel == nullptr) return false;
+
+
+	ParameterID = UnLive2DModel->GetParameterIndex(ParameterHandle);
 	return true;
 }
 

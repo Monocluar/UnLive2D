@@ -62,10 +62,6 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
 		UMaterialInterface* UnLive2DMultiplyMaterial;
 
-	// 材质读取图片参数名
-	UPROPERTY(Category = Rendering, EditAnywhere, BlueprintReadWrite)
-		FName TextureParameterName;
-
 public:
 	UFUNCTION(BlueprintCallable, Category = "Live2D")
 		bool SetUnLive2D(UUnLive2D* NewUnLive2D);
@@ -87,9 +83,11 @@ public:
 #if WITH_EDITOR
 	 bool GetModelParamterGroup(TArray<FUnLive2DParameterData>& ParameterArr);
 
-	 void SetModelParamterValue(int32  ParameterID, float NewParameter);
+	 void SetModelParamterValue(int32  ParameterID, float NewParameter, EUnLive2DExpressionBlendType::Type BlendType = EUnLive2DExpressionBlendType::ExpressionBlendType_Overwrite);
 
 	 bool GetModelParamterIDData(FName ParameterStr, FUnLive2DParameterData& Parameter);
+
+	 bool GetModelParamterID(FName ParameterStr, int32& ParameterID);
 #endif
 
 protected:

@@ -5,6 +5,7 @@
 #include "UnLive2D.h"
 #include "Engine/World.h"
 #include "Draw/UnLive2DSepRenderer.h"
+#include "UnLive2DSetting.h"
 
 
 #define LOCTEXT_NAMESPACE "UnLive2D"
@@ -12,17 +13,12 @@
 UUnLive2DViewRendererUI::UUnLive2DViewRendererUI(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	const UUnLive2DSetting* Setting = GetDefault<UUnLive2DSetting>();
+	UnLive2DNormalMaterial = Cast<UMaterialInterface>(Setting->DefaultUnLive2DNormalMaterial_UI.TryLoad());
 
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> NormalMaterial(TEXT("/UnLive2DAsset/Slate/UnLive2DSlateThrough_Normal"));
-	UnLive2DNormalMaterial = NormalMaterial.Object;
+	UnLive2DAdditiveMaterial = Cast<UMaterialInterface>(Setting->DefaultUnLive2DAdditiveMaterial_UI.TryLoad());
 
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> AdditiveMaterial(TEXT("/UnLive2DAsset/Slate/UnLive2DSlateThrough_Additive"));
-	UnLive2DAdditiveMaterial = AdditiveMaterial.Object;
-
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> MultiplyMaterial(TEXT("/UnLive2DAsset/Slate/UnLive2DSlateThrough_Multiply"));
-	UnLive2DMultiplyMaterial = MultiplyMaterial.Object;
-
-	TextureParameterName = FName(TEXT("UnLive2D"));
+	UnLive2DMultiplyMaterial = Cast<UMaterialInterface>(Setting->DefaultUnLive2DMultiplyMaterial_UI.TryLoad());
 }
 
 void UUnLive2DViewRendererUI::PlayMotion(UUnLive2DMotion* InMotion)

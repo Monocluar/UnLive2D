@@ -5,6 +5,7 @@
 #include "UObject/ObjectMacros.h"
 #include "UObject/Object.h"
 #include "UnLive2D.h"
+#include "CubismBpLib.h"
 #include "UnLive2DAnimBase.generated.h"
 
 
@@ -27,10 +28,5 @@ public:
 	// 获取UnLive2D动画参数组
 	virtual bool GetAnimParamterGroup(TWeakObjectPtr<class UUnLive2DRendererComponent>& ObsComp, TArray<struct FUnLive2DParameterData_Expression>& ParameterArr){ return false; }
 
-	// 设置UnLive2D动画参数值
-	virtual void SetAnimParamterValue(FName ParameterStr, float NewParameter){};
-
-	// 设置UnLive2D动画叠加类型
-	virtual void SetAnimParamterBlendType(FName ParameterStr, float NewParameter) {};
 #endif
 };

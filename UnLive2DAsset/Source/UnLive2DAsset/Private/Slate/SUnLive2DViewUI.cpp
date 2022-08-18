@@ -205,8 +205,7 @@ void SUnLive2DViewUI::UpDateMesh(const FGeometry& AllottedGeometry, int32 Drawab
 
 	for (int32 VertexIndex = 0; VertexIndex < VertexIndexCount; ++VertexIndex)
 	{
-		SlateIndex& Live2DIndexData = MeshSectionData->InterlottingLive2DIndexData.AddDefaulted_GetRef();
-		Live2DIndexData =  InterlottingIndiceIndex + (SlateIndex)IndicesArray[VertexIndex];
+		MeshSectionData->InterlottingLive2DIndexData.Add(InterlottingIndiceIndex + (SlateIndex)IndicesArray[VertexIndex]);
 	}
 	
 }

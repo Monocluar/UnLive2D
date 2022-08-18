@@ -9,6 +9,7 @@
 #include "Id/CubismId.hpp"
 #include "Serialization/JsonReader.h"
 #include "Dom/JsonValue.h"
+#include "FWPort/UnLive2DRawModel.h"
 #endif
 #include "Serialization/JsonSerializer.h"
 
@@ -60,6 +61,8 @@ bool UUnLive2DExpression::GetAnimParamterGroup(TWeakObjectPtr<class UUnLive2DRen
 	if (!ExpressionData.ByteData.IsValidIndex(0)) return false;
 	ParameterArr.Empty();
 
+	ObsComp->GetUnLive2DRawModel().Pin()->SetBreathAnimAutoPlay(false);
+
 	Utils::CubismJson* json = Utils::CubismJson::Create(ExpressionData.ByteData.GetData(), ExpressionData.ByteData.Num());
 	Utils::Value& root = json->GetRoot();
 
@@ -99,7 +102,25 @@ bool UUnLive2DExpression::GetAnimParamterGroup(TWeakObjectPtr<class UUnLive2DRen
 	return true;
 }
 
-void UUnLive2DExpression::SetAnimParamterValue(FName ParameterStr, float NewParameter)
+void UUnLive2DExpression::SetAnimParamterValue(TWeakObjectPtr<class UUnLive2DRendererComponent>& ObsComp, int32 ParameterID, float NewParameter, EUnLive2DExpressionBlendType::Type NewType)
+{
+	if (!ObsComp.IsValid()) return;
+
+	ObsComp->SetModelParamterValue(ParameterID, NewParameter, NewType);
+	return;
+
+}
+
+
+void UUnLive2DExpression::SetAnimParamterBlendType(TWeakObjectPtr<class UUnLive2DRendererComponent>& ObsComp, int32 ParameterID, float DefaultParameter, EUnLive2DExpressionBlendType::Type NewType)
+{
+	if (!ObsComp.IsValid()) return;
+
+	ObsComp->SetModelParamterValue(ParameterID, DefaultParameter, EUnLive2DExpressionBlendType::ExpressionBlendType_Overwrite);
+	ObsComp->SetModelParamterValue(ParameterID, DefaultParameter, NewType);
+}
+
+void UUnLive2DExpression::SetExpressionDataValue(FName ParameterStr, float NewParameter, EUnLive2DExpressionBlendType::Type NewType)
 {
 	if (!ExpressionDataJsonRoot.IsValid())
 	{
@@ -109,10 +130,8 @@ void UUnLive2DExpression::SetAnimParamterValue(FName ParameterStr, float NewPara
 		if (!FJsonSerializer::Deserialize(JsonReader, ExpressionDataJsonRoot)) return;
 
 	}
-
 	TArray<TSharedPtr<FJsonValue>> ParameterArr = ExpressionDataJsonRoot->GetArrayField(ExpressionKeyParameters);
 
-	bool bIsHasParamter = false;
 	for (TSharedPtr<FJsonValue>& Parameter : ParameterArr)
 	{
 		if (!Parameter.IsValid()) continue;
@@ -121,29 +140,95 @@ void UUnLive2DExpression::SetAnimParamterValue(FName ParameterStr, float NewPara
 
 		if (ParameterObject->GetStringField(ExpressionKeyId) == ParameterStr.ToString())
 		{
-			bIsHasParamter = true;
+
+			FString BlendType;
+			switch (NewType)
+			{
+			case EUnLive2DExpressionBlendType::ExpressionBlendType_Add:
+				BlendType = BlendValueAdd;
+				break;
+			case EUnLive2DExpressionBlendType::ExpressionBlendType_Multiply:
+				BlendType = BlendValueMultiply;
+				break;
+			case EUnLive2DExpressionBlendType::ExpressionBlendType_Overwrite:
+				BlendType = BlendValueOverwrite;
+				break;
+			}
+
+			ParameterObject->SetStringField(ExpressionKeyBlend, BlendType);
 
 			ParameterObject->SetNumberField(ExpressionKeyValue, NewParameter);
-		}
-	}
 
-	if (bIsHasParamter)
-	{
-		FString OutJsonString;
-		TSharedRef<TJsonWriter<TCHAR, TPrettyJsonPrintPolicy<TCHAR>>> JsonWriter = TJsonWriterFactory<TCHAR, TPrettyJsonPrintPolicy<TCHAR>>::Create(&OutJsonString, 0);
-		if (FJsonSerializer::Serialize(ExpressionDataJsonRoot.ToSharedRef(), JsonWriter))
-		{
-			ExpressionData.ByteData.SetNum(OutJsonString.Len());
-			FMemory::Memcpy(ExpressionData.ByteData.GetData(), TCHAR_TO_ANSI(*OutJsonString), OutJsonString.Len());
-			UE_LOG(LogTemp, Log, TEXT(""));
+			return;
 		}
-
 	}
 }
 
-void UUnLive2DExpression::SetAnimParamterBlendType(FName ParameterStr, float NewParameter)
+void UUnLive2DExpression::AddExpressionDataValue(FName ParameterStr, float NewParameter, EUnLive2DExpressionBlendType::Type NewType)
 {
+	if (!ExpressionDataJsonRoot.IsValid())
+	{
+		FString JsonStr;
+		FFileHelper::BufferToString(JsonStr, ExpressionData.ByteData.GetData(), ExpressionData.ByteData.Num());
+		TSharedRef<TJsonReader<> > JsonReader = TJsonReaderFactory<>::Create(JsonStr);
+		if (!FJsonSerializer::Deserialize(JsonReader, ExpressionDataJsonRoot)) return;
 
+	}
+	TArray<TSharedPtr<FJsonValue>> ParameterArr = ExpressionDataJsonRoot->GetArrayField(ExpressionKeyParameters);
+
+	FString BlendType;
+	switch (NewType)
+	{
+	case EUnLive2DExpressionBlendType::ExpressionBlendType_Add:
+		BlendType = BlendValueAdd;
+		break;
+	case EUnLive2DExpressionBlendType::ExpressionBlendType_Multiply:
+		BlendType = BlendValueMultiply;
+		break;
+	case EUnLive2DExpressionBlendType::ExpressionBlendType_Overwrite:
+		BlendType = BlendValueOverwrite;
+		break;
+	}
+
+	TSharedRef<FJsonObject> Out = MakeShared<FJsonObject>();
+	Out->Values.Add(ExpressionKeyId, MakeShared<FJsonValueString>(ParameterStr.ToString()));
+	Out->Values.Add(ExpressionKeyValue, MakeShared<FJsonValueNumber>(NewParameter));
+	Out->Values.Add(ExpressionKeyBlend, MakeShared<FJsonValueString>(BlendType));
+	ParameterArr.Add(MakeShared<FJsonValueObject>(Out));
+	ExpressionDataJsonRoot->SetArrayField(ExpressionKeyParameters, ParameterArr);
+}
+
+void UUnLive2DExpression::RemoveExpressionDataValue(FName ParameterStr)
+{
+	if (!ExpressionDataJsonRoot.IsValid())
+	{
+		FString JsonStr;
+		FFileHelper::BufferToString(JsonStr, ExpressionData.ByteData.GetData(), ExpressionData.ByteData.Num());
+		TSharedRef<TJsonReader<> > JsonReader = TJsonReaderFactory<>::Create(JsonStr);
+		if (!FJsonSerializer::Deserialize(JsonReader, ExpressionDataJsonRoot)) return;
+
+	}
+	TArray<TSharedPtr<FJsonValue>> ParameterArr = ExpressionDataJsonRoot->GetArrayField(ExpressionKeyParameters);
+
+	ParameterArr.RemoveAllSwap([ParameterStr](const TSharedPtr<FJsonValue>& A)
+	{
+		TSharedPtr<FJsonObject> ParameterObject = A->AsObject();
+
+		return ParameterObject->GetStringField(ExpressionKeyId) == ParameterStr.ToString();
+	});
+
+	ExpressionDataJsonRoot->SetArrayField(ExpressionKeyParameters, ParameterArr);
+}
+
+void UUnLive2DExpression::SaveExpressionData()
+{
+	FString OutJsonString;
+	TSharedRef<TJsonWriter<TCHAR, TPrettyJsonPrintPolicy<TCHAR>>> JsonWriter = TJsonWriterFactory<TCHAR, TPrettyJsonPrintPolicy<TCHAR>>::Create(&OutJsonString, 0);
+	if (FJsonSerializer::Serialize(ExpressionDataJsonRoot.ToSharedRef(), JsonWriter))
+	{
+		ExpressionData.ByteData.SetNum(OutJsonString.Len());
+		FMemory::Memcpy(ExpressionData.ByteData.GetData(), TCHAR_TO_ANSI(*OutJsonString), OutJsonString.Len());
+	}
 }
 
 #endif
