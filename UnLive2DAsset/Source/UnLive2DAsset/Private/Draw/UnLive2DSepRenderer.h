@@ -132,4 +132,6 @@ private:
 
 	mutable FUnLive2DRenderBuffers MaskRenderBuffers;
 
+	TWeakObjectPtr<const UUnLive2D> SourceUnLive2D;
+
 };

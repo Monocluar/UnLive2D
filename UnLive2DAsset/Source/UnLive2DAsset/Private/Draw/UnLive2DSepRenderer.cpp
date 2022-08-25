@@ -180,9 +180,9 @@ void FUnLive2DRenderState::InitRender(TWeakObjectPtr<UUnLive2D> InNewUnLive2D, T
 
 	if (!OwnerCompWeak.IsValid() && !OwnerViewUIWeak.IsValid()) return;
 
-	UUnLive2D* SourceUnLive2D = InNewUnLive2D.Get();
+	UUnLive2D* UnLive2D = InNewUnLive2D.Get();
 
-	InitRender(SourceUnLive2D, InUnLive2DRawModel);
+	InitRender(UnLive2D, InUnLive2DRawModel);
 }
 
 
@@ -193,6 +193,10 @@ void FUnLive2DRenderState::InitRender(const UUnLive2D* InNewUnLive2D, TSharedPtr
 	if (!OwnerCompWeak.IsValid() && !OwnerViewUIWeak.IsValid()) return;
 
 	if (!InUnLive2DRawModel.IsValid()) return;
+
+	if (SourceUnLive2D.IsValid() && SourceUnLive2D.Get() == InNewUnLive2D) return;
+
+	SourceUnLive2D = InNewUnLive2D;
 
 	if (UnLive2DClippingManager.IsValid())
 	{
@@ -255,9 +259,9 @@ void FUnLive2DRenderState::LoadTextures(TWeakPtr<FUnLive2DRawModel> InUnLive2DRa
 {
 	if (!OwnerCompWeak.IsValid() && !OwnerViewUIWeak.IsValid()) return;
 
-	const UUnLive2D* SourceUnLive2D = GetUnLive2D();
+	const UUnLive2D* UnLive2D = GetUnLive2D();
 
-	if (SourceUnLive2D == nullptr) return;
+	if (UnLive2D == nullptr) return;
 
 	if (!InUnLive2DRawModel.IsValid()) return;
 

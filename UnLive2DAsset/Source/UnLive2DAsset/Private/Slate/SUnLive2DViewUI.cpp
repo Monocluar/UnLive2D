@@ -100,7 +100,7 @@ void SUnLive2DViewUI::UpDateMesh(const FGeometry& AllottedGeometry, int32 Drawab
 
 	FLinearColor WidgetStyleColor = InWidgetStyle.GetColorAndOpacityTint();
 
-	csmFloat32 Opacity = UnLive2DModel->GetDrawableOpacity(DrawableIndex) * WidgetStyleColor.A; // 获取不透明度
+	csmFloat32 Opacity = UnLive2DModel->GetDrawableOpacity(DrawableIndex) * FMath::Clamp(WidgetStyleColor.A, 0.f, 1.f) ; // 获取不透明度
 
 	if (Opacity == 0.f) return;
 
