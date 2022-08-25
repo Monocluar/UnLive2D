@@ -39,10 +39,10 @@ protected:
 
 	void InitUnLive2D();
 
-	void UpDateMesh(const FGeometry &AllottedGeometry, int32 DrawableIndex, class CubismClippingContext* ClipContext);
+	void UpDateMesh(const FGeometry &AllottedGeometry, int32 DrawableIndex, class CubismClippingContext* ClipContext, const FWidgetStyle& InWidgetStyle);
 
 	// 描画
-	void Flush(int32 LayerId, FSlateWindowElementList& OutDrawElements);
+	void Flush(int32 LayerId, FSlateWindowElementList& OutDrawElements, bool bParentEnabled);
 
 	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
 

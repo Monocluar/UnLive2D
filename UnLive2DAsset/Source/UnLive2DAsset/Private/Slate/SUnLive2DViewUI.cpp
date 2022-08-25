@@ -92,13 +92,17 @@ void SUnLive2DViewUI::InitUnLive2D()
 
 }
 
-void SUnLive2DViewUI::UpDateMesh(const FGeometry& AllottedGeometry, int32 DrawableIndex, class CubismClippingContext* ClipContext)
+void SUnLive2DViewUI::UpDateMesh(const FGeometry& AllottedGeometry, int32 DrawableIndex, class CubismClippingContext* ClipContext, const FWidgetStyle& InWidgetStyle)
 {
 	//TArray<SlateIndex> Live2DIndexData;
 
 	const Csm::CubismModel* UnLive2DModel = UnLive2DRawModel->GetModel();
 
-	csmFloat32 Opacity = UnLive2DModel->GetDrawableOpacity(DrawableIndex); // 获取不透明度
+	FLinearColor WidgetStyleColor = InWidgetStyle.GetColorAndOpacityTint();
+
+	csmFloat32 Opacity = UnLive2DModel->GetDrawableOpacity(DrawableIndex) * WidgetStyleColor.A; // 获取不透明度
+
+	if (Opacity == 0.f) return;
 
 	UMaterialInstanceDynamic* DynamicMat = OwnerWidget->UnLive2DRenderPtr->GetMaterialInstanceDynamicToIndex(UnLive2DModel, DrawableIndex, ClipContext != nullptr); // 获取当前动态材质
 
@@ -163,12 +167,16 @@ void SUnLive2DViewUI::UpDateMesh(const FGeometry& AllottedGeometry, int32 Drawab
 			FVector2D MaskUV = FVector2D(ClipPosition.X, 1 + ClipPosition.Y);
 			MaskUV /= ClipPosition.W;
 
-			VertexIndexData->Color = FColor(255 * ChanelFlag.X, 255 * ChanelFlag.Y, 255 * ChanelFlag.Z, 255 * ChanelFlag.W);
+			//VertexIndexData->Color = FColor(255 * ChanelFlag.X, 255 * ChanelFlag.Y, 255 * ChanelFlag.Z, 255 * ChanelFlag.W);
+			VertexIndexData->PixelSize[0] = ChanelFlag.Z;
+			VertexIndexData->PixelSize[1] = ChanelFlag.W;
 
 #if UE_VERSION_OLDER_THAN(5,0,0)
 			VertexIndexData->MaterialTexCoords = MaskUV;
+			VertexIndexData->SetTexCoords(FVector4(UV.X, UV.Y, ChanelFlag.X, ChanelFlag.Y));
 #else
 			VertexIndexData->MaterialTexCoords = FVector2f(MaskUV.X, MaskUV.Y);
+			VertexIndexData->SetTexCoords(FVector4f(UV.X, UV.Y, ChanelFlag.X, ChanelFlag.Y));
 #endif
 
 		}
@@ -176,25 +184,25 @@ void SUnLive2DViewUI::UpDateMesh(const FGeometry& AllottedGeometry, int32 Drawab
 		{
 #if UE_VERSION_OLDER_THAN(5,0,0)
 			VertexIndexData->MaterialTexCoords = UV;
+			VertexIndexData->SetTexCoords(FVector4(UV.X, UV.Y, 1, 1));
 #else
 			VertexIndexData->MaterialTexCoords = FVector2f(UV.X, UV.Y);
+			VertexIndexData->SetTexCoords(FVector4f(UV.X, UV.Y, 1, 1));
 #endif
-			VertexIndexData->Color = FColor(255, 255, 255, 255);
+			//VertexIndexData->Color = FColor(255, 255, 255, 255);
 		}
 
 		
 		FVector2D NewPos = Transform.TransformPoint(FVector2D(Position.X, Position.Y) * SetupScale * FVector2D(1.f, -1.f) + (WidgetSize / 2));
 
 #if UE_VERSION_OLDER_THAN(5,0,0)
-		VertexIndexData->SetTexCoords(FVector4(UV.X, UV.Y, Opacity, Opacity));
+		//VertexIndexData->SetTexCoords(FVector4(UV.X, UV.Y, Opacity, Opacity));
 		VertexIndexData->SetPosition(NewPos);
 #else
-		VertexIndexData->SetTexCoords(FVector4f(UV.X, UV.Y, Opacity, Opacity));
+		//VertexIndexData->SetTexCoords(FVector4f(UV.X, UV.Y, Opacity, Opacity));
 		VertexIndexData->SetPosition(FVector2f(NewPos.X, NewPos.Y));
 #endif
-
-		VertexIndexData->PixelSize[0] = 1;
-		VertexIndexData->PixelSize[1] = 1;
+		VertexIndexData->Color = FColor(255 * WidgetStyleColor.R, 255 * WidgetStyleColor.G, 255 * WidgetStyleColor.B, 255 * Opacity);
 	}
 
 	const csmInt32 VertexIndexCount = UnLive2DModel->GetDrawableVertexIndexCount(DrawableIndex); // 获得Drawable的顶点索引个数
@@ -210,14 +218,18 @@ void SUnLive2DViewUI::UpDateMesh(const FGeometry& AllottedGeometry, int32 Drawab
 	
 }
 
-void SUnLive2DViewUI::Flush(int32 LayerId, FSlateWindowElementList& OutDrawElements)
+void SUnLive2DViewUI::Flush(int32 LayerId, FSlateWindowElementList& OutDrawElements, bool bParentEnabled)
 {
+
+	const bool bIsEnabled = ShouldBeEnabled(bParentEnabled);
+
+	const ESlateDrawEffect DrawEffects = bIsEnabled ? ESlateDrawEffect::None : ESlateDrawEffect::DisabledEffect;
 	for (int32 i = 0; i < UnLive2DCustomVertsData.Num(); i++)
 	{
 		TSharedPtr<FSlateBrush> Brush = MakeShareable(new FUnLive2DSlateMaterialBrush(UnLive2DCustomVertsData[i].InterlottingDynamicMat, FVector2D(64.f, 64.f)));
 		FSlateResourceHandle RenderingResourceHandle = FSlateApplication::Get().GetRenderer()->GetResourceHandle(*Brush);
 
-		FSlateDrawElement::MakeCustomVerts(OutDrawElements, LayerId, RenderingResourceHandle, UnLive2DCustomVertsData[i].InterlottingLive2DVertexData, UnLive2DCustomVertsData[i].InterlottingLive2DIndexData, nullptr, 0, 0);
+		FSlateDrawElement::MakeCustomVerts(OutDrawElements, LayerId, RenderingResourceHandle, UnLive2DCustomVertsData[i].InterlottingLive2DVertexData, UnLive2DCustomVertsData[i].InterlottingLive2DIndexData, nullptr, 0, 0, DrawEffects);
 	}
 
 	UnLive2DCustomVertsData.Empty();
@@ -269,11 +281,11 @@ int32 SUnLive2DViewUI::OnPaint(const FPaintArgs& Args, const FGeometry& Allotted
 
 		const bool IsMaskDraw = (nullptr != ClipContext);
 
-		ThisPtr->UpDateMesh(AllottedGeometry, DrawableIndex, ClipContext);
+		ThisPtr->UpDateMesh(AllottedGeometry, DrawableIndex, ClipContext, InWidgetStyle);
 	}
 
 	// 描画
-	ThisPtr->Flush(LayerId, OutDrawElements);
+	ThisPtr->Flush(LayerId, OutDrawElements, bParentEnabled);
 
 	return LayerId;
 }
