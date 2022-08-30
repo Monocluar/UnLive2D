@@ -68,6 +68,7 @@ protected:
 	}
 
 	virtual void DrawCanvas(FViewport& InViewport, FSceneView& View, FCanvas& Canvas) override;
+	virtual void Draw(const FSceneView* View, FPrimitiveDrawInterface* PDI) override;
 
 protected:
 	/** Checkerboard texture */

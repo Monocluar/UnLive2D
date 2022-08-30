@@ -30,7 +30,7 @@ public:
 
 	// 贴图资源
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, AssetRegistrySearchable, Category = Live2D)
-		TArray<TSoftObjectPtr<UTexture2D>> TextureAssets;
+		TArray<UTexture2D*> TextureAssets;
 
 public:
 

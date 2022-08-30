@@ -100,7 +100,7 @@ public:
 protected:
 
 	// 初始化渲染
-	void InitRenderBuffers(TSharedPtr<FUnLive2DRawModel>& InUnLive2DRawModel);
+	void InitRenderBuffers(TSharedPtr<FUnLive2DRawModel> InUnLive2DRawModel);
 
 	const UUnLive2D* GetUnLive2D() const;
 
@@ -134,4 +134,5 @@ private:
 
 	TWeakObjectPtr<const UUnLive2D> SourceUnLive2D;
 
+	bool bInitRenderBuffers;
 };

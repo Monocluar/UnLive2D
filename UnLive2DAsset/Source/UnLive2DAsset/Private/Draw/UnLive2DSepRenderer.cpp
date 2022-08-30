@@ -150,6 +150,7 @@ FUnLive2DRenderState::FUnLive2DRenderState(UUnLive2DRendererComponent* InComp)
 	: UnLive2DClippingManager(nullptr)
 	, bNoLowPreciseMask(false)
 	, OwnerCompWeak(InComp)
+	, bInitRenderBuffers(false)
 {
 }
 
@@ -157,6 +158,7 @@ FUnLive2DRenderState::FUnLive2DRenderState(UUnLive2DViewRendererUI* InViewUI)
 	: UnLive2DClippingManager(nullptr)
 	, bNoLowPreciseMask(false)
 	, OwnerViewUIWeak(InViewUI)
+	, bInitRenderBuffers(false)
 {
 
 }
@@ -198,6 +200,7 @@ void FUnLive2DRenderState::InitRender(const UUnLive2D* InNewUnLive2D, TSharedPtr
 
 	SourceUnLive2D = InNewUnLive2D;
 
+
 	if (UnLive2DClippingManager.IsValid())
 	{
 		UnLive2DClippingManager.Reset();
@@ -206,9 +209,11 @@ void FUnLive2DRenderState::InitRender(const UUnLive2D* InNewUnLive2D, TSharedPtr
 
 	LoadTextures(InUnLive2DRawModel);
 
+	bInitRenderBuffers = false;
+
 	Csm::CubismModel* UnLive2DModel = InUnLive2DRawModel->GetModel();
 
-	InitRenderBuffers(InUnLive2DRawModel);
+	//InitRenderBuffers(InUnLive2DRawModel);
 
 	UnLive2DClippingManager = MakeShared<CubismClippingManager_UE>();
 
@@ -280,7 +285,7 @@ void FUnLive2DRenderState::LoadTextures(TWeakPtr<FUnLive2DRawModel> InUnLive2DRa
 	{
 		if (!SourceUnLive2D->TextureAssets.IsValidIndex(i)) break;
 
-		UTexture2D* LoadedImage = SourceUnLive2D->TextureAssets[i].LoadSynchronous();
+		UTexture2D* LoadedImage = SourceUnLive2D->TextureAssets[i];
 		if (IsValid(LoadedImage))
 		{
 			RandererStatesTextures[i] = LoadedImage;
@@ -429,13 +434,12 @@ CubismClippingContext* FUnLive2DRenderState::GetClipContextInDrawableIndex(const
 	return nullptr;
 }
 
-void FUnLive2DRenderState::InitRenderBuffers(TSharedPtr<FUnLive2DRawModel>& InUnLive2DRawModel)
+void FUnLive2DRenderState::InitRenderBuffers(TSharedPtr<FUnLive2DRawModel> InUnLive2DRawModel)
 {
-	check(IsInGameThread());
 
 	ENQUEUE_RENDER_COMMAND(UnLiveRenderInit)([ThisSharedPtr = AsShared(), InUnLive2DRawModel](FRHICommandListImmediate& RHICmdList)
 	{
-		check(IsInRenderingThread()); // 如果不是渲染线程请弄成渲染线程
+		check(RHICmdList.IsOutsideRenderPass());
 
 		if (!InUnLive2DRawModel.IsValid()) return;
 
@@ -582,6 +586,10 @@ FName FUnLive2DRenderState::GetDMaterialTextureParameterName() const
 
 void FUnLive2DRenderState::UnLive2DFillMaskParameter(CubismClippingContext* clipContext, FUnLiveMatrix& ts_MartixForMask, FUnLiveVector4& ts_BaseColor, FUnLiveVector4& ts_ChanelFlag)
 {
+	if (!UnLive2DClippingManager.IsValid())
+	{
+		return;
+	}
 	// チャンネル
 	const csmInt32 channelNo = clipContext->_layoutChannelNo;
 	// チャンネルをRGBAに変換
@@ -594,9 +602,10 @@ void FUnLive2DRenderState::UnLive2DFillMaskParameter(CubismClippingContext* clip
 	ts_ChanelFlag = FUnLiveVector4(colorChannel->R, colorChannel->G, colorChannel->B, colorChannel->A);
 }
 
+int32 UpDataIndex = 0;
+
 void FUnLive2DRenderState::UpdateRenderBuffers(TWeakPtr<FUnLive2DRawModel> InUnLive2DRawModel)
 {
-	check(IsInGameThread());
 
 	UWorld* SelfWorld = nullptr;
 
@@ -613,24 +622,34 @@ void FUnLive2DRenderState::UpdateRenderBuffers(TWeakPtr<FUnLive2DRawModel> InUnL
 
 	ERHIFeatureLevel::Type FeatureLevel = SelfWorld->Scene->GetFeatureLevel();
 
-	ENQUEUE_RENDER_COMMAND(UpdateRender)([this, FeatureLevel, InUnLive2DRawModel](FRHICommandListImmediate& RHICmdList)
+	if (!bInitRenderBuffers)
 	{
-		check(IsInRenderingThread()); // 如果不是渲染线程请弄成渲染线程
+		InitRenderBuffers(InUnLive2DRawModel.Pin());
+		bInitRenderBuffers = true;
+	}
+	else
+	{
 
-		if (GetUnLive2D() == nullptr || !InUnLive2DRawModel.IsValid()) return;
+		ENQUEUE_RENDER_COMMAND(UpdateRender)([this, FeatureLevel, InUnLive2DRawModel](FRHICommandListImmediate& RHICmdList)
+		{
+			check(RHICmdList.IsOutsideRenderPass());
+
+			if (GetUnLive2D() == nullptr || !InUnLive2DRawModel.IsValid()) return;
 
 
-		Csm::CubismModel* UnLive2DModel = InUnLive2DRawModel.Pin()->GetModel();
+			Csm::CubismModel* UnLive2DModel = InUnLive2DRawModel.Pin()->GetModel();
 
-		if (!UnLive2DModel->IsUsingMasking() || !UnLive2DClippingManager.IsValid()) return;
+			if (!UnLive2DModel->IsUsingMasking() || !UnLive2DClippingManager.IsValid()) return;
 
-		UnLive2DClippingManager->SetupClippingContext(UnLive2DModel, this);
+			UnLive2DClippingManager->SetupClippingContext(UnLive2DModel, this);
 
-		if (GetUseHighPreciseMask()) return;
+			if (GetUseHighPreciseMask()) return;
 
-		UpdateMaskBufferRenderTarget(RHICmdList, UnLive2DModel, FeatureLevel);
-		
-	});
+			UpdateMaskBufferRenderTarget(RHICmdList, UnLive2DModel, FeatureLevel);
+
+		});
+	}
+
 }
 
 void FUnLive2DRenderState::UpdateMaskBufferRenderTarget(FRHICommandListImmediate& RHICmdList, Csm::CubismModel* tp_Model, ERHIFeatureLevel::Type FeatureLevel)

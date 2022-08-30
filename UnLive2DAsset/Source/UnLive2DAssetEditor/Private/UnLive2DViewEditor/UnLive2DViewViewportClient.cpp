@@ -31,7 +31,7 @@ FUnLive2DViewViewportClient::FUnLive2DViewViewportClient(TWeakObjectPtr<UUnLive2
 
 void FUnLive2DViewViewportClient::Draw(const FSceneView* View, FPrimitiveDrawInterface* PDI)
 {
-	FEditorViewportClient::Draw(View, PDI);
+	FUnLive2DViewportClient::Draw(View, PDI);
 
 	/*if (bShowPivot && AnimatedRenderComponent.IsValid())
 	{
@@ -39,6 +39,7 @@ void FUnLive2DViewViewportClient::Draw(const FSceneView* View, FPrimitiveDrawInt
 		const bool bHitTestingForPivot = PDI->IsHitTesting() && bCanSelectPivot;
 		FUnrealEdUtils::DrawWidget(View, PDI, AnimatedRenderComponent->GetComponentTransform().ToMatrixWithScale(), 0, 0, EAxisList::YZ, EWidgetMovementMode::WMM_Translate, bHitTestingForPivot);
 	}*/
+	
 }
 
 void FUnLive2DViewViewportClient::DrawCanvas(FViewport& InViewport, FSceneView& View, FCanvas& Canvas)

@@ -147,3 +147,20 @@ void FUnLive2DViewportClient::DrawCanvas(FViewport& InViewport, FSceneView& View
 	FEditorViewportClient::DrawCanvas(InViewport, View, Canvas);
 }
 
+void FUnLive2DViewportClient::Draw(const FSceneView* View, FPrimitiveDrawInterface* PDI)
+{
+	if (UnLive2DBeingEditedLastFrame.IsValid())
+	{
+		for (UTexture2D* Item : UnLive2DBeingEditedLastFrame->TextureAssets)
+		{
+			if (Item)
+			{
+				Item->SetForceMipLevelsToBeResident(30.0f);
+				Item->WaitForStreaming();
+			}
+		}
+	}
+
+	FEditorViewportClient::Draw(View, PDI);
+}
+
