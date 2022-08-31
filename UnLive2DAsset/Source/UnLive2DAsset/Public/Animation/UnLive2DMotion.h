@@ -6,6 +6,9 @@
 #include "UnLive2DAnimBase.h"
 #include "UnLive2DMotion.generated.h"
 
+
+DECLARE_DELEGATE_TwoParams(FOnUnLive2DMotionEnded, class UUnLive2DMotion*, bool /*bInterrupted*/)
+
 UCLASS(Blueprintable, BlueprintType, Category = UnLive2DAnim, hidecategories=Object)
 class UNLIVE2DASSET_API UUnLive2DMotion : public UUnLive2DAnimBase
 {
@@ -22,6 +25,11 @@ public:
 	// 正常速率播放一次动画需要时间
 	UPROPERTY(Category = Developer, AssetRegistrySearchable, VisibleAnywhere, BlueprintReadOnly)
 		float Duration;
+
+public:
+	
+	FOnUnLive2DMotionEnded OnUnLive2DMotionEnded;
+
 public:
 
 #if WITH_EDITOR
@@ -33,6 +41,8 @@ public:
 	const FUnLive2DMotionData* GetMotionData();
 
 	void OnPlayAnimEnd();
+
+	void OnPlayAnimInterrupted();
 
 protected:
 	// 动作数据
@@ -50,5 +60,4 @@ private:
 private:
 
 	bool bFinished;
-
 };

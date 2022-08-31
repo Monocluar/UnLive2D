@@ -53,6 +53,11 @@ void SUnLive2DAnimBaseAssetBrowser::RebuildWidget(UUnLive2DAnimBase* UnLive2DAni
 	AssetPickerConfig.OnShouldFilterAsset = FOnShouldFilterAsset::CreateSP(this, &SUnLive2DAnimBaseAssetBrowser::FilterAnimBaseBasedOnParentClass);
 	AssetPickerConfig.bAllowNullSelection = true;
 	AssetPickerConfig.InitialAssetViewType = EAssetViewType::Column;
+	if (!TargetUnLive2DAnimBaseAsset.IsValid())
+	{
+		TargetUnLive2DAnimBaseAsset = FAssetData(UnLive2DAnimBas);
+	}
+
 	AssetPickerConfig.InitialAssetSelection = TargetUnLive2DAnimBaseAsset;
 
 	AssetPickerConfig.SyncToAssetsDelegates.Add(&SyncToAssetsDelegate);

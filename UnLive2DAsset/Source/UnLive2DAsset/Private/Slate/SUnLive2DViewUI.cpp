@@ -64,6 +64,14 @@ void SUnLive2DViewUI::PlayExpression(class UUnLive2DExpression* InExpression)
 	}
 }
 
+void SUnLive2DViewUI::StopMotion()
+{
+	if (UnLive2DRawModel.IsValid())
+	{
+		UnLive2DRawModel->StopMotion();
+	}
+}
+
 void SUnLive2DViewUI::InitUnLive2D()
 {
 	if (!FSlateApplication::IsInitialized()) return;

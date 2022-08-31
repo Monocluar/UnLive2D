@@ -65,6 +65,9 @@ public:
     // 设置闲置呼吸动画播放
     void SetBreathAnimAutoPlay(bool bNewBreathPlay);
 
+	// 停止播放动画
+	void StopMotion();
+
 private:
 
     // 释放动画系统
@@ -89,6 +92,7 @@ private:
 
     // 设置播放表情系统
     void SetExpression(const uint32& ExpressionID);
+
 
 private:
 

@@ -181,6 +181,11 @@ TWeakObjectPtr<UUnLive2DRendererComponent> FUnLive2DAnimationBlueprintEditor::Ge
 	return UnLive2DViewportClient->GetUnLive2DRenderComponent();
 }
 
+EUnLive2DParameterAssetType::Type FUnLive2DAnimationBlueprintEditor::GetUnLive2DParameterAssetType() const
+{
+	return EUnLive2DParameterAssetType::UnLive2DAnimBlueprint;
+}
+
 FName FUnLive2DAnimationBlueprintEditor::GetToolkitFName() const
 {
 	return FName("UnLive2DAnimationBlueprintEditor");
@@ -209,6 +214,11 @@ FString FUnLive2DAnimationBlueprintEditor::GetWorldCentricTabPrefix() const
 FLinearColor FUnLive2DAnimationBlueprintEditor::GetWorldCentricTabColorScale() const
 {
 	return FLinearColor( 0.5f, 0.25f, 0.35f, 0.5f );
+}
+
+UUnLive2D* FUnLive2DAnimationBlueprintEditor::GetUnLive2DBeingEdited() const
+{
+	return UnLive2DAnimBlueprintEdited->TargetUnLive2D;
 }
 
 void FUnLive2DAnimationBlueprintEditor::PostUndo(bool bSuccess)

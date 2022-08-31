@@ -31,9 +31,11 @@ public:
 
 	void ReleaseRenderStateData();
 
-	void  PlayMotion(class UUnLive2DMotion* InMotion);
+	void PlayMotion(class UUnLive2DMotion* InMotion);
 
 	void PlayExpression(class UUnLive2DExpression* InExpression);
+
+	void StopMotion();
 
 protected:
 

@@ -56,6 +56,20 @@ const FUnLive2DMotionData* UUnLive2DMotion::GetMotionData()
 void UUnLive2DMotion::OnPlayAnimEnd()
 {
 	bFinished = true;
+	if (OnUnLive2DMotionEnded.IsBound())
+	{
+		OnUnLive2DMotionEnded.Execute(this, false);
+	}
+	
+}
+
+void UUnLive2DMotion::OnPlayAnimInterrupted()
+{
+	bFinished = true;
+	if (OnUnLive2DMotionEnded.IsBound())
+	{
+		OnUnLive2DMotionEnded.Execute(this, true);
+	}
 }
 
 void UUnLive2DMotion::Parse( FActiveUnLive2DAnimBlueprint& ActiveLive2DAnim, FUnLive2DAnimParseParameters& ParseParams, const UPTRINT NodeAnimInstanceHash)

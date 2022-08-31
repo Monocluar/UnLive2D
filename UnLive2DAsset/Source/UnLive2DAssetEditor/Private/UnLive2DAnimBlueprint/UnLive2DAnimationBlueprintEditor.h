@@ -4,9 +4,7 @@
 #include "CoreMinimal.h"
 #include "Stats/Stats.h"
 #include "Widgets/SWidget.h"
-#include "EditorUndoClient.h"
-#include "WorkflowOrientedApp/WorkflowCentricApplication.h"
-#include "WorkflowOrientedApp/WorkflowTabManager.h"
+#include "IUnLive2DParameterEditorAsset.h"
 
 class UUnLive2DRendererComponent;
 class FDocumentTracker;
@@ -46,11 +44,11 @@ namespace UnLive2DAnimationBlueprintEditorTabs
 	extern const FName PropertiesTab;
 };
 
-class FUnLive2DAnimationBlueprintEditor : public FWorkflowCentricApplication ,  public FEditorUndoClient , public FGCObject, public FNotifyHook/*, public FEditorUndoClient*/
+class FUnLive2DAnimationBlueprintEditor : public IUnLive2DParameterEditorAsset, public FNotifyHook/*, public FEditorUndoClient*/
 {
 protected:
 
-	typedef FWorkflowCentricApplication Super;
+	typedef IUnLive2DParameterEditorAsset Super;
 
 public:
 
@@ -77,6 +75,12 @@ protected:
 	virtual FText GetToolkitToolTipText() const override;
 	virtual FString GetWorldCentricTabPrefix() const override;
 	virtual FLinearColor GetWorldCentricTabColorScale() const override;
+
+protected:
+	virtual UUnLive2D* GetUnLive2DBeingEdited() const override;
+	virtual TWeakObjectPtr<UUnLive2DRendererComponent> GetUnLive2DRenderComponent() const override;
+
+	virtual EUnLive2DParameterAssetType::Type GetUnLive2DParameterAssetType() const override;
 
 protected:
 	//~ Begin FEditorUndoClient Interface
@@ -120,9 +124,6 @@ public:
 	 * @param Padding 要添加到边界所有边的填充量
 	 */
 	virtual bool GetBoundsForSelectedNodes(class FSlateRect& Rect, float Padding);
-
-
-	FORCEINLINE TWeakObjectPtr<UUnLive2DRendererComponent> GetUnLive2DRenderComponent() const;
 
 private:
 

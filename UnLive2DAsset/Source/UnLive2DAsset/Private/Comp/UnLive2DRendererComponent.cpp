@@ -409,6 +409,14 @@ void UUnLive2DRendererComponent::PlayExpression(UUnLive2DExpression* InExpressio
 	}
 }
 
+void UUnLive2DRendererComponent::StopMotion()
+{
+	if (UnLive2DRawModel.IsValid())
+	{
+		UnLive2DRawModel->StopMotion();
+	}
+}
+
 #if WITH_EDITOR
 bool UUnLive2DRendererComponent::GetModelParamterGroup(TArray<FUnLive2DParameterData>& ParameterArr)
 {

@@ -79,7 +79,6 @@ void FUnLive2DAnimBaseViewEditor::InitUnLive2DAnimViewEditor(const EToolkitMode:
 	TSharedRef<IUnLive2DAssetFamily> AssetFamily = MangerModule.CreatePersonaAssetFamily(InitUnLive2DAnimBase);
 	AssetFamily->RecordAssetOpened(FAssetData(InitUnLive2DAnimBase));
 
-	UpDataAnimBase();
 
 	BindCommands();
 
@@ -148,6 +147,8 @@ void FUnLive2DAnimBaseViewEditor::InitUnLive2DAnimViewEditor(const EToolkitMode:
 	ExtendToolbar();
 
 	RegenerateMenusAndToolbars();
+
+	UpDataAnimBase();
 }
 
 void FUnLive2DAnimBaseViewEditor::RegisterTabSpawners(const TSharedRef<FTabManager>& InTabManager)

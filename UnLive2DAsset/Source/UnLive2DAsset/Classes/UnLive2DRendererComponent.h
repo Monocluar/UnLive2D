@@ -12,6 +12,7 @@
 #include "UnLive2DRendererComponent.generated.h"
 
 class UUnLive2D;
+class UUnLive2DMotion;
 class UMaterialInterface;
 class FUnLive2DRawModel;
 
@@ -70,12 +71,16 @@ public:
 		UUnLive2D* GetUnLive2D(){ return SourceUnLive2D; }
 
 	// 播放动画
-	UFUNCTION(BlueprintCallable, Category = "Anim")
-		virtual void  PlayMotion(UUnLive2DMotion* InMotion);
+	//UFUNCTION(BlueprintCallable, Category = "Anim")
+	virtual void  PlayMotion(UUnLive2DMotion* InMotion);
 
 	// 播放表情
 	UFUNCTION(BlueprintCallable, Category = "Anim")
 		virtual void PlayExpression(UUnLive2DExpression* InExpression);
+
+	// 停止播放动画
+	UFUNCTION(BlueprintCallable, Category = "Anim")
+		virtual void StopMotion();
 
 
 	FORCEINLINE TWeakPtr<FUnLive2DRawModel> GetUnLive2DRawModel() const { return UnLive2DRawModel; }

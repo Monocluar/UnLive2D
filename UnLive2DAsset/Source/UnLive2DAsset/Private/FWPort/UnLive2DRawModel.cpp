@@ -35,10 +35,11 @@ static bool bInitPlay = false;
 
 void OnMotionEnd(ACubismMotion* MotionData)
 {
-	UE_LOG(LogUnLive2D, Log, TEXT("播放动画完成"));
+	//UE_LOG(LogUnLive2D, Log, TEXT("播放动画完成"));
 	if (CurrentPlayMotion.IsValid())
 	{
 		CurrentPlayMotion->OnPlayAnimEnd();
+		CurrentPlayMotion.Reset();
 	}
 }
 
@@ -570,6 +571,12 @@ float FUnLive2DRawModel::StartMotion(UUnLive2DMotion* InMotion)
 
 	Csm::ACubismMotion* FindPtr = Live2DMotions.FindOrAdd(*Name);
 
+	if (CurrentPlayMotion.IsValid())
+	{
+		CurrentPlayMotion->OnPlayAnimInterrupted();
+		CurrentPlayMotion.Reset();
+	}
+
 	CurrentPlayMotion = InMotion;
 
 	if (FindPtr == nullptr)
@@ -656,4 +663,14 @@ void FUnLive2DRawModel::SetExpression(const uint32& ExpressionID)
 	if (MotionPtr == nullptr || *MotionPtr == nullptr) return;
 
 	_expressionManager->StartMotionPriority(*MotionPtr, false, PriorityForce);
+}
+
+void FUnLive2DRawModel::StopMotion()
+{
+	_motionManager->StopAllMotions();
+	if (CurrentPlayMotion.IsValid())
+	{
+		CurrentPlayMotion->OnPlayAnimInterrupted();
+		CurrentPlayMotion.Reset();
+	}
 }

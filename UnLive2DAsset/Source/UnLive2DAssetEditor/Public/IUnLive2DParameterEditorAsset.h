@@ -17,6 +17,8 @@ namespace EUnLive2DParameterAssetType
 		UnLive2DExpression, // 表情数据
 
 		UnLive2DMotion, //动画数据
+
+		UnLive2DAnimBlueprint, // 动画蓝图
 	};
 }
 

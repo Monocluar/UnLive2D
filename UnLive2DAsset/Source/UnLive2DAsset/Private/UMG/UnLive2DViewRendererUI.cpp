@@ -37,6 +37,14 @@ void UUnLive2DViewRendererUI::PlayExpression(UUnLive2DExpression* InExpression)
 	}
 }
 
+void UUnLive2DViewRendererUI::StopMotion()
+{
+	if (MySlateWidget.IsValid())
+	{
+		MySlateWidget->StopMotion();
+	}
+}
+
 void UUnLive2DViewRendererUI::SlateUpDataRender(TWeakPtr<class FUnLive2DRawModel> InUnLive2DRawModel)
 {
 	if (UnLive2DRenderPtr.IsValid())
