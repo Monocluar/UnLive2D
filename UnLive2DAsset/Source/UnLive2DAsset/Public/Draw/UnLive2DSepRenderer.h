@@ -2,14 +2,19 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Model/CubismModel.hpp"
-#include "Type/CubismBasicType.hpp"
-#include "CubismFramework.hpp"
 #include "Misc/EngineVersionComparison.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "UnLive2DRendererComponent.h"
 #include "Templates/SharedPointer.h"
+
+namespace Live2D { namespace Cubism { namespace Framework 
+{
+	class CubismModel;
+}}}
+
+
+namespace Csm = Live2D::Cubism::Framework;
 
 class UUnLive2DViewRendererUI;
 class FUnLive2DRawModel;
@@ -26,6 +31,17 @@ typedef FBufferRHIRef FIndexUnLiveBufferRHIRef;
 typedef FBufferRHIRef FVertexUnLiveBufferRHIRef;
 #endif
 
+namespace EUnLive2DRenderStateOwnerType
+{
+	enum Type
+	{
+		Component,
+
+		UMG,
+
+		ThumbnailRenderer
+	};
+}
 
 struct FUnLive2DRenderBuffers
 {
@@ -43,15 +59,13 @@ public:
 	}
 };
 
-class FUnLive2DRenderState : public TSharedFromThis<FUnLive2DRenderState>
+class UNLIVE2DASSET_API FUnLive2DRenderState : public TSharedFromThis<FUnLive2DRenderState>
 {
 public:
 
 	FUnLive2DRenderState() {}
 
-	FUnLive2DRenderState(UUnLive2DRendererComponent* InComp);
-
-	FUnLive2DRenderState(UUnLive2DViewRendererUI* InViewUI);
+	FUnLive2DRenderState(UObject* InOwnerObject, UWorld* InWorld);
 
 	~FUnLive2DRenderState();
 
@@ -74,13 +88,13 @@ public:
 	void UnOldMaterial();
 
 	// 获取图片
-	class UTexture2D* GetRandererStatesTexturesTextureIndex(const Csm::CubismModel* Live2DModel, const Csm::csmInt32& DrawableIndex) const;
+	class UTexture2D* GetRandererStatesTexturesTextureIndex(const Csm::CubismModel* Live2DModel, const int32& DrawableIndex) const;
 
 	// 获取当前的动态材质
-	UMaterialInstanceDynamic* GetMaterialInstanceDynamicToIndex(const Csm::CubismModel* Live2DModel, const Csm::csmInt32 DrawableIndex, bool bIsMesk);
+	UMaterialInstanceDynamic* GetMaterialInstanceDynamicToIndex(const Csm::CubismModel* Live2DModel, const int32 DrawableIndex, bool bIsMesk);
 
 	// 根据绘制索引ID获取当前的遮罩
-	class CubismClippingContext* GetClipContextInDrawableIndex(const Csm::csmUint32 DrawableIndex) const;
+	class CubismClippingContext* GetClipContextInDrawableIndex(const uint32 DrawableIndex) const;
 
 	// 更新遮罩
 	void UpdateRenderBuffers(TWeakPtr<FUnLive2DRawModel> InUnLive2DRawModel);
@@ -89,13 +103,19 @@ public:
 	void UpdateMaskBufferRenderTarget(FRHICommandListImmediate& RHICmdList, Csm::CubismModel* tp_Model, ERHIFeatureLevel::Type FeatureLevel);
 
 	// 
-	void MaskFillVertexBuffer(Csm::CubismModel* tp_Model, const Csm::csmInt32 drawableIndex, FVertexUnLiveBufferRHIRef ScratchVertexBufferRHI, FRHICommandListImmediate& RHICmdList);
+	void MaskFillVertexBuffer(Csm::CubismModel* tp_Model, const int32 drawableIndex, FVertexUnLiveBufferRHIRef ScratchVertexBufferRHI, FRHICommandListImmediate& RHICmdList);
 
 	// 获取Live2D模型在遮罩矩阵中的矩阵
 	FUnLiveMatrix GetUnLive2DPosToClipMartix(class CubismClippingContext* ClipContext, FUnLiveVector4& ChanelFlag);
 
 	// 更新背景颜色
 	void SetDynamicMaterialTintColor(FLinearColor& NewColor);
+
+	// 设置渲染材质
+	void SetUnLive2DMaterial(int32 InModeIndex, UMaterialInterface* NewUnLive2DMaterial);
+
+	// 设置UnLive2D资源
+	void SetUnLive2D(class UUnLive2D* InUnLive2D);
 
 protected:
 
@@ -123,16 +143,28 @@ private:
 private:
 	bool bNoLowPreciseMask; // 是否有高精度遮罩
 
-	TWeakObjectPtr<UUnLive2DRendererComponent> OwnerCompWeak;
-	TWeakObjectPtr<UUnLive2DViewRendererUI> OwnerViewUIWeak;
-
 	TMap<int32, UMaterialInstanceDynamic*> UnLive2DToNormalBlendMaterial; // CubismBlendMode_Normal普通动态材质
 	TMap<int32, UMaterialInstanceDynamic*> UnLive2DToAdditiveBlendMaterial; // CubismBlendMode_Additive叠加动态材质
 	TMap<int32, UMaterialInstanceDynamic*> UnLive2DToMultiplyBlendMaterial; // CubismBlendMode_Multiplicative乘积动态材质
 
 	mutable FUnLive2DRenderBuffers MaskRenderBuffers;
 
-	TWeakObjectPtr<const UUnLive2D> SourceUnLive2D;
+	TWeakObjectPtr<const class UUnLive2D> SourceUnLive2D;
 
 	bool bInitRenderBuffers;
+
+	UWorld* World;
+
+	UObject* OwnerObject;
+
+
+	// Live2D颜色混合模式为CubismBlendMode_Normal使用的材质
+	UMaterialInterface* UnLive2DNormalMaterial;
+
+	// Live2D颜色混合模式为CubismBlendMode_Additive使用的材质
+	UMaterialInterface* UnLive2DAdditiveMaterial;
+
+	// Live2D颜色混合模式为CubismBlendMode_Multiplicative使用的材质
+	UMaterialInterface* UnLive2DMultiplyMaterial;
+
 };

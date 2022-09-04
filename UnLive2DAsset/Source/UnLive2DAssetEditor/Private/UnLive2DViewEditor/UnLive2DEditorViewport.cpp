@@ -3,6 +3,7 @@
 #include "SUnLive2DEditorViewportToolbar.h"
 #include "Framework/MultiBox/MultiBoxExtender.h"
 #include "UnLive2DViewEditor.h"
+#include "UnLive2DEditorCommands.h"
 
 void SUnLive2DEditorViewport::Construct(const FArguments& InArgs)
 {
@@ -14,9 +15,17 @@ void SUnLive2DEditorViewport::Construct(const FArguments& InArgs)
 void SUnLive2DEditorViewport::BindCommands()
 {
 	SEditorViewport::BindCommands();
-	
+
+	const FUnLive2DEditorCommands& UnLive2DEditorCommands = FUnLive2DEditorCommands::Get();
 
 	TSharedRef<FUnLive2DViewViewportClient> EditorViewportClientRef = EditorViewportClient.ToSharedRef();
+
+	CommandList->MapAction(
+		UnLive2DEditorCommands.SetShowGrid,
+		FExecuteAction::CreateSP(EditorViewportClientRef, &FEditorViewportClient::SetShowGrid),
+		FCanExecuteAction(),
+		FIsActionChecked::CreateSP(EditorViewportClientRef, &FEditorViewportClient::IsSetShowGridChecked));
+
 }
 
 TSharedRef<FEditorViewportClient> SUnLive2DEditorViewport::MakeEditorViewportClient()
@@ -56,4 +65,3 @@ void SUnLive2DEditorViewport::OnFloatingButtonClicked()
 {
 
 }
-

@@ -186,12 +186,20 @@ void UUnLive2DAnimBlueprintGraphNode::GetNodeContextMenuActions(class UToolMenu*
 
 		{
 			FToolMenuSection& Section = Menu->AddSection("SUnLive2DAnimBlueprintGraphNodeAddPlaySync");
+			if (CanAddInputPin())
+			{
+				Section.AddMenuEntry(FUnLive2DAnimBlueprintEditorCommands::Get().AddInput);
+			}
 			Section.AddMenuEntry(FUnLive2DAnimBlueprintEditorCommands::Get().PlayNode);
 
 			if (Cast<UUnLive2DAnimBlueprintNode_MotionPlayer>(AnimBlueprintNode))
 			{
 				Section.AddMenuEntry(FUnLive2DAnimBlueprintEditorCommands::Get().BrowserSync);
 			}
+			/*else if (Cast<UUnLive2DAnimBlueprintNode_ExpressionPlayer>(AnimBlueprintNode))
+			{
+				Section.AddMenuEntry(FUnLive2DAnimBlueprintEditorCommands::Get().BrowserSync);
+			}*/
 		}
 	}
 }
@@ -214,6 +222,48 @@ FString UUnLive2DAnimBlueprintGraphNode::GetDocumentationExcerptName() const
 {
 	UClass* MyClass = (AnimBlueprintNode != NULL) ? AnimBlueprintNode->GetClass() : this->GetClass();
 	return FString::Printf(TEXT("%s%s"), MyClass->GetPrefixCPP(), *MyClass->GetName());
+}
+
+void UUnLive2DAnimBlueprintGraphNode::PostLoad()
+{
+	Super::PostLoad();
+
+	if (AnimBlueprintNode)
+	{
+		AnimBlueprintNode->GraphNode = this;
+	}
+
+	for (int32 i = 0; i < Pins.Num(); i++)
+	{
+		UEdGraphPin* Pin = Pins[i];
+		if (!Pin->PinName.IsNone()) continue;
+
+		// Makes sure pin has a name for lookup purposes but user will never see it
+		if (Pin->Direction == EGPD_Input)
+		{
+			Pin->PinName = CreateUniquePinName(TEXT("Input"));
+		}
+		else
+		{
+			Pin->PinName = CreateUniquePinName(TEXT("Output"));
+		}
+		Pin->PinFriendlyName = FText::FromString(TEXT(" "));
+	}
+}
+
+void UUnLive2DAnimBlueprintGraphNode::PostEditImport()
+{
+	ResetUnLive2DAnimBlueprintNodeOwner();
+}
+
+void UUnLive2DAnimBlueprintGraphNode::PostDuplicate(bool bDuplicateForPIE)
+{
+	Super::PostDuplicate(bDuplicateForPIE);
+
+	if (!bDuplicateForPIE)
+	{
+		CreateNewGuid();
+	}
 }
 
 void UUnLive2DAnimBlueprintGraphNode::ResetUnLive2DAnimBlueprintNodeOwner()

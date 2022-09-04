@@ -21,6 +21,7 @@
 #include "UnLive2DExpressionAction.h"
 #include "ISettingsModule.h"
 #include "UnLive2DSetting.h"
+#include "ThumbnailRenderer/UnLive2DThumbnailRenderer.h"
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
 
@@ -70,6 +71,7 @@ void FUnLive2DAssetEditorModule::OnPostEngineInit()
 			LOCTEXT("RuntimeSettingsDescription", "Configure the UnLive2DAsset plugin"), GetMutableDefault<UUnLive2DSetting>());
 	}
 
+	//UThumbnailManager::Get().RegisterCustomRenderer(UUnLive2D::StaticClass(), UUnLive2DThumbnailRenderer::StaticClass());
 }
 
 #undef LOCTEXT_NAMESPACE

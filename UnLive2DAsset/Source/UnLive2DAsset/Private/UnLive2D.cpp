@@ -14,7 +14,7 @@ UUnLive2D::UUnLive2D(const FObjectInitializer& ObjectInitializer)
 	, PlayRate(1.f)
 	, TintColorAndOpacity(FLinearColor::White)
 {
-
+	bTryLowPreciseMask = true;
 	// 初始化Live2D库（只需要初始化一次）
 	UCubismBpLib::InitCubism();
 }
@@ -37,11 +37,6 @@ void UUnLive2D::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEve
 	 
 }
 #endif
-
-void UUnLive2D::OnMotionPlayeEnd_Implementation()
-{
-}
-
 
 TSharedPtr<FUnLive2DRawModel> UUnLive2D::CreateLive2DRawModel() const
 {
@@ -69,24 +64,6 @@ void UUnLive2D::LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString
 const FUnLive2DLoadData* UUnLive2D::GetUnLive2DLoadData()
 {
 	return &Live2DFileData;
-}
-
-void UUnLive2D::OnTap(const FVector2D& TapPosition)
-{
-	//if (!UnLive2DRawModel.IsValid()) return;
-
-	/*FVector2D PointPos = TapPosition / DrawSize;
-
-	UnLive2DRawModel->OnTapMotion(FVector2D(PointPos.X - 0.5f, 0.5f - PointPos.Y / * 因为UE4轴向和Live2D轴向不同，该Y轴向是相反的 * /) * 2);*/
-}
-
-void UUnLive2D::OnDrag(const FVector2D& DragPosition)
-{
-	//if (!UnLive2DRawModel.IsValid()) return;
-
-	/*FVector2D PointPos = DragPosition / DrawSize;
-
-	UnLive2DRawModel->SetDragPos(FVector2D(PointPos.X - 0.5f, 0.5f - PointPos.Y / * 因为UE4轴向和Live2D轴向不同，该Y轴向是相反的 * /) * 2);*/
 }
 
 void UUnLive2D::PostLoad()

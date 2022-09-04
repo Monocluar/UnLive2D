@@ -6,6 +6,8 @@
 #include "AnimBlueprintGraph/UnLive2DAnimBlueprintGraphNode_Base.h"
 #include "AnimBlueprintNodeSlateUI/SGraphNode_UnLive2DAnimBlueprintResult.h"
 #include "AnimBlueprintNodeSlateUI/SGraphNode_UnLive2DAnimBlueprintBase.h"
+#include "AnimBlueprintGraph/UnLive2DAnimBlueprintGraphNode_Root.h"
+#include "AnimBlueprintGraph/UnLive2DAnimBlueprintGraphNode.h"
 
 
 class FUnLive2DAnimBlueprintGraphNodeFactory : public FGraphPanelNodeFactory

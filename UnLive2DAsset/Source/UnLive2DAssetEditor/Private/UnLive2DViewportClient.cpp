@@ -6,6 +6,7 @@
 #include "Misc/EngineVersionComparison.h"
 #include "UnLive2DRendererComponent.h"
 #include "UnLive2D.h"
+#include "MouseDeltaTracker.h"
 
 /*
 const FVector UnLive2DAxisX = FVector(1.0f, 0.0f, 0.0f);
@@ -35,6 +36,9 @@ FUnLive2DViewportClient::FUnLive2DViewportClient(TWeakObjectPtr<UUnLive2D> InUnL
 	AnimatedRenderComponent = NewObject<UUnLive2DRendererComponent>();
 	AnimatedRenderComponent->SetUnLive2D(UnLive2DBeingEditedLastFrame.Get());
 	PreviewScene->AddComponent(AnimatedRenderComponent.Get(), FTransform::Identity);
+
+	//SetShowGrid();
+
 }
 
 FUnLive2DViewportClient::~FUnLive2DViewportClient()

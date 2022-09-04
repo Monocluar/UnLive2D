@@ -274,7 +274,10 @@ void UUnLive2DRendererComponent::PostEditChangeProperty(FPropertyChangedEvent& P
 			{
 				if (!UnLive2DRander.IsValid())
 				{
-					UnLive2DRander = MakeShared<FUnLive2DRenderState>(this);
+					UnLive2DRander = MakeShared<FUnLive2DRenderState>(this, GetWorld());
+					UnLive2DRander->SetUnLive2DMaterial(0, UnLive2DNormalMaterial);
+					UnLive2DRander->SetUnLive2DMaterial(1, UnLive2DAdditiveMaterial);
+					UnLive2DRander->SetUnLive2DMaterial(2, UnLive2DMultiplyMaterial);
 				}
 				UnLive2DRander->InitRender(SourceUnLive2D, UnLive2DRawModel);
 			}
@@ -367,17 +370,19 @@ void UUnLive2DRendererComponent::InitUnLive2D()
 
 	if (!UnLive2DRander.IsValid())
 	{
-		UnLive2DRander = MakeShared<FUnLive2DRenderState>(this);
-		UnLive2DRander->InitRender(SourceUnLive2D, UnLive2DRawModel);
+		UnLive2DRander = MakeShared<FUnLive2DRenderState>(this, GetWorld());
+		UnLive2DRander->SetUnLive2DMaterial(0, UnLive2DNormalMaterial);
+		UnLive2DRander->SetUnLive2DMaterial(1, UnLive2DAdditiveMaterial);
+		UnLive2DRander->SetUnLive2DMaterial(2, UnLive2DMultiplyMaterial);
 	}
-	else
-	{
-		UnLive2DRander->InitRender(SourceUnLive2D, UnLive2DRawModel);
-	}
+	
+	UnLive2DRander->InitRender(SourceUnLive2D, UnLive2DRawModel);
 }
 
 bool UUnLive2DRendererComponent::SetUnLive2D(UUnLive2D* NewUnLive2D)
 {
+	if (NewUnLive2D == nullptr) return false;
+	
 	if(NewUnLive2D == SourceUnLive2D) return false;
 
 	if ((GetOwner() != nullptr) && !AreDynamicDataChangesAllowed()) return false;

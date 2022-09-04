@@ -46,7 +46,8 @@ public class UnLive2DAssetEditor : ModuleRules
 				"RigVMDeveloper",
 				"GraphEditor",
 				"UnLive2DManager",
-				"Settings"
+				"Settings",
+				"UMG"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

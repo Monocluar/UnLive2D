@@ -1,5 +1,6 @@
 #include "SGraphNode_UnLive2DAnimBlueprintBase.h"
 #include "AnimBlueprintGraph/UnLive2DAnimBlueprintGraphNode.h"
+#include "GraphEditorSettings.h"
 
 #define LOCTEXT_NAMESPACE "UnLive2D"
 

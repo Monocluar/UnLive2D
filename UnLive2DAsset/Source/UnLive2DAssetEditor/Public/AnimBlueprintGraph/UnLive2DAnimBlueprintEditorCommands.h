@@ -26,6 +26,9 @@ public:
 	// 在内容浏览器中选择动画资源
 	TSharedPtr<FUICommandInfo> BrowserSync;
 
+	/** 将输入节点添加到节点 */
+	TSharedPtr<FUICommandInfo> AddInput;
+
 	// 删除一个输入节点
 	TSharedPtr<FUICommandInfo> DeleteInput;
 

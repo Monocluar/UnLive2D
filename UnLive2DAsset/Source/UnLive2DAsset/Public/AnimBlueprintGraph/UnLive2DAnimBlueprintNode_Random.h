@@ -36,6 +36,10 @@ public:
 	UPROPERTY()
 		uint8 bAnimBlueprintExcludedFromBranchCulling : 1;
 
+
+	UPROPERTY(EditAnywhere, Category = Random)
+		uint8 bRandomizeWithoutReplacement : 1;
+
 #if WITH_EDITORONLY_DATA
 	/** 仅编辑器隐藏以复制PreselectAtLevelLoad行为的节点列表 */
 	UPROPERTY(transient)
@@ -54,6 +58,9 @@ protected:
 	//~ Begin UObject Interface
 	virtual void PostLoad() override;
 	//~ End UObject Interface
+
+	// 播放节点
+	virtual void ParseNodes(FActiveUnLive2DAnimBlueprint& ActiveLive2DAnim, FUnLive2DAnimParseParameters& ParseParams, const UPTRINT NodeAnimInstanceHash) override;
 
 	// 重新设置权重数组
 	void FixWeightsArray();

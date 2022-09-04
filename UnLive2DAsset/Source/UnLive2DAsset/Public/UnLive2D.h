@@ -34,24 +34,20 @@ public:
 
 public:
 
-	// 渲染设置数据
+	// 是否使用单遮罩图（ 为false 遮罩图不更新）
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
-		FModelConfig ModelConfigData;
+		bool bTryLowPreciseMask = true;
 
 	/** 此组件的着色颜色和不透明度 */
 	UPROPERTY(EditAnywhere, Category = Rendering)
 		FLinearColor TintColorAndOpacity;
 
-
 public:
 
+#if WITH_EDITOR
 	// 更新UnLive2D其他参数
 	FSimpleDelegate OnUpDataUnLive2DProperty;
-
-protected:
-	/** 动画播放完成 */
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Anim")
-		void OnMotionPlayeEnd();
+#endif
 
 public:
 
@@ -63,16 +59,7 @@ public:
 	void LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& TexturePaths, TArray<FUnLive2DMotionData>& LoadMotionData, TMap<FString, FUnLiveByteData>& LoadExpressionData);
 
 #endif
-
-    FORCEINLINE const FModelConfig& GetModelConfigData() { return ModelConfigData; }
-
 	const FUnLive2DLoadData* GetUnLive2DLoadData();
-
-	// 敲击
-	void OnTap(const FVector2D& TapPosition);
-
-	// 拖动
-	void OnDrag(const FVector2D& DragPosition);
 
 public:
 

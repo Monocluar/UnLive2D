@@ -10,6 +10,7 @@
 #include "UnLive2DParameterEditor/SUnLive2DParameterGroup.h"
 #include "UnLive2DRendererComponent.h"
 #include "UnLive2DViewportClient.h"
+#include "UnLive2DEditorCommands.h"
 
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
@@ -93,6 +94,8 @@ void FUnLive2DViewEditor::InitUnLive2DViewEditor(const EToolkitMode::Type Mode, 
 	//GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->CloseOtherEditors(InitUnLive2D, this); // 关闭其他的Live2D编辑器
 
 	UnLive2DBeingEdited = InitUnLive2D;
+
+	FUnLive2DEditorCommands::Register();
 
 	FUnLive2DManagerModule& MangerModule = FModuleManager::LoadModuleChecked<FUnLive2DManagerModule>("UnLive2DManager");
 	UnLive2DToolkit = MangerModule.CreatePersonaToolkit(UnLive2DBeingEdited);
@@ -299,6 +302,7 @@ void FUnLive2DViewEditor::BindCommands()
 
 void FUnLive2DViewEditor::ExtendToolbar()
 {
+
 	if (ToolbarExtender.IsValid())
 	{
 		RemoveToolbarExtender(ToolbarExtender);
@@ -306,6 +310,27 @@ void FUnLive2DViewEditor::ExtendToolbar()
 	}
 
 	ToolbarExtender = MakeShareable(new FExtender);
+
+	struct Local
+	{
+		static void FillToolbar(FToolBarBuilder& ToolbarBuilder)
+		{
+			const FUnLive2DEditorCommands& UnLive2DEditorCommands = FUnLive2DEditorCommands::Get();
+
+			ToolbarBuilder.BeginSection("Command");
+			{
+				ToolbarBuilder.AddToolBarButton(UnLive2DEditorCommands.SetShowGrid);
+			}
+			ToolbarBuilder.EndSection();
+		}
+	};
+
+	ToolbarExtender->AddToolBarExtension(
+		"Asset",
+		EExtensionHook::After,
+		ViewportPtr->GetCommandList(),
+		FToolBarExtensionDelegate::CreateStatic(&Local::FillToolbar)
+	);
 
 	AddToolbarExtender(ToolbarExtender);
 

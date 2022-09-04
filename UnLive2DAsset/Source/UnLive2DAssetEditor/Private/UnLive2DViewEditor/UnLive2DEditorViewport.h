@@ -37,6 +37,7 @@ public:
 	virtual void OnFloatingButtonClicked() override;
 	// End of ICommonEditorViewportToolbarInfoProvider interface
 
+
 private:
 	TAttribute<UUnLive2D*> UnLive2DBeingEdited;
 

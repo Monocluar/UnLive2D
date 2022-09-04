@@ -1,4 +1,4 @@
-﻿#include "UnLive2DViewRendererUI.h"
+#include "UnLive2DViewRendererUI.h"
 #include "Slate/SUnLive2DViewUI.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Materials/MaterialInterface.h"
@@ -54,17 +54,18 @@ void UUnLive2DViewRendererUI::SlateUpDataRender(TWeakPtr<class FUnLive2DRawModel
 	}
 }
 
-void UUnLive2DViewRendererUI::InitUnLive2DRender()
+TSharedRef<FUnLive2DRenderState> UUnLive2DViewRendererUI::InitUnLive2DRender()
 {
 	if (!UnLive2DRenderPtr.IsValid())
 	{
-		UnLive2DRenderPtr = MakeShared<FUnLive2DRenderState>(this);
-		UnLive2DRenderPtr->InitRender(SourceUnLive2D, MySlateWidget->UnLive2DRawModel);
+		UnLive2DRenderPtr = MakeShared<FUnLive2DRenderState>(this, GetWorld());
+		UnLive2DRenderPtr->SetUnLive2DMaterial(0, UnLive2DNormalMaterial);
+		UnLive2DRenderPtr->SetUnLive2DMaterial(1, UnLive2DAdditiveMaterial);
+		UnLive2DRenderPtr->SetUnLive2DMaterial(2, UnLive2DMultiplyMaterial);
 	}
-	else
-	{
-		UnLive2DRenderPtr->InitRender(SourceUnLive2D, MySlateWidget->UnLive2DRawModel);
-	}
+	UnLive2DRenderPtr->InitRender(SourceUnLive2D, MySlateWidget->UnLive2DRawModel);
+
+	return UnLive2DRenderPtr.ToSharedRef();
 }
 
 #if WITH_EDITOR
@@ -86,8 +87,9 @@ TSharedPtr<SWidget> UUnLive2DViewRendererUI::GetAccessibleWidget() const
 TSharedRef<SWidget> UUnLive2DViewRendererUI::RebuildWidget()
 {
 
-	return SAssignNew(MySlateWidget, SUnLive2DViewUI, this).OnUpDataRender(BIND_UOBJECT_DELEGATE(FOnUpDataRender, SlateUpDataRender));
-	
+	return SAssignNew(MySlateWidget, SUnLive2DViewUI, GetUnLive2D())
+		.OnUpDataRender(BIND_UOBJECT_DELEGATE(FOnUpDataRender, SlateUpDataRender))
+		.OnInitUnLive2DRender(BIND_UOBJECT_DELEGATE(FOnInitUnLive2DRender, InitUnLive2DRender));
 }
 
 
@@ -98,6 +100,7 @@ void UUnLive2DViewRendererUI::SynchronizeProperties()
 	if (MySlateWidget.IsValid())
 	{
 		MySlateWidget->SetUnLive2D(SourceUnLive2D);
+		MySlateWidget->SetPlayRate(SourceUnLive2D == nullptr ? 1.f : SourceUnLive2D->PlayRate);
 	}
 }
 

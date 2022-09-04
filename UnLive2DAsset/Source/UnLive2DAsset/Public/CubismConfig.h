@@ -3,24 +3,6 @@
 #include "CoreMinimal.h"
 #include "CubismConfig.generated.h"
 
-/**
- * 模型渲染配置
- */
-USTRUCT(BlueprintType)
-struct FModelConfig
-{
-	GENERATED_BODY()
-
-public:
-
-	/**
-	 * 如果可能，我们将尝试在单个纹理中渲染所有遮罩
-	 */
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Model")
-	bool bTryLowPreciseMask = true;
-
-};
-
 UENUM(BlueprintType)
 enum class EUnLive2DMotionGroup : uint8
 {

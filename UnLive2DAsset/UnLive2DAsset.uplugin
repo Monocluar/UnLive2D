@@ -47,6 +47,11 @@
 				"Mac",
 				"Linux"
 			]
+		},
+		{
+			"Name": "UnLive2DBlueprintSupport",
+			"Type": "UncookedOnly",
+			"LoadingPhase": "PostConfigInit"
 		}
 	],
 	"Plugins": [

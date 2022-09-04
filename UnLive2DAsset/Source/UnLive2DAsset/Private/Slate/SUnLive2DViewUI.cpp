@@ -5,8 +5,8 @@
 #include "Model/CubismModel.hpp"
 #include "Styling/SlateBrush.h"
 #include "Materials/MaterialInstanceDynamic.h"
-#include "UnLive2DViewRendererUI.h"
 #include "Framework/Application/SlateApplication.h"
+#include "FWPort/UnLive2DRawModel.h"
 
 #if UE_VERSION_OLDER_THAN(5,0,0)
 typedef FMatrix FUnLiveMatrix;
@@ -30,15 +30,18 @@ struct FUnLive2DSlateMaterialBrush : public FSlateBrush
 	}
 };
 
-void SUnLive2DViewUI::Construct(const FArguments& InArgs, UUnLive2DViewRendererUI* InRendererUI)
+void SUnLive2DViewUI::Construct(const FArguments& InArgs, const UUnLive2D* InUnLive2D)
 {
-	OwnerWidget = InRendererUI;
 	OnUpDataRender = InArgs._OnUpDataRender;
+	OnInitUnLive2DRender = InArgs._OnInitUnLive2DRender;
+	PlayRate = 1.f;
+	SourceUnLive2DPtr = InUnLive2D;
 	InitUnLive2D();
 }
 
 void SUnLive2DViewUI::SetUnLive2D(const UUnLive2D* InUnLive2D)
 {
+	SourceUnLive2DPtr = InUnLive2D;
 	InitUnLive2D();
 	
 }
@@ -72,32 +75,48 @@ void SUnLive2DViewUI::StopMotion()
 	}
 }
 
+void SUnLive2DViewUI::SetPlayRate(float InPlayRate)
+{
+	PlayRate = InPlayRate;
+}
+
+void SUnLive2DViewUI::SetUnLive2DRender(TSharedRef<class FUnLive2DRenderState> InUnLive2DRenderState)
+{
+	UnLive2DRender = InUnLive2DRenderState;
+}
+
 void SUnLive2DViewUI::InitUnLive2D()
 {
 	if (!FSlateApplication::IsInitialized()) return;
 
-	if (OwnerWidget->SourceUnLive2D == nullptr) return;
+	if (!SourceUnLive2DPtr.IsValid()) return;
+
+	const UUnLive2D* SourceUnLive2D = SourceUnLive2DPtr.Get();
 
 	if (!UnLive2DRawModel.IsValid())
 	{
-		UnLive2DRawModel = OwnerWidget->SourceUnLive2D->CreateLive2DRawModel();
+		UnLive2DRawModel = SourceUnLive2D->CreateLive2DRawModel();
 		//UnLive2DRawModel->OnMotionPlayEnd.BindUObject(this, &SUnLive2DViewUI::OnMotionPlayeEnd);
 	}
 	else
 	{
-		if (UnLive2DRawModel->GetOwnerLive2D().IsValid() && UnLive2DRawModel->GetOwnerLive2D().Get() != OwnerWidget->SourceUnLive2D)
+		if (UnLive2DRawModel->GetOwnerLive2D().IsValid() && UnLive2DRawModel->GetOwnerLive2D().Get() != SourceUnLive2D)
 		{
 			UnLive2DRawModel.Reset();
-			UnLive2DRawModel = OwnerWidget->SourceUnLive2D->CreateLive2DRawModel();
+			UnLive2DRawModel = SourceUnLive2D->CreateLive2DRawModel();
 			//UnLive2DRawModel->OnMotionPlayEnd.BindUObject(this, &SUnLive2DViewUI::OnMotionPlayeEnd);
 		}
 	}
 
-	if (OwnerWidget.IsValid())
+	/*if (OwnerWidget.IsValid())
 	{
 		OwnerWidget->InitUnLive2DRender();
+	}*/
+	if (OnInitUnLive2DRender.IsBound())
+	{
+		UnLive2DRender = OnInitUnLive2DRender.Execute();
 	}
-
+	
 }
 
 void SUnLive2DViewUI::UpDateMesh(const FGeometry& AllottedGeometry, int32 DrawableIndex, class CubismClippingContext* ClipContext, const FWidgetStyle& InWidgetStyle)
@@ -110,9 +129,11 @@ void SUnLive2DViewUI::UpDateMesh(const FGeometry& AllottedGeometry, int32 Drawab
 
 	csmFloat32 Opacity = UnLive2DModel->GetDrawableOpacity(DrawableIndex) * FMath::Clamp(WidgetStyleColor.A, 0.f, 1.f) ; // 获取不透明度
 
-	if (Opacity == 0.f) return;
+	if (Opacity == 0.f || !UnLive2DRender.IsValid()) return;
 
-	UMaterialInstanceDynamic* DynamicMat = OwnerWidget->UnLive2DRenderPtr->GetMaterialInstanceDynamicToIndex(UnLive2DModel, DrawableIndex, ClipContext != nullptr); // 获取当前动态材质
+	TSharedPtr<FUnLive2DRenderState> UnLive2DRenderPtr = UnLive2DRender.Pin();
+
+	UMaterialInstanceDynamic* DynamicMat = UnLive2DRenderPtr->GetMaterialInstanceDynamicToIndex(UnLive2DModel, DrawableIndex, ClipContext != nullptr); // 获取当前动态材质
 
 	if (!IsValid(DynamicMat)) return;
 
@@ -145,7 +166,7 @@ void SUnLive2DViewUI::UpDateMesh(const FGeometry& AllottedGeometry, int32 Drawab
 	const csmFloat32* VertexArray = const_cast<csmFloat32*>(UnLive2DModel->GetDrawableVertices(DrawableIndex)); // 顶点组
 
 	FUnLiveVector4 ChanelFlag;
-	FUnLiveMatrix MartixForDraw = OwnerWidget->UnLive2DRenderPtr->GetUnLive2DPosToClipMartix(ClipContext, ChanelFlag);
+	FUnLiveMatrix MartixForDraw = UnLive2DRenderPtr->GetUnLive2DPosToClipMartix(ClipContext, ChanelFlag);
 
 	/*Live2DVertexData.SetNumUninitialized(NumVertext);
 	FSlateVertex* VertexDataPtr = (FSlateVertex*)Live2DVertexData.GetData();*/
@@ -246,14 +267,16 @@ void SUnLive2DViewUI::Flush(int32 LayerId, FSlateWindowElementList& OutDrawEleme
 void SUnLive2DViewUI::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
 {
 	SLeafWidget::Tick(AllottedGeometry, InCurrentTime, InDeltaTime);
-	if (!UnLive2DRawModel.IsValid() || OwnerWidget->SourceUnLive2D == nullptr) return;
+	if (!UnLive2DRawModel.IsValid() ) return;
 
-	UnLive2DRawModel->OnUpDate(InDeltaTime * OwnerWidget->SourceUnLive2D->PlayRate);
+	UnLive2DRawModel->OnUpDate(InDeltaTime * PlayRate);
 }
 
 int32 SUnLive2DViewUI::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyCullingRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const
 {
-	if (!UnLive2DRawModel.IsValid()) return LayerId;
+	if (!UnLive2DRawModel.IsValid() || !UnLive2DRender.IsValid()) return LayerId;
+
+	TSharedPtr<FUnLive2DRenderState> UnLive2DRenderPtr = UnLive2DRender.Pin();
 
 	if (OnUpDataRender.IsBound())
 	{
@@ -285,7 +308,7 @@ int32 SUnLive2DViewUI::OnPaint(const FPaintArgs& Args, const FGeometry& Allotted
 
 		if (0 == UnLive2DModel->GetDrawableVertexIndexCount(DrawableIndex)) continue;
 
-		CubismClippingContext* ClipContext = OwnerWidget->UnLive2DRenderPtr->GetClipContextInDrawableIndex(DrawableIndex);
+		CubismClippingContext* ClipContext = UnLive2DRenderPtr->GetClipContextInDrawableIndex(DrawableIndex);
 
 		const bool IsMaskDraw = (nullptr != ClipContext);
 

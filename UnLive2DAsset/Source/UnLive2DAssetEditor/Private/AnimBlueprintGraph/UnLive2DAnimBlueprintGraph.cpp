@@ -147,7 +147,9 @@ protected:
 	{
 		TArray<class UEdGraphPin*> InputPins;
 
+#if WITH_EDITORONLY_DATA
 		CastChecked<UUnLive2DAnimBlueprintGraphNode>(AnimBlueprintNode->GetGraphNode())->GetInputPins(InputPins);
+#endif
 
 		for (int32 i = 0; i < InputPins.Num(); i++)
 		{

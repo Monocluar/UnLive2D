@@ -47,6 +47,13 @@ protected:
 	virtual FString GetDocumentationExcerptName() const override;
 	// End of UEdGraphNode interface
 
+
+	// UObject interface
+	virtual void PostLoad() override;
+	virtual void PostEditImport() override;
+	virtual void PostDuplicate(bool bDuplicateForPIE) override;
+	// End of UObject interface
+
 	friend class FUnLive2DAnimationBlueprintEditor;
 
 private:

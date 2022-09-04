@@ -1,4 +1,4 @@
-#include "UnLive2DSepRenderer.h"
+#include "Draw/UnLive2DSepRenderer.h"
 #include "UnLive2D.h"
 #include "CubismConfig.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -15,6 +15,14 @@
 #include "RHI.h"
 #include "Slate/SUnLive2DViewUI.h"
 #include "UnLive2DViewRendererUI.h"
+#include "Model/CubismModel.hpp"
+#include "Type/CubismBasicType.hpp"
+#include "CubismFramework.hpp"
+
+#if WITH_EDITOR
+#include "ThumbnailRenderer/UnLive2DThumbnailRenderer.h"
+#include "UnLive2DSetting.h"
+#endif
 
 
 FName MaskTextureParameterName = "UnLive2DMask";
@@ -146,21 +154,14 @@ public:
 IMPLEMENT_SHADER_TYPE(, FUnLive2DMaskVS, TEXT("/Plugin/UnLive2DAsset/Private/CubismMask.usf"), TEXT("MainVS"), SF_Vertex)
 IMPLEMENT_SHADER_TYPE(, FUnLive2DMaskPS, TEXT("/Plugin/UnLive2DAsset/Private/CubismMask.usf"), TEXT("MainPS"), SF_Pixel)
 
-FUnLive2DRenderState::FUnLive2DRenderState(UUnLive2DRendererComponent* InComp)
+FUnLive2DRenderState::FUnLive2DRenderState(UObject* InOwnerObject, UWorld* InWorld)
 	: UnLive2DClippingManager(nullptr)
 	, bNoLowPreciseMask(false)
-	, OwnerCompWeak(InComp)
+	, SourceUnLive2D(nullptr)
 	, bInitRenderBuffers(false)
+	, World(InWorld)
+	, OwnerObject(InOwnerObject)
 {
-}
-
-FUnLive2DRenderState::FUnLive2DRenderState(UUnLive2DViewRendererUI* InViewUI)
-	: UnLive2DClippingManager(nullptr)
-	, bNoLowPreciseMask(false)
-	, OwnerViewUIWeak(InViewUI)
-	, bInitRenderBuffers(false)
-{
-
 }
 
 FUnLive2DRenderState::~FUnLive2DRenderState()
@@ -180,19 +181,13 @@ void FUnLive2DRenderState::InitRender(TWeakObjectPtr<UUnLive2D> InNewUnLive2D, T
 {
 	if (!InNewUnLive2D.IsValid() || !InUnLive2DRawModel.IsValid()) return;
 
-	if (!OwnerCompWeak.IsValid() && !OwnerViewUIWeak.IsValid()) return;
-
-	UUnLive2D* UnLive2D = InNewUnLive2D.Get();
-
-	InitRender(UnLive2D, InUnLive2DRawModel);
+	InitRender(InNewUnLive2D.Get(), InUnLive2DRawModel);
 }
 
 
 void FUnLive2DRenderState::InitRender(const UUnLive2D* InNewUnLive2D, TSharedPtr<FUnLive2DRawModel> InUnLive2DRawModel)
 {
 	if (InNewUnLive2D == nullptr) return;
-
-	if (!OwnerCompWeak.IsValid() && !OwnerViewUIWeak.IsValid()) return;
 
 	if (!InUnLive2DRawModel.IsValid()) return;
 
@@ -242,7 +237,7 @@ bool FUnLive2DRenderState::GetUseHighPreciseMask() const
 
     if (const UUnLive2D* UnLive2D = GetUnLive2D())
     {
-        if (!UnLive2D->ModelConfigData.bTryLowPreciseMask)
+        if (!UnLive2D->bTryLowPreciseMask)
         {
              return true;
         }
@@ -262,7 +257,6 @@ bool FUnLive2DRenderState::GetUseHighPreciseMask() const
 
 void FUnLive2DRenderState::LoadTextures(TWeakPtr<FUnLive2DRawModel> InUnLive2DRawModel)
 {
-	if (!OwnerCompWeak.IsValid() && !OwnerViewUIWeak.IsValid()) return;
 
 	const UUnLive2D* UnLive2D = GetUnLive2D();
 
@@ -333,7 +327,7 @@ void FUnLive2DRenderState::UnOldMaterial()
 	UnLive2DToAdditiveBlendMaterial.Empty();
 }
 
-class UTexture2D* FUnLive2DRenderState::GetRandererStatesTexturesTextureIndex(const Csm::CubismModel* Live2DModel, const Csm::csmInt32& DrawableIndex) const
+class UTexture2D* FUnLive2DRenderState::GetRandererStatesTexturesTextureIndex(const Csm::CubismModel* Live2DModel, const int32& DrawableIndex) const
 {
 
 	const csmInt32 TextureIndex = Live2DModel->GetDrawableTextureIndices(DrawableIndex);
@@ -346,9 +340,8 @@ class UTexture2D* FUnLive2DRenderState::GetRandererStatesTexturesTextureIndex(co
 	return TextureWeakPtr.Get();
 }
 
-UMaterialInstanceDynamic* FUnLive2DRenderState::GetMaterialInstanceDynamicToIndex(const Csm::CubismModel* Live2DModel, const Csm::csmInt32 DrawableIndex, bool bIsMesk)
+UMaterialInstanceDynamic* FUnLive2DRenderState::GetMaterialInstanceDynamicToIndex(const Csm::CubismModel* Live2DModel, const int32 DrawableIndex, bool bIsMesk)
 {
-	if (!OwnerCompWeak.IsValid() && !OwnerViewUIWeak.IsValid()) return nullptr;
 
 	const UUnLive2D* UnLive2D = GetUnLive2D();
 	if (UnLive2D == nullptr) return nullptr;
@@ -421,7 +414,7 @@ UMaterialInstanceDynamic* FUnLive2DRenderState::GetMaterialInstanceDynamicToInde
 	return Material;
 }
 
-CubismClippingContext* FUnLive2DRenderState::GetClipContextInDrawableIndex(const Csm::csmUint32 DrawableIndex) const
+CubismClippingContext* FUnLive2DRenderState::GetClipContextInDrawableIndex(const uint32 DrawableIndex) const
 {
 	if (!UnLive2DClippingManager.IsValid()) return nullptr;
 
@@ -437,13 +430,11 @@ CubismClippingContext* FUnLive2DRenderState::GetClipContextInDrawableIndex(const
 void FUnLive2DRenderState::InitRenderBuffers(TSharedPtr<FUnLive2DRawModel> InUnLive2DRawModel)
 {
 
-	ENQUEUE_RENDER_COMMAND(UnLiveRenderInit)([ThisSharedPtr = AsShared(), InUnLive2DRawModel](FRHICommandListImmediate& RHICmdList)
+	ENQUEUE_RENDER_COMMAND(UnLiveRenderInit)([this, InUnLive2DRawModel](FRHICommandListImmediate& RHICmdList)
 	{
 		check(RHICmdList.IsOutsideRenderPass());
 
 		if (!InUnLive2DRawModel.IsValid()) return;
-
-		if (!ThisSharedPtr->OwnerCompWeak.IsValid() && !ThisSharedPtr->OwnerViewUIWeak.IsValid()) return;
 
 		Csm::CubismModel* UnLive2DModel = InUnLive2DRawModel->GetModel();
 
@@ -453,7 +444,7 @@ void FUnLive2DRenderState::InitRenderBuffers(TSharedPtr<FUnLive2DRawModel> InUnL
 
 		if (UnLive2DModel == nullptr) return;
 
-		ThisSharedPtr->MaskRenderBuffers.Clear();
+		MaskRenderBuffers.Clear();
 
 		for (Csm::csmInt32 DrawIter = 0; DrawIter < DrawableCount; ++DrawIter)
 		{
@@ -472,8 +463,8 @@ void FUnLive2DRenderState::InitRenderBuffers(TSharedPtr<FUnLive2DRawModel> InUnL
 				RHIUnlockBuffer(ScratchVertexBufferRHI);
 #endif
 
-				ThisSharedPtr->MaskRenderBuffers.VertexBuffers.Add(DrawIter, ScratchVertexBufferRHI);
-				ThisSharedPtr->MaskRenderBuffers.VertexCounts.Add(DrawIter, VCount);
+				MaskRenderBuffers.VertexBuffers.Add(DrawIter, ScratchVertexBufferRHI);
+				MaskRenderBuffers.VertexCounts.Add(DrawIter, VCount);
 			}
 			
 			{
@@ -496,7 +487,7 @@ void FUnLive2DRenderState::InitRenderBuffers(TSharedPtr<FUnLive2DRawModel> InUnL
 				RHIUnlockBuffer(IndexBufferRHI);
 #endif
 				
-				ThisSharedPtr->MaskRenderBuffers.IndexBuffers.Add(DrawIter, IndexBufferRHI);
+				MaskRenderBuffers.IndexBuffers.Add(DrawIter, IndexBufferRHI);
 			}
 		}
 
@@ -505,70 +496,26 @@ void FUnLive2DRenderState::InitRenderBuffers(TSharedPtr<FUnLive2DRawModel> InUnL
 
 const UUnLive2D* FUnLive2DRenderState::GetUnLive2D() const
 {
-	if (OwnerCompWeak.IsValid())
-	{
-		return OwnerCompWeak->GetUnLive2D();
-	}
-	else if (OwnerViewUIWeak.IsValid())
-	{
-		return OwnerViewUIWeak->GetUnLive2D();
-	}
-
-	return nullptr;
+	return SourceUnLive2D.Get();
 }
 
 UMaterialInstanceDynamic* FUnLive2DRenderState::GetUnLive2DMaterial(int32 InModeIndex) const
 {
 	Rendering::CubismRenderer::CubismBlendMode InMode = (Rendering::CubismRenderer::CubismBlendMode )InModeIndex;
-	if (!OwnerCompWeak.IsValid() && !OwnerViewUIWeak.IsValid()) return nullptr;
+
 	UMaterialInstanceDynamic* MatDynamic = nullptr;
+
 	switch (InMode)
 	{
-	case Rendering::CubismRenderer::CubismBlendMode_Normal:
-	{
-		if (OwnerCompWeak.IsValid())
-		{
-			MatDynamic = UMaterialInstanceDynamic::Create(OwnerCompWeak->UnLive2DNormalMaterial, OwnerCompWeak.Get());
-			break;
-		}
-		
-		if (OwnerViewUIWeak.IsValid())
-		{
-			MatDynamic = UMaterialInstanceDynamic::Create(OwnerViewUIWeak->UnLive2DNormalMaterial, OwnerViewUIWeak.Get());
-			break;
-		}
-	}
-	break;
-	case Rendering::CubismRenderer::CubismBlendMode_Additive:
-	{
-		if (OwnerCompWeak.IsValid())
-		{
-			MatDynamic = UMaterialInstanceDynamic::Create(OwnerCompWeak->UnLive2DAdditiveMaterial, OwnerCompWeak.Get());
-			break;
-		}
-
-		if (OwnerViewUIWeak.IsValid())
-		{
-			MatDynamic = UMaterialInstanceDynamic::Create(OwnerViewUIWeak->UnLive2DAdditiveMaterial, OwnerViewUIWeak.Get());
-			break;
-		}
-	}
-	break;
-	case Rendering::CubismRenderer::CubismBlendMode_Multiplicative:
-	{
-		if (OwnerCompWeak.IsValid())
-		{
-			MatDynamic = UMaterialInstanceDynamic::Create(OwnerCompWeak->UnLive2DMultiplyMaterial, OwnerCompWeak.Get());
-			break;
-		}
-
-		if (OwnerViewUIWeak.IsValid())
-		{
-			MatDynamic = UMaterialInstanceDynamic::Create(OwnerViewUIWeak->UnLive2DMultiplyMaterial, OwnerViewUIWeak.Get());
-			break;
-		}
-	}
-	break;
+	case Live2D::Cubism::Framework::Rendering::CubismRenderer::CubismBlendMode_Normal:
+		MatDynamic = UMaterialInstanceDynamic::Create(UnLive2DNormalMaterial, OwnerObject);
+		break;
+	case Live2D::Cubism::Framework::Rendering::CubismRenderer::CubismBlendMode_Additive:
+		MatDynamic = UMaterialInstanceDynamic::Create(UnLive2DAdditiveMaterial, OwnerObject);
+		break;
+	case Live2D::Cubism::Framework::Rendering::CubismRenderer::CubismBlendMode_Multiplicative:
+		MatDynamic = UMaterialInstanceDynamic::Create(UnLive2DMultiplyMaterial, OwnerObject);
+		break;
 	}
 
 	if (MatDynamic)
@@ -607,20 +554,9 @@ int32 UpDataIndex = 0;
 void FUnLive2DRenderState::UpdateRenderBuffers(TWeakPtr<FUnLive2DRawModel> InUnLive2DRawModel)
 {
 
-	UWorld* SelfWorld = nullptr;
+	if (World == nullptr) return;
 
-	if (OwnerCompWeak.IsValid())
-	{
-		SelfWorld = OwnerCompWeak->GetWorld();
-	}
-	else if (OwnerViewUIWeak.IsValid() && OwnerViewUIWeak.IsValid())
-	{
-		SelfWorld = OwnerViewUIWeak->GetWorld();
-	}
-
-	if (SelfWorld == nullptr) return;
-
-	ERHIFeatureLevel::Type FeatureLevel = SelfWorld->Scene->GetFeatureLevel();
+	ERHIFeatureLevel::Type FeatureLevel = World->Scene->GetFeatureLevel();
 
 	if (!bInitRenderBuffers)
 	{
@@ -629,13 +565,14 @@ void FUnLive2DRenderState::UpdateRenderBuffers(TWeakPtr<FUnLive2DRawModel> InUnL
 	}
 	else
 	{
-
+	
 		ENQUEUE_RENDER_COMMAND(UpdateRender)([this, FeatureLevel, InUnLive2DRawModel](FRHICommandListImmediate& RHICmdList)
 		{
 			check(RHICmdList.IsOutsideRenderPass());
 
 			if (GetUnLive2D() == nullptr || !InUnLive2DRawModel.IsValid()) return;
 
+			if (GetUseHighPreciseMask()) return;
 
 			Csm::CubismModel* UnLive2DModel = InUnLive2DRawModel.Pin()->GetModel();
 
@@ -643,7 +580,6 @@ void FUnLive2DRenderState::UpdateRenderBuffers(TWeakPtr<FUnLive2DRawModel> InUnL
 
 			UnLive2DClippingManager->SetupClippingContext(UnLive2DModel, this);
 
-			if (GetUseHighPreciseMask()) return;
 
 			UpdateMaskBufferRenderTarget(RHICmdList, UnLive2DModel, FeatureLevel);
 
@@ -785,7 +721,7 @@ void FUnLive2DRenderState::UpdateMaskBufferRenderTarget(FRHICommandListImmediate
 	RHICmdList.EndRenderPass();
 }
 
-void FUnLive2DRenderState::MaskFillVertexBuffer(Csm::CubismModel* tp_Model, const Csm::csmInt32 drawableIndex, FVertexUnLiveBufferRHIRef ScratchVertexBufferRHI, FRHICommandListImmediate& RHICmdList)
+void FUnLive2DRenderState::MaskFillVertexBuffer(Csm::CubismModel* tp_Model, const int32 drawableIndex, FVertexUnLiveBufferRHIRef ScratchVertexBufferRHI, FRHICommandListImmediate& RHICmdList)
 {
 	const csmInt32 td_NumVertext = tp_Model->GetDrawableVertexCount(drawableIndex);
 	UE_LOG(LogUnLive2D, Verbose, TEXT("FillVertexBuffer: Vertext buffer info %d|%d >> (%u, %u)"), drawableIndex, td_NumVertext, ScratchVertexBufferRHI->GetSize(), ScratchVertexBufferRHI->GetUsage());
@@ -852,5 +788,27 @@ void FUnLive2DRenderState::SetDynamicMaterialTintColor(FLinearColor& NewColor)
 	{
 		Item.Value->SetVectorParameterValue(TintColorAndOpacityName, NewColor);
 	}
+}
+
+void FUnLive2DRenderState::SetUnLive2DMaterial(int32 InModeIndex, UMaterialInterface* NewUnLive2DMaterial)
+{
+	Rendering::CubismRenderer::CubismBlendMode InMode = (Rendering::CubismRenderer::CubismBlendMode)InModeIndex;
+	switch (InMode)
+	{
+	case Live2D::Cubism::Framework::Rendering::CubismRenderer::CubismBlendMode_Normal:
+		UnLive2DNormalMaterial = NewUnLive2DMaterial;
+		break;
+	case Live2D::Cubism::Framework::Rendering::CubismRenderer::CubismBlendMode_Additive:
+		UnLive2DAdditiveMaterial = NewUnLive2DMaterial;
+		break;
+	case Live2D::Cubism::Framework::Rendering::CubismRenderer::CubismBlendMode_Multiplicative:
+		UnLive2DMultiplyMaterial = NewUnLive2DMaterial;
+		break;
+	}
+}
+
+void FUnLive2DRenderState::SetUnLive2D(class UUnLive2D* InUnLive2D)
+{
+	SourceUnLive2D = InUnLive2D;
 }
 

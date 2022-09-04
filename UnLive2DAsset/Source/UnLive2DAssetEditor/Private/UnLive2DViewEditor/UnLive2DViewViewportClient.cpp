@@ -196,6 +196,6 @@ void FUnLive2DViewViewportClient::EventOnLeftMouseMove(FIntPoint MousePointDiffe
 {
 	OldMouseTapPos += MousePointDifference;
 
-	UnLive2DBeingEditedLastFrame->OnDrag(OldMouseTapPos);
+	//UnLive2DBeingEditedLastFrame->OnDrag(OldMouseTapPos);
 	UE_LOG(LogUnLive2DEditor, Log, TEXT("MousePos:X:%d,Y:%d"), MousePointDifference.X, MousePointDifference.Y);
 }

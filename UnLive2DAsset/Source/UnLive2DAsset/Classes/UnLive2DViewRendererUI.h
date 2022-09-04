@@ -56,7 +56,7 @@ protected:
 
 	virtual void SlateUpDataRender(TWeakPtr<class FUnLive2DRawModel> InUnLive2DRawModel);
 
-	void InitUnLive2DRender();
+	TSharedRef<class FUnLive2DRenderState> InitUnLive2DRender();
 
 #if WITH_EDITOR
 protected:

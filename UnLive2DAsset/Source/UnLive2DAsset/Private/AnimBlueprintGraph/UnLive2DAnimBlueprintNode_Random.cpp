@@ -1,6 +1,5 @@
 #include "AnimBlueprintGraph/UnLive2DAnimBlueprintNode_Random.h"
 
-
 UUnLive2DAnimBlueprintNode_Random::UUnLive2DAnimBlueprintNode_Random(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -64,6 +63,43 @@ void UUnLive2DAnimBlueprintNode_Random::PostLoad()
 
 	FixWeightsArray();
 	FixHasBeenUsedArray();
+}
+
+void UUnLive2DAnimBlueprintNode_Random::ParseNodes(FActiveUnLive2DAnimBlueprint& ActiveLive2DAnim, FUnLive2DAnimParseParameters& ParseParams, const UPTRINT NodeAnimInstanceHash)
+{
+	RETRIEVE_UNLIVE2DANIMBLUEPRINT_PAYLOAD(sizeof(int32));
+	DECLARE_UNLIVE2DANIMBLUEPRINT_ELEMENT(int32, NodeIndex);
+
+
+#if WITH_EDITOR
+	bool bIsPIEAnimBlueprint = (GEditor != nullptr) && ((GEditor->bIsSimulatingInEditor || GEditor->PlayWorld != nullptr));
+#endif //WITH_EDITOR
+
+	// check to see if we have used up our random sounds
+	if (bRandomizeWithoutReplacement && (HasBeenUsed.Num() > 0) && (NumRandomUsed >= HasBeenUsed.Num()
+#if WITH_EDITOR
+		|| (bIsPIEAnimBlueprint && NumRandomUsed >= (HasBeenUsed.Num() - PIEHiddenNodes.Num()))
+#endif //WITH_EDITOR
+		))
+	{
+		// reset all of the children nodes
+		for (int32 i = 0; i < HasBeenUsed.Num(); ++i)
+		{
+			if (HasBeenUsed.Num() > NodeIndex)
+			{
+				HasBeenUsed[i] = false;
+			}
+		}
+		// set the node that has JUST played to be true so we don't repeat it
+		HasBeenUsed[NodeIndex] = true;
+		NumRandomUsed = 1;
+	}
+
+
+	if (NodeIndex < ChildNodes.Num() && ChildNodes[NodeIndex])
+	{
+		ChildNodes[NodeIndex]->ParseNodes(ActiveLive2DAnim, ParseParams, NodeAnimInstanceHash);
+	}
 }
 
 void UUnLive2DAnimBlueprintNode_Random::FixWeightsArray()

@@ -7,23 +7,23 @@
 #include "Widgets/DeclarativeSyntaxSupport.h"
 #include "UnLive2DViewRendererUI.h"
 #include "Materials/MaterialInstanceDynamic.h"
-#include "UObject/GCObject.h"
-#include "FWPort/UnLive2DRawModel.h"
 
 class UUnLive2D;
 
-DECLARE_DELEGATE_OneParam(FOnUpDataRender, TWeakPtr<FUnLive2DRawModel>);
+DECLARE_DELEGATE_OneParam(FOnUpDataRender, TWeakPtr<class FUnLive2DRawModel>);
+DECLARE_DELEGATE_RetVal(TSharedRef<class FUnLive2DRenderState>, FOnInitUnLive2DRender);
 
 class UNLIVE2DASSET_API SUnLive2DViewUI : public SLeafWidget
 {
 public:
 	SLATE_BEGIN_ARGS(SUnLive2DViewUI)
-	{}
-	SLATE_EVENT(FOnUpDataRender, OnUpDataRender)
+		{}
+		SLATE_EVENT(FOnUpDataRender, OnUpDataRender)
+		SLATE_EVENT(FOnInitUnLive2DRender, OnInitUnLive2DRender)
 	SLATE_END_ARGS()
 
 public:
-	void Construct( const FArguments& InArgs , class UUnLive2DViewRendererUI* InRendererUI);
+	void Construct( const FArguments& InArgs, const UUnLive2D* InUnLive2D);
 
 public:
 
@@ -36,6 +36,10 @@ public:
 	void PlayExpression(class UUnLive2DExpression* InExpression);
 
 	void StopMotion();
+
+	void SetPlayRate(float InPlayRate);
+
+	void SetUnLive2DRender(TSharedRef<class FUnLive2DRenderState> InUnLive2DRenderState);
 
 protected:
 
@@ -55,13 +59,17 @@ protected:
 	virtual FVector2D ComputeDesiredSize(float) const override;
 public:
 
-	TWeakObjectPtr<class UUnLive2DViewRendererUI> OwnerWidget;
+	TWeakObjectPtr<const UUnLive2D> SourceUnLive2DPtr;
 
 	// Live2D模型设置模块
 	TSharedPtr<class FUnLive2DRawModel> UnLive2DRawModel;
 
 	// 渲染回调
 	FOnUpDataRender OnUpDataRender;
+
+	// 初始化UnLive2DRender
+	FOnInitUnLive2DRender OnInitUnLive2DRender;
+
 private:
 
 	struct FCustomVertsData
@@ -89,6 +97,9 @@ private:
 
 	TArray<FCustomVertsData> UnLive2DCustomVertsData;
 
+	float PlayRate;
+
+	TWeakPtr<class FUnLive2DRenderState> UnLive2DRender;
 
 	friend UUnLive2DViewRendererUI;
 

@@ -25,12 +25,12 @@ void FUnLive2DEditorStyle::Initialize()
 
 	{
 		StyleSet->Set(FName(TEXT("ClassThumbnail.UnLive2DMotion")), new IMAGE_BRUSH("AnimComposite_64x", FVector2D(64, 64)));
-		StyleSet->Set(FName(TEXT("ClassIcon.UnLive2DMotion")), new IMAGE_BRUSH("AnimComposite_16x", FVector2D(16, 16)));
+		StyleSet->Set(FName(TEXT("ClassIcon.UnLive2DMotion")), new IMAGE_BRUSH("AnimComposite_64x", FVector2D(16, 16)));
 	}
 
 	{
 		StyleSet->Set(FName(TEXT("ClassThumbnail.UnLive2DAnimBlueprint")), new IMAGE_BRUSH("AnimInstance_64x", FVector2D(64, 64)));
-		StyleSet->Set(FName(TEXT("ClassIcon.UnLive2DAnimBlueprint")), new IMAGE_BRUSH("AnimInstance_16x", FVector2D(16, 16)));
+		StyleSet->Set(FName(TEXT("ClassIcon.UnLive2DAnimBlueprint")), new IMAGE_BRUSH("AnimInstance_64x", FVector2D(16, 16)));
 	}
 
 	{
@@ -45,6 +45,11 @@ void FUnLive2DEditorStyle::Initialize()
 		StyleSet->Set("UnLive2DAnimBlueprintGraphEditor.PlayNode.Small", new IMAGE_BRUSH("Slate/icon_PlayNode_40x", FVector2D(16, 16)));
 		StyleSet->Set("UnLive2DAnimBlueprintGraphEditor.StopUnLive2DAnim", new IMAGE_BRUSH("Slate/icon_Stop_40x", FVector2D(40, 40)));
 		StyleSet->Set("UnLive2DAnimBlueprintGraphEditor.StopUnLive2DAnim.Small", new IMAGE_BRUSH("Slate/icon_Stop_16x", FVector2D(16, 16)));
+	}
+
+	{
+		StyleSet->Set("UnLive2DEditor.SetShowGrid", new IMAGE_BRUSH(TEXT("icon_MatEd_Grid_40x"), FVector2D(40, 40)));
+		StyleSet->Set("UnLive2DEditor.SetShowGrid.Small", new IMAGE_BRUSH(TEXT("icon_MatEd_Grid_40x"), FVector2D(20, 20)));
 	}
 
     FSlateStyleRegistry::RegisterSlateStyle(*StyleSet);
