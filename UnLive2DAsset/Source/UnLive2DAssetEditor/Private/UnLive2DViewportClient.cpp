@@ -15,7 +15,7 @@ FVector UnLive2DAxisX(1.0f, 0.0f, 0.0f);
 FVector UnLive2DAxisY(0.0f, 0.0f, 1.0f);
 FVector UnLive2DAxisZ(0.0f, 1.0f, 0.0f);*/
 
-FUnLive2DViewportClient::FUnLive2DViewportClient(TWeakObjectPtr<UUnLive2D> InUnLive2DBeingEdited, const TWeakPtr<class SEditorViewport>& InEditorViewportWidget /*= nullptr*/)
+FUnLive2DViewportClient::FUnLive2DViewportClient(UUnLive2D* InUnLive2DBeingEdited, const TWeakPtr<class SEditorViewport>& InEditorViewportWidget /*= nullptr*/)
 	: FEditorViewportClient(nullptr, nullptr, InEditorViewportWidget)
 	, CheckerboardTexture(nullptr)
 {
@@ -31,7 +31,7 @@ FUnLive2DViewportClient::FUnLive2DViewportClient(TWeakObjectPtr<UUnLive2D> InUnL
 	bDeferZoomToUnLive2D = true;
 	bDeferZoomToUnLive2DIsInstant = true;
 
-	SetInitialViewTransform(LVT_Perspective, FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f).Rotation(), 0.0f);
+	SetInitialViewTransform(LVT_Perspective, FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f).Rotation(), 1.f);
 
 	AnimatedRenderComponent = NewObject<UUnLive2DRendererComponent>();
 	AnimatedRenderComponent->SetUnLive2D(UnLive2DBeingEditedLastFrame.Get());

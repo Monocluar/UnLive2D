@@ -3,7 +3,7 @@
 #include "Animation/UnLive2DAnimBlueprint.h"
 #include "SUnLive2DAnimBlueprintEditorViewport.h"
 
-FUnLive2DAnimBlueprintViewportClient::FUnLive2DAnimBlueprintViewportClient(TWeakObjectPtr<UUnLive2DAnimBlueprint> InUnLive2DAnimBlueprintEdited)
+FUnLive2DAnimBlueprintViewportClient::FUnLive2DAnimBlueprintViewportClient(UUnLive2DAnimBlueprint* InUnLive2DAnimBlueprintEdited)
 	: FUnLive2DViewportClient(InUnLive2DAnimBlueprintEdited->TargetUnLive2D)
 {
 	UnLive2DAnimBlueprintEditedLastFrame = InUnLive2DAnimBlueprintEdited;

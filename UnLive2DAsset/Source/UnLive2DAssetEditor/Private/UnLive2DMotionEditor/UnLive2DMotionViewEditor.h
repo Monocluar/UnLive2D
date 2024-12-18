@@ -10,6 +10,7 @@ class FUnLive2DAnimBaseViewEditor : public IUnLive2DParameterEditorAsset
 public:
 	FUnLive2DAnimBaseViewEditor();
 
+
 public:
 	// 初始化编辑器
 	void InitUnLive2DAnimViewEditor(const EToolkitMode::Type Mode, const TSharedPtr< IToolkitHost >& InitToolkitHost, UUnLive2DAnimBase* InitUnLive2DAnimBase);
@@ -33,6 +34,8 @@ protected:
 	virtual FString GetWorldCentricTabPrefix() const override;
 	virtual FString GetDocumentationLink() const override;
 	// End of FAssetEditorToolkit
+
+	FString GetReferencerName() const override;
 
 public:
 	// FSerializableObject interface

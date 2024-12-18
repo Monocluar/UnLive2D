@@ -31,6 +31,7 @@ void UActorFactoryUnLive2D::PostSpawnActor(UObject* Asset, AActor* NewActor)
 	UnLive2DActor->GetUnLive2DRendererComponent()->RegisterComponent();
 }
 
+#if ENGINE_MAJOR_VERSION == 4 
 void UActorFactoryUnLive2D::PostCreateBlueprint(UObject* Asset, AActor* CDO)
 {
 	if (Asset == NULL || CDO == NULL) return;
@@ -39,6 +40,7 @@ void UActorFactoryUnLive2D::PostCreateBlueprint(UObject* Asset, AActor* CDO)
 	AUnLive2DActor* UnLive2DActor = CastChecked<AUnLive2DActor>(CDO);
 	UnLive2DActor->GetUnLive2DRendererComponent()->SetUnLive2D(UnLive2D);
 }
+#endif
 
 bool UActorFactoryUnLive2D::CanCreateActorFrom(const FAssetData& AssetData, FText& OutErrorMsg)
 {

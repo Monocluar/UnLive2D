@@ -10,7 +10,7 @@
 #include "CanvasTypes.h"
 
 
-FUnLive2DViewViewportClient::FUnLive2DViewViewportClient(TWeakObjectPtr<UUnLive2D> InUnLive2DBeingEdited)
+FUnLive2DViewViewportClient::FUnLive2DViewViewportClient(UUnLive2D* InUnLive2DBeingEdited)
 	: FUnLive2DViewportClient(InUnLive2DBeingEdited)
 {
 	SetRealtime(true);

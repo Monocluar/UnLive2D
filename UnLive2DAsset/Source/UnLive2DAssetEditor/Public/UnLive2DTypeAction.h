@@ -3,6 +3,8 @@
 
 #include "AssetTypeActions_Base.h"
 
+class UUnLive2D;
+
 class UNLIVE2DASSETEDITOR_API FUnLive2DTypeAction : public FAssetTypeActions_Base
 {
 public:

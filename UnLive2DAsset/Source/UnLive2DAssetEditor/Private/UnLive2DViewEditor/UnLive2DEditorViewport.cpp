@@ -30,7 +30,7 @@ void SUnLive2DEditorViewport::BindCommands()
 
 TSharedRef<FEditorViewportClient> SUnLive2DEditorViewport::MakeEditorViewportClient()
 {
-	EditorViewportClient = MakeShareable(new FUnLive2DViewViewportClient(UnLive2DBeingEdited.Get()));
+	EditorViewportClient = MakeShared<FUnLive2DViewViewportClient>(UnLive2DBeingEdited.Get());
 
 	return EditorViewportClient.ToSharedRef();
 }

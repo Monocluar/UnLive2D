@@ -269,12 +269,12 @@ void FUnLive2DAnimationBlueprintEditor::RegisterTabSpawners(const TSharedRef<FTa
 	InTabManager->RegisterTabSpawner(UnLive2DAnimationBlueprintEditorTabs::ViewportTab, FOnSpawnTab::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::SpawnTab_Viewport))
 		.SetDisplayName(LOCTEXT("ViewportTabTitle", "Viewport"))
 		.SetGroup(WorkspaceMenuCategoryRef)
-		.SetIcon(FSlateIcon(FEditorStyle::GetStyleSetName(), "LevelEditor.Tabs.Viewports"));
+		.SetIcon(FSlateIcon(FAppStyle::GetAppStyleSetName(), "LevelEditor.Tabs.Viewports"));
 
 	InTabManager->RegisterTabSpawner(UnLive2DAnimationBlueprintEditorTabs::AssetBrowserTab, FOnSpawnTab::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::SpawnTab_AssetBrowser))
 		.SetDisplayName(NSLOCTEXT("PersonaModes", "AssetBrowserTabTitle", "Asset Browser"))
 		.SetGroup(WorkspaceMenuCategoryRef)
-		.SetIcon(FSlateIcon(FEditorStyle::GetStyleSetName(), "ContentBrowser.TabIcon"));
+		.SetIcon(FSlateIcon(FAppStyle::GetAppStyleSetName(), "ContentBrowser.TabIcon"));
 
 	InTabManager->RegisterTabSpawner(UnLive2DAnimationBlueprintEditorTabs::GraphDocumentTab, FOnSpawnTab::CreateSP(this,&FUnLive2DAnimationBlueprintEditor::SpawnTab_GraphDocument))
 		.SetDisplayName(LOCTEXT("AnimationBlueprintTitle", "Animation Blueprint"))
@@ -284,7 +284,7 @@ void FUnLive2DAnimationBlueprintEditor::RegisterTabSpawners(const TSharedRef<FTa
 	InTabManager->RegisterTabSpawner(UnLive2DAnimationBlueprintEditorTabs::PropertiesTab, FOnSpawnTab::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::SpawnTab_Properties))
 		.SetDisplayName(LOCTEXT("DetailsTab", "Details"))
 		.SetGroup(WorkspaceMenuCategoryRef)
-		.SetIcon(FSlateIcon(FEditorStyle::GetStyleSetName(), "LevelEditor.Tabs.Details"));
+		.SetIcon(FSlateIcon(FAppStyle::GetAppStyleSetName(), "LevelEditor.Tabs.Details"));
 }
 
 void FUnLive2DAnimationBlueprintEditor::UnregisterTabSpawners(const TSharedRef<FTabManager>& InTabManager)
@@ -404,7 +404,7 @@ TSharedRef<SDockTab> FUnLive2DAnimationBlueprintEditor::SpawnTab_GraphDocument(c
 TSharedRef<SDockTab> FUnLive2DAnimationBlueprintEditor::SpawnTab_Properties(const FSpawnTabArgs& Args)
 {
 	return SNew(SDockTab)
-		.Icon(FEditorStyle::GetBrush("LevelEditor.Tabs.Details"))
+		.Icon(FAppStyle::GetBrush("LevelEditor.Tabs.Details"))
 		.Label(LOCTEXT("SoundCueDetailsTitle", "Details"))
 		[
 			UnLive2DAnimProperties.ToSharedRef()
@@ -999,6 +999,11 @@ void FUnLive2DAnimationBlueprintEditor::InitUnLive2DAnimationBlueprintEditor(con
 	ExtendToolbar();
 	RegenerateMenusAndToolbars();
 
+}
+
+FString FUnLive2DAnimationBlueprintEditor::GetReferencerName() const
+{
+	return TEXT("UnLive2DAnimationBlueprintEditor");
 }
 
 #undef LOCTEXT_NAMESPACE

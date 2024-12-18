@@ -14,7 +14,7 @@ void SGraphNode_UnLive2DAnimBlueprintResult::Construct(const FArguments& InArgs,
 TSharedRef<SWidget> SGraphNode_UnLive2DAnimBlueprintResult::CreateNodeContentArea()
 {
 	return SNew(SBorder)
-		.BorderImage(FEditorStyle::GetBrush("NoBorder"))
+		.BorderImage(FAppStyle::GetBrush("NoBorder"))
 		.HAlign(HAlign_Fill)
 		.VAlign(VAlign_Fill)
 		.Padding(FMargin(0, 3))
@@ -33,7 +33,7 @@ TSharedRef<SWidget> SGraphNode_UnLive2DAnimBlueprintResult::CreateNodeContentAre
 			.VAlign(VAlign_Center)
 			[
 				SNew(SImage)
-				.Image(FEditorStyle::GetBrush("Graph.AnimationResultNode.Body"))
+				.Image(FAppStyle::GetBrush("Graph.AnimationResultNode.Body"))
 			]
 			+ SHorizontalBox::Slot()
 			.AutoWidth()

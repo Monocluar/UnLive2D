@@ -14,7 +14,9 @@ class UActorFactoryUnLive2D : public UActorFactory
 public:
 	//~ Begin UActorFactory Interface
 	virtual void PostSpawnActor(UObject* Asset, AActor* NewActor) override;
+#if ENGINE_MAJOR_VERSION == 4 
 	virtual void PostCreateBlueprint(UObject* Asset, AActor* CDO) override;
+#endif
 	virtual bool CanCreateActorFrom(const FAssetData& AssetData, FText& OutErrorMsg) override;
 	virtual UObject* GetAssetFromActorInstance(AActor* ActorInstance) override;
 	//~ End UActorFactory Interface

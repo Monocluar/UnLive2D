@@ -3,7 +3,7 @@
 #include "Animation/UnLive2DAnimBase.h"
 #include "SUnLive2DMotionEditorViewport.h"
 
-FUnLive2DAnimBaseViewportClient::FUnLive2DAnimBaseViewportClient(TWeakObjectPtr<UUnLive2DAnimBase> InUnLive2DAnimBaseBegingEdited)
+FUnLive2DAnimBaseViewportClient::FUnLive2DAnimBaseViewportClient(UUnLive2DAnimBase* InUnLive2DAnimBaseBegingEdited)
 	: FUnLive2DViewportClient(InUnLive2DAnimBaseBegingEdited->UnLive2D)
 {
 	UnLive2DAnimBaseBeingEditedLastFrame = InUnLive2DAnimBaseBegingEdited;

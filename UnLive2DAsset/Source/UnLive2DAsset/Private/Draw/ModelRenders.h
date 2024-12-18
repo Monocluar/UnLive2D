@@ -28,7 +28,11 @@ public:
 	/** Destructor. */
 	virtual ~FCubismVertexDeclaration() {}
 
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >=3
+	virtual void InitRHI(FRHICommandListBase& RHICmdList);
+#else
 	virtual void InitRHI();
+#endif  
 
 	virtual void ReleaseRHI();
 };

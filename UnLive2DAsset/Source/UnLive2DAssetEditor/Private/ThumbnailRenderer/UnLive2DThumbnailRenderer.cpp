@@ -5,6 +5,7 @@
 #include "Slate/SUnLive2DViewUI.h"
 #include "Draw/UnLive2DSepRenderer.h"
 #include "UnLive2DSetting.h"
+#include "UnLive2D.h"
 
 UUnLive2DThumbnailRenderer::UUnLive2DThumbnailRenderer(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -14,7 +15,12 @@ UUnLive2DThumbnailRenderer::UUnLive2DThumbnailRenderer(const FObjectInitializer&
 void UUnLive2DThumbnailRenderer::Draw(UObject* Object, int32 X, int32 Y, uint32 Width, uint32 Height, FRenderTarget* RenderTarget, FCanvas* Canvas, bool bAdditionalViewFamily)
 {
 	UUnLive2D* UnLive2D = Cast<UUnLive2D>(Object);
+
+#if ENGINE_MAJOR_VERSION < 5
 	if (UnLive2D == nullptr || UnLive2D->IsPendingKill()) return;
+#else
+	if (IsValid(UnLive2D)) return;
+#endif
 
 	SourceUnLive2D = UnLive2D;
 	if (WidgetRenderer == nullptr)

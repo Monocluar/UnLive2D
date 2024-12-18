@@ -1,5 +1,12 @@
 ﻿#include "SUnLive2DParameterInfo.h"
 #include "IUnLive2DParameterFilterText.h"
+#include "Widgets/Input/SSpinBox.h"
+#include "Widgets/SBoxPanel.h"
+#include "Animation/UnLive2DExpression.h"
+#include "IUnLive2DParameterEditorAsset.h"
+#include "UObject/WeakObjectPtrTemplates.h"
+#include "Animation/SmartName.h"
+#include "CubismBpLib.h"
 
 
 FName UnLive2DParameterNameLabel("Parameter Name");

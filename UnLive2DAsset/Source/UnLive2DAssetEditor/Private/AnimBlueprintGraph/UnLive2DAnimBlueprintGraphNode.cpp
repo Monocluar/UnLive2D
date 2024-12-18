@@ -81,7 +81,11 @@ void UUnLive2DAnimBlueprintGraphNode::RemoveInputPin(UEdGraphPin* InGraphPin)
 	{
 		if (InGraphPin == InputPins[InputIndex])
 		{
+#if ENGINE_MAJOR_VERSION < 5
 			InGraphPin->MarkPendingKill();
+#else
+			InGraphPin->MarkAsGarbage();
+#endif
 			Pins.Remove(InGraphPin);
 			AnimBlueprintNode->Modify();
 			AnimBlueprintNode->RemoveChildNode(InputIndex);

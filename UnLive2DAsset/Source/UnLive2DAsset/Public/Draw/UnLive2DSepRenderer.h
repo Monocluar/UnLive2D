@@ -19,7 +19,7 @@ namespace Csm = Live2D::Cubism::Framework;
 class UUnLive2DViewRendererUI;
 class FUnLive2DRawModel;
 
-#if UE_VERSION_OLDER_THAN(5,0,0)
+#if ENGINE_MAJOR_VERSION < 5
 typedef FMatrix FUnLiveMatrix;
 typedef FVector4 FUnLiveVector4;
 typedef FIndexBufferRHIRef FIndexUnLiveBufferRHIRef;

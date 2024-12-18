@@ -48,7 +48,7 @@ void FUnLive2DTypeAction::GetActions(const TArray<UObject*>& InObjects, struct F
 		NSLOCTEXT("AssetTypeActions", "CreateSkeletonSubmenu_ToolTip", "Create assets for this skeleton"),
 		FNewMenuDelegate::CreateSP(this, &FUnLive2DTypeAction::FillCreateMenu, UnLive2DArr),
 		false,
-		FSlateIcon(FEditorStyle::GetStyleSetName(), "Persona.AssetActions.CreateAnimAsset")
+		FSlateIcon(FAppStyle::GetAppStyleSetName(), "Persona.AssetActions.CreateAnimAsset")
 	);
 }
 

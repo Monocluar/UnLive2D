@@ -54,6 +54,7 @@ public:
 
 	void InitUnLive2DAnimationBlueprintEditor(const EToolkitMode::Type Mode, const TSharedPtr< class IToolkitHost >& InitToolkitHost, class UUnLive2DAnimBlueprint* InAnimBlueprint);
 
+
 public:
 	FUnLive2DAnimationBlueprintEditor();
 
@@ -76,6 +77,8 @@ protected:
 	virtual FString GetWorldCentricTabPrefix() const override;
 	virtual FLinearColor GetWorldCentricTabColorScale() const override;
 
+
+	FString GetReferencerName() const override;
 protected:
 	virtual UUnLive2D* GetUnLive2DBeingEdited() const override;
 	virtual TWeakObjectPtr<UUnLive2DRendererComponent> GetUnLive2DRenderComponent() const override;
@@ -241,9 +244,15 @@ private:
 	/** Toolbar extender */
 	TSharedPtr<FExtender> ToolbarExtender;
 
+#if ENGINE_MAJOR_VERSION < 5
 	UUnLive2DRendererComponent* DebuggedUnLive2DComponent;
 
 	UUnLive2DAnimBlueprint* UnLive2DAnimBlueprintEdited;
+#else
+	TObjectPtr<UUnLive2DRendererComponent> DebuggedUnLive2DComponent;
+
+	TObjectPtr<UUnLive2DAnimBlueprint> UnLive2DAnimBlueprintEdited;
+#endif
 
 	/** Command list for this editor */
 	TSharedPtr<FUICommandList> GraphEditorCommands;

@@ -12,7 +12,7 @@ class FUnLive2DViewViewportClient : public FUnLive2DViewportClient
 {
 public:
 	/** Constructor */
-	FUnLive2DViewViewportClient(TWeakObjectPtr<UUnLive2D> InUnLive2DBeingEdited);
+	FUnLive2DViewViewportClient(UUnLive2D* InUnLive2DBeingEdited);
 
 protected:
 	// FViewportClient interface

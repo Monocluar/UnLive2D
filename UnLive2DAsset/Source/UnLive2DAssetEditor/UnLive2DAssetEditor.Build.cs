@@ -51,5 +51,11 @@ public class UnLive2DAssetEditor : ModuleRules
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
+
+        if (Target.Version.MajorVersion >= 5)
+		{
+			PrivateDependencyModuleNames.Add("EditorFramework");
+
+        }
     }
 }

@@ -32,7 +32,7 @@ TSharedPtr<SWidget> FUnLive2DAnimBlurprintTypeAction::GetThumbnailOverlay(const 
 	const FSlateBrush* Icon = FSlateIconFinder::FindIconBrushForClass(UUnLive2DAnimBlueprint::StaticClass());
 
 	return SNew(SBorder)
-		.BorderImage(FEditorStyle::GetNoBrush())
+		.BorderImage(FAppStyle::GetNoBrush())
 		.Visibility(EVisibility::HitTestInvisible)
 		.Padding(FMargin(0.0f, 0.0f, 0.0f, 3.0f))
 		.HAlign(HAlign_Right)
@@ -110,7 +110,7 @@ void FUnLive2DAnimBlurprintTypeAction::OpenAssetEditor(const TArray<UObject*>& I
 				else
 #endif
 				{
-					TSharedRef< FUnLive2DAnimationBlueprintEditor > NewAnimationBlueprintEditor(new FUnLive2DAnimationBlueprintEditor());
+					TSharedPtr< FUnLive2DAnimationBlueprintEditor > NewAnimationBlueprintEditor = MakeShared<FUnLive2DAnimationBlueprintEditor>();
 					NewAnimationBlueprintEditor->InitUnLive2DAnimationBlueprintEditor(Mode, EditWithinLevelEditor, AnimBlueprint);
 				}
 			}

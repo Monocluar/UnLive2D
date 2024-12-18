@@ -6,6 +6,9 @@
 #include "UnLive2DManagerModule.h"
 #include "WorkflowOrientedApp/WorkflowCentricApplication.h"
 #include "Misc/EngineVersionComparison.h"
+#if ENGINE_MAJOR_VERSION >= 5
+#include "Styling/AppStyle.h"
+#endif
 
 #define LOCTEXT_NAMESPACE "SUnLive2DAssetFamilyShortcutBar"
 
@@ -47,8 +50,8 @@ public:
 		TArray<FAssetData> Assets;
 		InAssetFamily->FindAssetsOfType(InAssetData.GetClass(), Assets);
 		bMultipleAssetsExist = Assets.Num() > 1;
-#if	UE_VERSION_OLDER_THAN(5,0,0)
-		AssetDirtyBrush = FEditorStyle::GetBrush("ContentBrowser.ContentDirty");
+#if ENGINE_MAJOR_VERSION >= 5
+		AssetDirtyBrush = FAppStyle::GetBrush("ContentBrowser.ContentDirty");
 #else
 		AssetDirtyBrush = FAppStyle::Get().GetBrush("Icons.DirtyBadge");
 #endif
@@ -83,9 +86,9 @@ protected:
 
 	TSharedRef<SWidget> CreateSwithUI()
 	{
-#if	UE_VERSION_OLDER_THAN(5,0,0)
+#if ENGINE_MAJOR_VERSION >= 5
 		return SAssignNew(CheckBox, SCheckBox)
-				.Style(FEditorStyle::Get(), "ToolBar.ToggleButton")
+				.Style(FAppStyle::Get(), "ToolBar.ToggleButton")
 				//.ForegroundColor(FSlateColor::UseForeground())
 				.OnCheckStateChanged(this, &SUnLive2DAssetShortcut::HandleOpenAssetShortcut)
 				.IsChecked(this, &SUnLive2DAssetShortcut::GetCheckState)
@@ -101,7 +104,7 @@ protected:
 					[
 						SNew(SBorder)
 						.Padding(4.0f)
-						.BorderImage(FEditorStyle::GetBrush("PropertyEditor.AssetThumbnailShadow"))
+						.BorderImage(FAppStyle::GetBrush("PropertyEditor.AssetThumbnailShadow"))
 						[
 							SNew(SHorizontalBox)
 							+SHorizontalBox::Slot()
@@ -162,7 +165,7 @@ protected:
 						[
 							SNew(STextBlock)
 							.Text(this, &SUnLive2DAssetShortcut::GetAssetText)
-							.TextStyle(FEditorStyle::Get(), "Toolbar.Label")
+							.TextStyle(FAppStyle::Get(), "Toolbar.Label")
 							.ShadowOffset(FVector2D::UnitVector)
 						]
 					]
@@ -357,7 +360,7 @@ protected:
 	FSlateColor GetAssetTextColor() const
 	{
 		static const FName InvertedForeground("InvertedForeground");
-		return GetCheckState() == ECheckBoxState::Checked || CheckBox->IsHovered() ? FEditorStyle::GetSlateColor(InvertedForeground) : FSlateColor::UseForeground();
+		return GetCheckState() == ECheckBoxState::Checked || CheckBox->IsHovered() ? FAppStyle::GetSlateColor(InvertedForeground) : FSlateColor::UseForeground();
 	}
 
 	EVisibility GetButtonVisibility() const

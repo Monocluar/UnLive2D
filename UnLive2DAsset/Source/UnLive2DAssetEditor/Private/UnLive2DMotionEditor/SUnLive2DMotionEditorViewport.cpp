@@ -16,7 +16,8 @@ void SUnLive2DAnimBaseEditorViewport::BindCommands()
 
 TSharedRef<FEditorViewportClient> SUnLive2DAnimBaseEditorViewport::MakeEditorViewportClient()
 {
-	EditorViewportClient = MakeShareable(new FUnLive2DAnimBaseViewportClient(UnLive2DAnimBaseBeingEdited.Get()));
+	UUnLive2DAnimBase* UnLive2DAnimBase = UnLive2DAnimBaseBeingEdited.Get();
+	EditorViewportClient = MakeShared<FUnLive2DAnimBaseViewportClient>(UnLive2DAnimBase);
 
 	return EditorViewportClient.ToSharedRef();
 }

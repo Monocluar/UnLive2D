@@ -4,6 +4,7 @@
 #include "Animation/UnLive2DAnimBlueprint.h"
 #include "AssetToolsModule.h"
 #include "Misc/EngineVersionComparison.h"
+#include "AssetRegistry/AssetRegistryModule.h"
 
 #define LOCTEXT_NAMESPACE "UnLive2DManagerAssetFamily"
 
@@ -126,8 +127,8 @@ void FUnLive2DManagerAssetFamily::GetAssetTypes(TArray<UClass*>& OutAssetTypes) 
 {
 	OutAssetTypes.Reset();
 	OutAssetTypes.Add(UUnLive2D::StaticClass());
-	OutAssetTypes.Add(UUnLive2DAnimBase::StaticClass());
-	OutAssetTypes.Add(UUnLive2DAnimBlueprint::StaticClass());
+	//OutAssetTypes.Add(UUnLive2DAnimBase::StaticClass());
+	//OutAssetTypes.Add(UUnLive2DAnimBlueprint::StaticClass());
 }
 
 FAssetData FUnLive2DManagerAssetFamily::FindAssetOfType(UClass* InAssetClass) const

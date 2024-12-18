@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "Widgets/SCompoundWidget.h"
+#include "CubismConfig.h"
 
 class SWindow;
 class UUnLive2DMotionFactory;

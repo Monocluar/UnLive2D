@@ -39,7 +39,7 @@ void FUnLive2DExpressionAction::OpenAssetEditor(const TArray<UObject*>& InObject
 	{
 		if (UUnLive2DExpression* UnLive2DExpression = Cast<UUnLive2DExpression>(*ObjIt))
 		{
-			TSharedRef<FUnLive2DAnimBaseViewEditor> NewUnLive2DEditor(new FUnLive2DAnimBaseViewEditor());
+			TSharedPtr<FUnLive2DAnimBaseViewEditor> NewUnLive2DEditor = MakeShared<FUnLive2DAnimBaseViewEditor>();
 
 			NewUnLive2DEditor->InitUnLive2DAnimViewEditor(Mode, EditWithinLevelEditor, UnLive2DExpression);
 		}

@@ -10,7 +10,7 @@ class SUnLive2DAnimBlueprintEditorViewport;
 class FUnLive2DAnimBlueprintViewportClient : public FUnLive2DViewportClient
 {
 public:
-	FUnLive2DAnimBlueprintViewportClient(TWeakObjectPtr<UUnLive2DAnimBlueprint> InUnLive2DAnimBlueprintEdited);
+	FUnLive2DAnimBlueprintViewportClient(UUnLive2DAnimBlueprint* InUnLive2DAnimBlueprintEdited);
 
 protected:
 

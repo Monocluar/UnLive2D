@@ -10,7 +10,7 @@ class SUnLive2DAnimBaseEditorViewport;
 class FUnLive2DAnimBaseViewportClient : public FUnLive2DViewportClient
 {
 public:
-	FUnLive2DAnimBaseViewportClient(TWeakObjectPtr<UUnLive2DAnimBase> InUnLive2DAnimBaseBegingEdited);
+	FUnLive2DAnimBaseViewportClient(UUnLive2DAnimBase* InUnLive2DAnimBaseBegingEdited);
 
 protected:
 
