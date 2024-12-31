@@ -3,8 +3,6 @@
 
 #include "CoreMinimal.h"
 #include "Components/MeshComponent.h"
-#include "ProceduralMeshComponent.h"
-
 #if WITH_EDITOR
 #include "CubismBpLib.h"
 #endif // WITH_EDITOR
@@ -17,12 +15,13 @@ class UMaterialInterface;
 class FUnLive2DRawModel;
 
 
+
 UCLASS(ClassGroup = UnLive2D, meta = (BlueprintSpawnableComponent), hidecategories=(Material,Mesh))
-class UNLIVE2DASSET_API UUnLive2DRendererComponent : public UProceduralMeshComponent
+class UNLIVE2DASSET_API UUnLive2DRendererComponent : public UMeshComponent
 {
 	GENERATED_UCLASS_BODY()
 
-public:
+protected:
 
 	virtual void BeginPlay() override;
 
@@ -30,16 +29,27 @@ public:
 
 	virtual void OnRegister() override;
 
-	virtual void OnUnregister() override;
+	//~ Begin UObject Interface
+	virtual void PostLoad() override;
+	//~ End UObject Interface.
+	// 
+	//~ Begin USceneComponent Interface.
+	virtual FBoxSphereBounds CalcBounds(const FTransform& LocalToWorld) const override;
+	//~ Begin USceneComponent Interface.
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
 
+	//~ Begin UPrimitiveComponent Interface.
+	virtual FPrimitiveSceneProxy* CreateSceneProxy() override;
+	virtual class UBodySetup* GetBodySetup() override;
+	//~ End UPrimitiveComponent Interface.
+
+
+	virtual void GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials, bool bGetDebugMaterials = false) const override;
 
 protected:
-	// 更新
-	virtual void UpdateRenderer();
 
 	// 初始化
 	virtual void InitUnLive2D();
@@ -52,16 +62,16 @@ protected:
 
 public:
 	// Live2D颜色混合模式为CubismBlendMode_Normal使用的材质
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
-		UMaterialInterface* UnLive2DNormalMaterial;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering, meta = (AllowedClasses = "UMaterialInterface"))
+	FSoftObjectPath UnLive2DNormalMaterial;
 
 	// Live2D颜色混合模式为CubismBlendMode_Additive使用的材质
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
-		UMaterialInterface* UnLive2DAdditiveMaterial;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering, meta = (AllowedClasses = "UMaterialInterface"))
+	FSoftObjectPath UnLive2DAdditiveMaterial;
 
 	// Live2D颜色混合模式为CubismBlendMode_Multiplicative使用的材质
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
-		UMaterialInterface* UnLive2DMultiplyMaterial;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering, meta = (AllowedClasses = "UMaterialInterface"))
+	FSoftObjectPath UnLive2DMultiplyMaterial;
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Live2D")
@@ -97,13 +107,6 @@ public:
 
 protected:
 
-	// 更新其他渲染参数
-	UFUNCTION()
-		void UpDataUnLive2DProperty();
-
-	UFUNCTION()
-		void OnLevelRemovedFromWorld(ULevel* InLevel, UWorld* InWorld);
-
 	/** 动画播放完成 */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Anim")
 		void OnMotionPlayeEnd();
@@ -113,7 +116,9 @@ private:
 	// Live2D模型设置模块
 	TSharedPtr<FUnLive2DRawModel> UnLive2DRawModel;
 
-public:
-	// Live2D渲染模块
-	TSharedPtr<class FUnLive2DRenderState> UnLive2DRander;
+	FBoxSphereBounds LocalBounds;
+	TObjectPtr<class UBodySetup> ProcMeshBodySetup;
+
+	class FUnLive2DSceneProxy* UnLive2DSceneProxy;
+
 };

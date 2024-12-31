@@ -73,7 +73,7 @@ UObject* UUnLive2DFactory::FactoryCreateFile(UClass* InClass, UObject* InParent,
 	{
 		return nullptr;
 	}
-
+	Live2DDataPath = FPaths::ConvertRelativePathToFull(Live2DDataPath);
 	UUnLive2D* UnLive2DPtr = nullptr;
 	// 导入设置窗体
 	{
@@ -139,6 +139,7 @@ UObject* UUnLive2DFactory::FactoryCreateFile(UClass* InClass, UObject* InParent,
 				{
 					if (UTexture2D* TextureAsset = Cast<UTexture2D>(Asset))
 					{
+						if (UnLive2DPtr->TextureAssets.Contains(TextureAsset)) continue;
 						UnLive2DPtr->TextureAssets.Add(TextureAsset);
 					}
 				}

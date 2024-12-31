@@ -573,7 +573,7 @@ int32 UpDataIndex = 0;
 
 void FUnLive2DRenderState::UpdateRenderBuffers(TWeakPtr<FUnLive2DRawModel> InUnLive2DRawModel)
 {
-
+	return;
 	if (World == nullptr) return;
 
 	ERHIFeatureLevel::Type FeatureLevel = World->Scene->GetFeatureLevel();
