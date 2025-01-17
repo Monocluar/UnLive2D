@@ -1,10 +1,78 @@
 #include "UnLive2DModelRender.h"
 #include "Model/CubismModel.hpp"
 #include "Draw/UnLive2DSepRenderer.h"
-
+#include "GlobalShader.h"
+#include "DynamicMeshBuilder.h"
 
 namespace {
     const csmInt32 ColorChannelCount = 4;   ///< 实验时1频道的情况是1，RGB的情况是3，Alpha也包含的情况是4
+}
+
+TGlobalResource<CubismClippingManager_UE::FUnLive2DMaskVertexDeclaration> GUnLive2DMaskVertexDeclaration;
+
+class FUnLive2DMaskShaderVS : public FGlobalShader
+{
+    DECLARE_SHADER_TYPE(FUnLive2DMaskShaderVS, Global);
+
+public:
+    FUnLive2DMaskShaderVS() {}
+
+    FUnLive2DMaskShaderVS(const ShaderMetaType::CompiledShaderInitializerType& Initializer)
+		: FGlobalShader(Initializer)
+	{
+
+		ProjectMatrix.Bind(Initializer.ParameterMap, TEXT("ProjectMatrix"));
+	}
+
+	void SetParameters(FRHIBatchedShaderParameters& BatchedParameters, const FUnLiveMatrix& InProjectMatrix)
+	{
+		SetShaderValue(BatchedParameters, ProjectMatrix, InProjectMatrix);
+	}
+
+
+	LAYOUT_FIELD(FShaderParameter, ProjectMatrix);
+};
+
+class FUnLive2DMaskShaderPS : public FGlobalShader
+{
+    DECLARE_SHADER_TYPE(FUnLive2DMaskShaderPS, Global);
+public:
+    FUnLive2DMaskShaderPS() {}
+
+    FUnLive2DMaskShaderPS(const ShaderMetaType::CompiledShaderInitializerType& Initializer)
+		: FGlobalShader(Initializer)
+	{
+	}
+};
+
+IMPLEMENT_SHADER_TYPE(, FUnLive2DMaskShaderVS, TEXT("/Plugin/UnLive2DAsset/Private/UnLive2DMask.usf"), TEXT("MainVS"), SF_Vertex);
+IMPLEMENT_SHADER_TYPE(, FUnLive2DMaskShaderPS, TEXT("/Plugin/UnLive2DAsset/Private/UnLive2DMask.usf"), TEXT("MainPS"), SF_Pixel);
+
+FUnLiveMatrix CubismClippingManager_UE::ConvertCubismMatrix(Csm::CubismMatrix44& InCubismMartix)
+{
+	FUnLiveMatrix Matrix;
+
+	Matrix.M[0][0] = InCubismMartix.GetArray()[0];
+	Matrix.M[0][1] = InCubismMartix.GetArray()[1];
+	Matrix.M[0][2] = InCubismMartix.GetArray()[2];
+	Matrix.M[0][3] = InCubismMartix.GetArray()[3];
+
+	Matrix.M[1][0] = InCubismMartix.GetArray()[4];
+	Matrix.M[1][1] = InCubismMartix.GetArray()[5];
+	Matrix.M[1][2] = InCubismMartix.GetArray()[6];
+	Matrix.M[1][3] = InCubismMartix.GetArray()[7];
+
+	Matrix.M[2][0] = InCubismMartix.GetArray()[8];
+	Matrix.M[2][1] = InCubismMartix.GetArray()[9];
+	Matrix.M[2][2] = InCubismMartix.GetArray()[10];
+	Matrix.M[2][3] = InCubismMartix.GetArray()[11];
+
+	Matrix.M[3][0] = InCubismMartix.GetArray()[12];
+	Matrix.M[3][1] = InCubismMartix.GetArray()[13];
+	Matrix.M[3][2] = InCubismMartix.GetArray()[14];
+	Matrix.M[3][3] = InCubismMartix.GetArray()[15];
+
+	return Matrix;
 }
 
 CubismClippingManager_UE::CubismClippingManager_UE()
@@ -57,6 +125,36 @@ CubismClippingManager_UE::~CubismClippingManager_UE()
         if (_channelColors[i]) CSM_DELETE(_channelColors[i]);
         _channelColors[i] = NULL;
     }
+
+    for (FUnLive2DRenderBufferInfo& Item : CacheRenderBufferRHI)
+    {
+        Item.VertexBufferRHI.SafeRelease();
+    }
+    for (FBufferRHIRef& Item : CacheIndexBufferRHI)
+    {
+        Item.SafeRelease();
+    }
+
+    CacheRenderBufferRHI.Empty();
+}
+
+bool CubismClippingManager_UE::IsVertexPositionsDidChange(CubismModel* UnLive2DModel) const
+{
+    bool bDidChange = false;
+	for (csmUint32 clipIndex = 0; clipIndex < _clippingContextListForMask.GetSize(); clipIndex++)
+	{
+		CubismClippingContext* clipContext = _clippingContextListForMask[clipIndex];
+
+		const csmInt32 clipDrawCount = clipContext->_clippingIdCount;
+		for (csmInt32 i = 0; i < clipDrawCount; i++)
+		{
+			const csmInt32 clipDrawIndex = clipContext->_clippingIdList[i];
+
+            if (UnLive2DModel->GetDrawableDynamicFlagVertexPositionsDidChange(clipDrawIndex)) return true;
+		}
+	}
+
+    return bDidChange;
 }
 
 void CubismClippingManager_UE::Initialize(CubismModel* model, csmInt32 drawableCount, const csmInt32** drawableMasks, const csmInt32* drawableMaskCounts)
@@ -158,8 +256,8 @@ void CubismClippingManager_UE::SetupClippingContext(CubismModel* InModel, class 
 		//}
 
 		// 各マスクのレイアウトを決定していく
-		const bool tb_SetupGood = SetupLayoutBounds(Renderer->GetUseHighPreciseMask() ? 0 : usingClipCount);
-		if (!tb_SetupGood)
+		const bool tb_SetupGood = SetupLayoutBounds(Renderer == nullptr ? usingClipCount : (Renderer->GetUseHighPreciseMask() ? 0 : usingClipCount));
+		if (Renderer && !tb_SetupGood)
 		{
 			Renderer->NoLowPreciseMask(true);
 		}
@@ -417,6 +515,168 @@ CubismRenderer::CubismTextureColor* CubismClippingManager_UE::GetChannelFlagAsCo
     return _channelColors[channelNo];
 }
 
+CubismRenderer::CubismTextureColor* CubismClippingManager_UE::GetChannelFlagAsColorByDrawableIndex(const uint16& InDrawableIndex)
+{
+    CubismClippingContext* gContext = GetClipContextInDrawableIndex(InDrawableIndex);
+    if (gContext == nullptr) return nullptr;
+
+    return GetChannelFlagAsColor(gContext->_layoutChannelNo);
+}
+
+bool CubismClippingManager_UE::GetFillMaskMartixForMask(const uint16& InDrawableIndex, FUnLiveMatrix& OutMartixForMask, FVector4f& OutMaskPos)
+{
+	CubismClippingContext* clipContext = GetClipContextInDrawableIndex(InDrawableIndex);
+	if (clipContext == nullptr) return false;
+
+	csmRectF* rect = clipContext->_layoutBounds;
+	// チャンネル
+	OutMartixForMask = ConvertCubismMatrix(clipContext->_matrixForMask);
+    if (rect)
+	{
+        OutMaskPos = FVector4f(rect->X * 2.0f - 1.0f, rect->Y * 2.0f - 1.0f, rect->GetRight() * 2.0f - 1.0f, rect->GetBottom() * 2.0f - 1.0f);
+    }
+
+    return true;
+}
+
+void CubismClippingManager_UE::RenderMask_Full(FRHICommandListImmediate& RHICmdList, CubismModel* UnLive2DModel, ERHIFeatureLevel::Type FeatureLevel, FTextureRHIRef OutMaskBuffer)
+{
+	RHICmdList.Transition(FRHITransitionInfo(OutMaskBuffer->GetTexture2D(), ERHIAccess::WritableMask));
+
+	FRHIRenderPassInfo RPInfo(OutMaskBuffer->GetTexture2D(), ERenderTargetActions::Clear_Store, OutMaskBuffer);
+	RHICmdList.BeginRenderPass(RPInfo, TEXT("DrawMask01"));
+    {
+		const csmInt32 BufferHeight = GetClippingMaskBufferSize();
+
+		RHICmdList.SetViewport(0.f, 0.f, 0.f, OutMaskBuffer->GetSizeX(), OutMaskBuffer->GetSizeY(), 1.f);
+		FGlobalShaderMap* GlobalShaderMap = GetGlobalShaderMap(FeatureLevel);
+		TShaderMapRef< FUnLive2DMaskShaderVS > VertexShader(GlobalShaderMap);
+		TShaderMapRef< FUnLive2DMaskShaderPS > PixelShader(GlobalShaderMap);
+
+		FGraphicsPipelineStateInitializer GraphicsPSOInit;
+		RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
+		GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, CF_Always>::GetRHI();
+		GraphicsPSOInit.BlendState = TStaticBlendState<CW_RGBA, BO_Add, BF_Zero, BF_InverseSourceColor, BO_Add, BF_Zero, BF_InverseSourceAlpha>::GetRHI();
+        //GraphicsPSOInit.BlendState = TStaticBlendState<CW_RGBA, BO_Add, BF_One, BF_InverseSourceAlpha, BO_Add, BF_One, BF_InverseSourceAlpha>::GetRHI();
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 4
+		GraphicsPSOInit.RasterizerState = TStaticRasterizerState<FM_Solid, CM_None, ERasterizerDepthClipMode::DepthClip, true>::GetRHI();
+#else
+		GraphicsPSOInit.RasterizerState = TStaticRasterizerState<FM_Solid, CM_None, true, true>::GetRHI();
+#endif
+		GraphicsPSOInit.PrimitiveType = PT_TriangleList;
+        GraphicsPSOInit.BoundShaderState.VertexDeclarationRHI = GUnLive2DMaskVertexDeclaration.VertexDeclarationRHI;
+		GraphicsPSOInit.BoundShaderState.VertexShaderRHI = VertexShader.GetVertexShader();
+		GraphicsPSOInit.BoundShaderState.PixelShaderRHI = PixelShader.GetPixelShader();
+        bool bCreateIndexBuffer = CacheIndexBufferRHI.Num() > 0;
+        if (!bCreateIndexBuffer || IsVertexPositionsDidChange(UnLive2DModel))
+        {
+			for (csmUint32 clipIndex = 0; clipIndex < _clippingContextListForMask.GetSize(); clipIndex++)
+			{
+				TArray<FUnLive2DMaskVertex> MaskVertexs;
+                TArray<uint16> Indexes;
+				CubismClippingContext* clipContext = _clippingContextListForMask[clipIndex];
+
+				const csmInt32 clipDrawCount = clipContext->_clippingIdCount;
+
+				const csmInt32 channelNo = clipContext->_layoutChannelNo;
+				// チャンネルをRGBAに変換
+				Csm::Rendering::CubismRenderer::CubismTextureColor* colorChannel = GetChannelFlagAsColor(channelNo);
+				csmRectF* rect = clipContext->_layoutBounds;
+                if (colorChannel == nullptr || rect == nullptr) continue;
+                FLinearColor ClipColor = FLinearColor(colorChannel->R, colorChannel->G, colorChannel->B, colorChannel->A);
+
+                //FUnLiveMatrix MartixForMask = ConvertCubismMatrix(clipContext->_matrixForMask);
+                FVector4f ViewPos = FVector4f(rect->X * 2.0f - 1.0f, rect->Y * 2.0f - 1.0f, rect->GetRight() * 2.0f - 1.0f, rect->GetBottom() * 2.0f - 1.0f);
+				for (csmInt32 i = 0; i < clipDrawCount; i++)
+				{
+					const csmInt32 DrawableIndex = clipContext->_clippingIdList[i];
+
+                    const csmInt32 IndexCount = UnLive2DModel->GetDrawableVertexIndexCount(DrawableIndex);
+                    if (0 == IndexCount) continue;
+
+                    if (!bCreateIndexBuffer)
+                    {
+						const csmUint16* IndicesArray = UnLive2DModel->GetDrawableVertexIndices(DrawableIndex); //顶点索引
+
+						for (int32 Index = 0; Index < IndexCount; ++Index)
+						{
+                            Indexes.Add(MaskVertexs.Num() + IndicesArray[Index]);
+						}
+                    }
+
+					const csmInt32 NumVertext = UnLive2DModel->GetDrawableVertexCount(DrawableIndex); // 获得Drawable顶点的个数
+					const csmFloat32* VertexArray = UnLive2DModel->GetDrawableVertices(DrawableIndex); // 顶点组
+					const  Live2D::Cubism::Core::csmVector2* UVArray = UnLive2DModel->GetDrawableVertexUvs(DrawableIndex); // 获取UV组
+                    for (int32 VertexIndex = 0; VertexIndex < NumVertext; ++VertexIndex)
+                    {
+						FUnLive2DMaskVertex& Vert = MaskVertexs.AddDefaulted_GetRef();
+						Vert.Position = FVector2f(VertexArray[VertexIndex * 2], VertexArray[VertexIndex * 2 + 1]);
+                        Vert.UV = FVector2f(UVArray[VertexIndex].X, UVArray[VertexIndex].Y);
+                        Vert.ViewPos = ViewPos;
+                        Vert.ClipColor = ClipColor;
+                    }
+				}
+
+                if (MaskVertexs.Num() > 0)
+                {
+                    FUnLive2DRenderBufferInfo* BufferInfoPtr = nullptr; 
+                    if (CacheRenderBufferRHI.IsValidIndex(clipIndex))
+                        BufferInfoPtr = &CacheRenderBufferRHI[clipIndex];
+                    else
+                        BufferInfoPtr = & CacheRenderBufferRHI.AddDefaulted_GetRef();
+
+					const uint32 VertexSize = MaskVertexs.Num() * sizeof(FUnLive2DMaskVertex);
+                    if (!BufferInfoPtr->VertexBufferRHI.IsValid())
+                    {
+                        BufferInfoPtr->ClipIndex = clipIndex;
+						BufferInfoPtr->NumVertext = MaskVertexs.Num();
+						BufferInfoPtr->NumPrimitives = Indexes.Num() / 3;
+                        FRHIResourceCreateInfo CreateInfo(TEXT("UnLive2DCacheMaskVertexBufferRHI"));
+                        BufferInfoPtr->VertexBufferRHI = RHICmdList.CreateVertexBuffer(VertexSize, BUF_Dynamic, CreateInfo);
+                    }
+					void* VertexBufferData = RHICmdList.LockBuffer(BufferInfoPtr->VertexBufferRHI, 0, VertexSize, RLM_WriteOnly);
+					FMemory::Memcpy(VertexBufferData, MaskVertexs.GetData(), VertexSize);
+					RHICmdList.UnlockBuffer(BufferInfoPtr->VertexBufferRHI);
+                    
+                }
+
+                if (Indexes.Num() > 0)
+				{
+					const uint32 IndexSize = Indexes.Num() * sizeof(uint16);
+                    FBufferRHIRef& BufferRHIRef = CacheIndexBufferRHI.AddDefaulted_GetRef();
+                    FRHIResourceCreateInfo CreateInfo(TEXT("UnLive2DCacheMaskIndexBuffer"));
+                    BufferRHIRef = RHICmdList.CreateIndexBuffer(sizeof(uint16), IndexSize, BUF_Static, CreateInfo);
+					void* IndexBufferData = RHICmdList.LockBuffer(BufferRHIRef, 0, IndexSize, RLM_WriteOnly);
+					FMemory::Memcpy(IndexBufferData, Indexes.GetData(), IndexSize);
+					RHICmdList.UnlockBuffer(BufferRHIRef);
+                }
+
+			}
+        }
+
+        for (int32 i = 0; i < CacheRenderBufferRHI.Num(); i++)
+		{
+			CubismClippingContext* clipContext = _clippingContextListForMask[CacheRenderBufferRHI[i].ClipIndex];
+			FUnLiveMatrix MartixForMask = ConvertCubismMatrix(clipContext->_matrixForMask);
+			SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit, 0);
+			SetShaderParametersLegacyVS(RHICmdList, VertexShader, MartixForMask);
+			RHICmdList.SetStreamSource(0, CacheRenderBufferRHI[i].VertexBufferRHI, 0);
+
+			RHICmdList.DrawIndexedPrimitive(
+                CacheIndexBufferRHI[i],
+				/*BaseVertexIndex=*/ 0,
+				/*MinIndex=*/ 0,
+				/*NumVertices=*/ CacheRenderBufferRHI[i].NumVertext,
+				/*StartIndex=*/ 0,
+				/*NumPrimitives=*/ CacheRenderBufferRHI[i].NumPrimitives,
+				/*NumInstances=*/ 1
+			);
+        }
+        
+	}
+	RHICmdList.EndRenderPass();
+}
+
 //CubismOffscreenFrame_D3D11* CubismClippingManager_UE::GetColorBuffer() const
 //{
 //    return _colorBuffer;
@@ -435,6 +695,13 @@ void CubismClippingManager_UE::SetClippingMaskBufferSize(csmInt32 size)
 csmInt32 CubismClippingManager_UE::GetClippingMaskBufferSize() const
 {
     return _clippingMaskBufferSize;
+}
+
+CubismClippingContext* CubismClippingManager_UE::GetClipContextInDrawableIndex(const uint16& InDrawableIndex) const
+{
+    if (_clippingContextListForDraw.GetSize() <= InDrawableIndex) return nullptr;
+
+    return _clippingContextListForDraw[InDrawableIndex];
 }
 
 /*********************************************************************************************************************
@@ -491,3 +758,19 @@ CubismClippingManager_UE* CubismClippingContext::GetClippingManager()
     return _owner;
 }
 
+void CubismClippingManager_UE::FUnLive2DMaskVertexDeclaration::InitRHI(FRHICommandListBase& RHICmdList)
+{
+	FVertexDeclarationElementList Elements;
+	uint16 Stride = sizeof(FUnLive2DMaskVertex);
+	Elements.Add(FVertexElement(0, STRUCT_OFFSET(FUnLive2DMaskVertex, Position), VET_Float2, 0, Stride));
+	Elements.Add(FVertexElement(0, STRUCT_OFFSET(FUnLive2DMaskVertex, UV), VET_Float2, 1, Stride));
+	Elements.Add(FVertexElement(0, STRUCT_OFFSET(FUnLive2DMaskVertex, ViewPos), VET_Float4, 2, Stride));
+	Elements.Add(FVertexElement(0, STRUCT_OFFSET(FUnLive2DMaskVertex, ClipColor), VET_Float4, 3, Stride));
+
+	VertexDeclarationRHI = PipelineStateCache::GetOrCreateVertexDeclaration(Elements);
+}
+
+void CubismClippingManager_UE::FUnLive2DMaskVertexDeclaration::ReleaseRHI()
+{
+	VertexDeclarationRHI.SafeRelease();
+}

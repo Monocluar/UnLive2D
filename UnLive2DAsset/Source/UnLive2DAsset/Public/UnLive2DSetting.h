@@ -6,8 +6,6 @@
 #include "UnLive2DSetting.generated.h"
 
 
-class UDataTable;
-
 UCLASS(config = Engine, defaultconfig)
 class UNLIVE2DASSET_API UUnLive2DSetting : public UObject
 {
@@ -41,6 +39,12 @@ public:
 	// 默认的UnLive2DMesh_Multiply材质
 	UPROPERTY(config, EditAnywhere, meta = (AllowedClasses = "UMaterialInterface", DisplayName = "DefaultMultiplyMaterial"), Category = "UI")
 		FSoftObjectPath DefaultUnLive2DMultiplyMaterial_UI;
+
+// RenderTarget
+public:
+	UPROPERTY(config, EditAnywhere, meta = (AllowedClasses = "UMaterialInterface", DisplayName = "RenderTargetMaterial"), Category = "RenderTarget")
+	FSoftObjectPath DefaultUnLive2DRenderTargetMaterial;
+
 
 public:
 	UUnLive2DSetting();

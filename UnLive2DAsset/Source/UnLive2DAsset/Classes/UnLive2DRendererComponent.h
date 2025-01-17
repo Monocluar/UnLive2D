@@ -6,6 +6,7 @@
 #if WITH_EDITOR
 #include "CubismBpLib.h"
 #endif // WITH_EDITOR
+#include "CubismConfig.h"
 
 #include "UnLive2DRendererComponent.generated.h"
 
@@ -73,12 +74,16 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering, meta = (AllowedClasses = "UMaterialInterface"))
 	FSoftObjectPath UnLive2DMultiplyMaterial;
 
+	// 渲染模式
+	UPROPERTY(EditAnywhere)
+	EUnLive2DRenderType UnLive2DRenderType;
+
 public:
 	UFUNCTION(BlueprintCallable, Category = "Live2D")
 		bool SetUnLive2D(UUnLive2D* NewUnLive2D);
 
 	UFUNCTION(BlueprintCallable, Category = "Live2D")
-		UUnLive2D* GetUnLive2D(){ return SourceUnLive2D; }
+		UUnLive2D* GetUnLive2D() const { return SourceUnLive2D; }
 
 	// 播放动画
 	//UFUNCTION(BlueprintCallable, Category = "Anim")
@@ -119,6 +124,6 @@ private:
 	FBoxSphereBounds LocalBounds;
 	TObjectPtr<class UBodySetup> ProcMeshBodySetup;
 
-	class FUnLive2DSceneProxy* UnLive2DSceneProxy;
+	class UnLive2DProxyBase* UnLive2DSceneProxy;
 
 };

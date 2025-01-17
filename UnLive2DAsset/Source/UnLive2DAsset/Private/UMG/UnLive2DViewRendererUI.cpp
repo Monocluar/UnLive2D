@@ -58,7 +58,7 @@ TSharedRef<FUnLive2DRenderState> UUnLive2DViewRendererUI::InitUnLive2DRender()
 {
 	if (!UnLive2DRenderPtr.IsValid())
 	{
-		UnLive2DRenderPtr = MakeShared<FUnLive2DRenderState>(this, GetWorld());
+		//UnLive2DRenderPtr = MakeShared<FUnLive2DRenderState>(this, GetWorld());
 		UnLive2DRenderPtr->SetUnLive2DMaterial(0, UnLive2DNormalMaterial);
 		UnLive2DRenderPtr->SetUnLive2DMaterial(1, UnLive2DAdditiveMaterial);
 		UnLive2DRenderPtr->SetUnLive2DMaterial(2, UnLive2DMultiplyMaterial);

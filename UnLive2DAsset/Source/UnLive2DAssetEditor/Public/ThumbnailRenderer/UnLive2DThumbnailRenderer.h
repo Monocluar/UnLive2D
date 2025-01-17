@@ -29,7 +29,7 @@ public:
 
 	const UUnLive2D* GetUnLive2D() const;
 
-	TSharedRef<class FUnLive2DRenderState> InitUnLive2DRender();
+	//TSharedRef<class FUnLive2DRenderState> InitUnLive2DRender();
 
 	virtual void SlateUpDataRender(TWeakPtr<class FUnLive2DRawModel> InUnLive2DRawModel);
 

@@ -50,8 +50,8 @@ void UUnLive2DThumbnailRenderer::Draw(UObject* Object, int32 X, int32 Y, uint32 
 		+ SOverlay::Slot()
 		[
 			SAssignNew(MySlateWidget, SUnLive2DViewUI, SourceUnLive2D)
-			.OnUpDataRender(BIND_UOBJECT_DELEGATE(FOnUpDataRender, SlateUpDataRender))
-			.OnInitUnLive2DRender(BIND_UOBJECT_DELEGATE(FOnInitUnLive2DRender, InitUnLive2DRender))
+			//.OnUpDataRender(BIND_UOBJECT_DELEGATE(FOnUpDataRender, SlateUpDataRender))
+			//.OnInitUnLive2DRender(BIND_UOBJECT_DELEGATE(FOnInitUnLive2DRender, InitUnLive2DRender))
 		];
 
 
@@ -77,16 +77,17 @@ const UUnLive2D* UUnLive2DThumbnailRenderer::GetUnLive2D() const
 	return SourceUnLive2D;
 }
 
+/*
 TSharedRef<class FUnLive2DRenderState> UUnLive2DThumbnailRenderer::InitUnLive2DRender()
 {
 	if (!UnLive2DRenderPtr.IsValid())
 	{
 		const UUnLive2DSetting* Setting = GetDefault<UUnLive2DSetting>();
-		UnLive2DRenderPtr = MakeShared<FUnLive2DRenderState>(this, GEditor->GetWorld());
-		UnLive2DRenderPtr->SetUnLive2DMaterial(0, Cast<UMaterialInterface>(Setting->DefaultUnLive2DNormalMaterial_UI.TryLoad()));
+		//UnLive2DRenderPtr = MakeShared<FUnLive2DRenderState>(this, GEditor->GetWorld());
+		/ *UnLive2DRenderPtr->SetUnLive2DMaterial(0, Cast<UMaterialInterface>(Setting->DefaultUnLive2DNormalMaterial_UI.TryLoad()));
 		UnLive2DRenderPtr->SetUnLive2DMaterial(1, Cast<UMaterialInterface>(Setting->DefaultUnLive2DAdditiveMaterial_UI.TryLoad()));
 		UnLive2DRenderPtr->SetUnLive2DMaterial(2, Cast<UMaterialInterface>(Setting->DefaultUnLive2DMultiplyMaterial_UI.TryLoad()));
-		UnLive2DRenderPtr->InitRender(SourceUnLive2D, MySlateWidget->UnLive2DRawModel);
+		UnLive2DRenderPtr->InitRender(SourceUnLive2D, MySlateWidget->UnLive2DRawModel);* /
 	}
 	else
 	{
@@ -94,14 +95,14 @@ TSharedRef<class FUnLive2DRenderState> UUnLive2DThumbnailRenderer::InitUnLive2DR
 	}
 
 	return UnLive2DRenderPtr.ToSharedRef();
-}
+}*/
 
 void UUnLive2DThumbnailRenderer::SlateUpDataRender(TWeakPtr<class FUnLive2DRawModel> InUnLive2DRawModel)
 {
 	if (UnLive2DRenderPtr.IsValid())
 	{
 		// 限幅掩码・缓冲前处理方式的情况
-		UnLive2DRenderPtr->UpdateRenderBuffers(InUnLive2DRawModel);
+		//UnLive2DRenderPtr->UpdateRenderBuffers(InUnLive2DRawModel);
 	}
 }
 

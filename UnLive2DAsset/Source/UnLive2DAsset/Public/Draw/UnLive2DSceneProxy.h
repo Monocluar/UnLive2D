@@ -3,10 +3,11 @@
 #pragma once
 #include "PrimitiveSceneProxy.h"
 #include "DynamicMeshBuilder.h"
+#include "UnLive2DProxyBase.h"
 
 class UUnLive2DRendererComponent;
 class FUnLive2DRawModel;
-class CubismClippingManager_UE;
+class FUnLive2DRenderState;
 
 namespace Live2D { namespace Cubism { namespace Framework 
 {
@@ -16,7 +17,7 @@ namespace Live2D { namespace Cubism { namespace Framework
 
 namespace Csm = Live2D::Cubism::Framework;
 
-class UNLIVE2DASSET_API FUnLive2DSceneProxy : public FPrimitiveSceneProxy
+class UNLIVE2DASSET_API FUnLive2DSceneProxy : public UnLive2DProxyBase
 {
 protected:
 
@@ -33,10 +34,9 @@ protected:
 	protected:
 		Csm::CubismModel* UnLive2DRawModel;
 		TArray<int32> DrawableCounts;
-		CubismClippingManager_UE* ClippingManager;
+		FUnLive2DRenderState* RenderState;
 
 		uint8 ScaleMesh;
-
 
 		//FUnLive2DDynamicMeshSectionData MeshSectionData;
 	public:
@@ -48,9 +48,13 @@ protected:
 		/** Vertex factory for this section */
 		FLocalVertexFactory VertexFactory;
 
+#if WITH_EDITOR
+		// 深度
+		uint16 Depth;
+#endif
 
 	public:
-		FUnLive2DVertexBuffer(Csm::CubismModel* InUnLive2DRawModel, CubismClippingManager_UE* InClippingManager, const TArray<int32>& InDrawableCounts, ERHIFeatureLevel::Type InFeatureLevel, UMaterialInterface* InMaterial = nullptr);
+		FUnLive2DVertexBuffer(Csm::CubismModel* InUnLive2DRawModel, FUnLive2DRenderState* InClippingManager, const TArray<int32>& InDrawableCounts, ERHIFeatureLevel::Type InFeatureLevel, UMaterialInterface* InMaterial = nullptr);
 
 	public:
 
@@ -63,27 +67,24 @@ protected:
 		void UpdateSection_RenderThread(FRHICommandListBase& RHICmdList);
 	protected:
 
-		// 根据绘制索引ID获取当前的遮罩
-		class CubismClippingContext* GetClipContextInDrawableIndex(const uint32 DrawableIndex) const;
-
 		void GetUnLive2DVertexData(TArray<FDynamicMeshVertex>& OutVertices, TArray<uint16>& OutIndices) const;
 	};
 
 public:
 
-	FUnLive2DSceneProxy(const UUnLive2DRendererComponent* InComponent);
+	FUnLive2DSceneProxy(UUnLive2DRendererComponent* InComponent);
 	~FUnLive2DSceneProxy();
 
-public:
-	void OnUpData();
-
 protected:
+	virtual void OnUpData() override;
+
 	SIZE_T GetTypeHash() const override;
 	// FPrimitiveSceneProxy interface.
 	virtual void GetDynamicMeshElements(const TArray<const FSceneView*>& Views, const FSceneViewFamily& ViewFamily, uint32 VisibilityMap, FMeshElementCollector& Collector) const override;
 	virtual FPrimitiveViewRelevance GetViewRelevance(const FSceneView* View) const override;
 	virtual uint32 GetMemoryFootprint() const override;
 	//virtual void CreateRenderThreadResources(FRHICommandListBase& RHICmdList) override;
+	virtual void GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials, bool bGetDebugMaterials = false) const override;
 
 protected:
 
@@ -97,10 +98,10 @@ protected:
 
 protected:
 
-	// Live2D模型设置模块
-	TWeakPtr<FUnLive2DRawModel> UnLive2DRawModel;
 	// 裁剪管理器
-	TUniquePtr<CubismClippingManager_UE> UnLive2DClippingManager;
+	//TUniquePtr<CubismClippingManager_UE> UnLive2DClippingManager;
+
+	TUniquePtr<FUnLive2DRenderState> UnLive2DRenderState;
 
 	TArray<FUnLive2DVertexBuffer*> Sections;
 
@@ -108,19 +109,10 @@ protected:
 	bool bCombinedbBatch;
 private:
 
-	// 绘制Buffer数
-	TArray<uint16> DrawableIndexList;
-#if ENGINE_MAJOR_VERSION < 5
-	const UUnLive2DRendererComponent* OwnerComponent;
-#else
-	TObjectPtr<const UUnLive2DRendererComponent> OwnerComponent;
-#endif
-
 #if ENGINE_MAJOR_VERSION < 5
 	TMap<uint16, class UMaterialInstanceDynamic*> UnLive2DToBlendMaterialList;
 #else
 	TMap<uint16, TObjectPtr<class UMaterialInstanceDynamic>> UnLive2DToBlendMaterialList;
 #endif
 
-	friend class UUnLive2DRendererComponent;
 };

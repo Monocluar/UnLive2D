@@ -12,6 +12,14 @@ enum class EUnLive2DMotionGroup : uint8
 	TapBody
 };
 
+
+UENUM(BlueprintType)
+enum class EUnLive2DRenderType : uint8
+{
+	Mesh,
+	RenderTarget,
+};
+
 USTRUCT(BlueprintType)
 struct FUnLive2DMotionData
 {

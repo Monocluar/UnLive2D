@@ -8,7 +8,54 @@
 using namespace Csm;
 using Rendering::CubismRenderer;
 
-class CubismClippingContext;
+
+#if ENGINE_MAJOR_VERSION < 5
+typedef FMatrix FUnLiveMatrix;
+typedef FVector4 FUnLiveVector4;
+#else
+typedef FMatrix44f FUnLiveMatrix;
+typedef FVector4f FUnLiveVector4;
+#endif
+
+/**
+ * 剪裁的上下文
+ */
+class CubismClippingContext
+{
+    friend class CubismClippingManager_UE;
+
+public:
+    CubismClippingContext(CubismClippingManager_UE* Manager, const csmInt32* ClippingDrawableIndices, csmInt32 ClipCount);
+
+    virtual ~CubismClippingContext();
+
+public:
+    /**
+     * 添加要被剪切到此绘图对象
+     *
+     * @param DrawableIndex   ->  要添加到剪切对象的绘图对象的索引
+     */
+    void AddClippedDrawable(csmInt32 DrawableIndex);
+
+    /**
+     * 获取管理此剪切管理器实例。
+     *
+     * @return  剪切管理器实例
+     */
+    CubismClippingManager_UE* GetClippingManager();
+
+    csmBool _isUsing;                                ///< 如果在当前绘制状态下需要准备
+    const csmInt32* _clippingIdList;                 ///< 剪裁ID列表
+    csmInt32 _clippingIdCount;                       ///< 裁剪ID的数量
+    csmInt32 _layoutChannelNo;                       ///< 在RGBA的哪个通道配置这个剪切(0:R , 1:G , 2:B , 3:A)
+    csmRectF* _layoutBounds;                         ///< 在层级通道的哪个区域安装掩码（View坐标-1.1，UV改为0.1）
+    csmRectF* _allClippedDrawRect;                   ///< 通过剪切，所有要消减的绘图对象的矩形框（每次更新）
+    CubismMatrix44 _matrixForMask;                   ///< 保存遮罩位置计算结果的矩阵
+    CubismMatrix44 _matrixForDraw;                   ///< 保存绘图对象位置计算结果的矩阵
+    csmVector<csmInt32>* _clippedDrawableIndexList;  ///< 列表将被裁剪到此遮罩中的绘图对象
+
+    CubismClippingManager_UE* _owner;        ///< 管理此遮罩的管理实例
+};
 
 // 裁剪处理
 class CubismClippingManager_UE
@@ -16,15 +63,48 @@ class CubismClippingManager_UE
 
     friend struct FCubismSepRender;
 
+    struct FUnLive2DMaskVertex
+    {
+        FVector2f Position;
+		FVector2f UV;
+        FVector4f ViewPos;
+        FLinearColor ClipColor;
+    };
 public:
+	class FUnLive2DMaskVertexDeclaration : public FRenderResource
+	{
+	public:
+
+		FVertexDeclarationRHIRef VertexDeclarationRHI;
+
+		virtual ~FUnLive2DMaskVertexDeclaration() {}
+
+		virtual void InitRHI(FRHICommandListBase& RHICmdList) override;
+		virtual void ReleaseRHI() override;
+	};
+
+public:
+
+	static FUnLiveMatrix ConvertCubismMatrix(Csm::CubismMatrix44& InCubismMartix);
+
     CubismClippingManager_UE();
 
     virtual ~CubismClippingManager_UE();
+
+protected:
+    // 查看顶点缓存是否有变化
+    bool IsVertexPositionsDidChange(CubismModel* UnLive2DModel) const;
 
 public:
 
     // 获取颜色通道(0:R , 1:G , 2:B, 3:A)
     CubismRenderer::CubismTextureColor* GetChannelFlagAsColor(csmInt32 ChannelNo);
+
+	CubismRenderer::CubismTextureColor* GetChannelFlagAsColorByDrawableIndex(const uint16& InDrawableIndex);
+
+    bool GetFillMaskMartixForMask(const uint16& InDrawableIndex, FUnLiveMatrix& OutMartixForMask, FVector4f& OutMaskPos);
+
+    void RenderMask_Full(FRHICommandListImmediate& RHICmdList, CubismModel* UnLive2DModel, ERHIFeatureLevel::Type FeatureLevel, FTextureRHIRef OutMaskBuffer);
 
     /**
      * 计算覆盖整个绘图对象的矩形（模型坐标系）
@@ -51,7 +131,7 @@ public:
      * @param Model       ->  模型实例
      * @param Renderer    ->  渲染实例
      */
-    void SetupClippingContext(CubismModel* Model, class FUnLive2DRenderState* Renderer);
+    void SetupClippingContext(CubismModel* Model, class FUnLive2DRenderState* Renderer = nullptr);
 
     /**
      * 如果正在制作，则返回相应的剪裁实例，
@@ -101,6 +181,8 @@ public:
      */
     csmInt32 GetClippingMaskBufferSize() const;
 
+    CubismClippingContext* GetClipContextInDrawableIndex(const uint16& InDrawableIndex) const;
+
     csmInt32    _currentFrameNo;         ///< 用于蒙版纹理的框架编号
 
     csmVector<CubismRenderer::CubismTextureColor*>  _channelColors;
@@ -119,44 +201,18 @@ public:
     CubismMatrix44  _tmpMatrixForDraw;       ///< 绘画计算矩阵
     csmRectF        _tmpBoundsOnModel;       ///< 用于计算模型放置的矩形
 
-};
+private:
+    struct FUnLive2DRenderBufferInfo
+    {
+        //FBufferRHIRef IndexBufferRHI; // 缓存遮罩顶点索引
+        FBufferRHIRef VertexBufferRHI; // 缓存遮罩顶点数据
+        csmUint32 ClipIndex;
+        uint16 NumVertext;
+		uint16 NumPrimitives;
+    };
 
-/**
- * 剪裁的上下文
- */
-class CubismClippingContext
-{
-    friend class CubismClippingManager_UE;
+    TArray<FBufferRHIRef> CacheIndexBufferRHI; // 缓存遮罩顶点索引
 
-public:
-    CubismClippingContext(CubismClippingManager_UE* Manager, const csmInt32* ClippingDrawableIndices, csmInt32 ClipCount);
+    TArray<FUnLive2DRenderBufferInfo> CacheRenderBufferRHI;
 
-    virtual ~CubismClippingContext();
-
-public:
-    /**
-     * 添加要被剪切到此绘图对象
-     *
-     * @param DrawableIndex   ->  要添加到剪切对象的绘图对象的索引
-     */
-    void AddClippedDrawable(csmInt32 DrawableIndex);
-
-    /**
-     * 获取管理此剪切管理器实例。
-     *
-     * @return  剪切管理器实例
-     */
-    CubismClippingManager_UE* GetClippingManager();
-
-    csmBool _isUsing;                                ///< 如果在当前绘制状态下需要准备
-    const csmInt32* _clippingIdList;                 ///< 剪裁ID列表
-    csmInt32 _clippingIdCount;                       ///< 裁剪ID的数量
-    csmInt32 _layoutChannelNo;                       ///< 在RGBA的哪个通道配置这个剪切(0:R , 1:G , 2:B , 3:A)
-    csmRectF* _layoutBounds;                         ///< 在层级通道的哪个区域安装掩码（View坐标-1.1，UV改为0.1）
-    csmRectF* _allClippedDrawRect;                   ///< 通过剪切，所有要消减的绘图对象的矩形框（每次更新）
-    CubismMatrix44 _matrixForMask;                   ///< 保存遮罩位置计算结果的矩阵
-    CubismMatrix44 _matrixForDraw;                   ///< 保存绘图对象位置计算结果的矩阵
-    csmVector<csmInt32>* _clippedDrawableIndexList;  ///< 列表将被裁剪到此遮罩中的绘图对象
-
-    CubismClippingManager_UE* _owner;        ///< 管理此遮罩的管理实例
 };

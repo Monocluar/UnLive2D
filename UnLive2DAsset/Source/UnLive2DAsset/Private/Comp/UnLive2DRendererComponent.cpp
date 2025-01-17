@@ -24,23 +24,17 @@
 #include "Id/CubismIdManager.hpp"
 #endif
 #include "Draw/UnLive2DSceneProxy.h"
+#include "Draw/UnLive2DTargetBoxProxy.h"
 
 using namespace Csm;
-
-#if UE_VERSION_OLDER_THAN(5,0,0)
-typedef FMatrix FUnLiveMatrix;
-typedef FVector4 FUnLiveVector4;
-#else
-using namespace UE::Math;
-typedef FMatrix44f FUnLiveMatrix;
-typedef FVector4f FUnLiveVector4;
-#endif
 
 UUnLive2DRendererComponent::UUnLive2DRendererComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, SourceUnLive2D(nullptr)
+	, UnLive2DRenderType(EUnLive2DRenderType::RenderTarget)
 	, UnLive2DSceneProxy(nullptr)
 {
+	BoundsScale = 1024.f;
 	if (!ObjectInitializer.GetObj()->HasAnyFlags(RF_ClassDefaultObject))
 	{
 		PrimaryComponentTick.bCanEverTick = true;
@@ -128,6 +122,10 @@ void UUnLive2DRendererComponent::PostEditChangeProperty(FPropertyChangedEvent& P
 		{
 			MarkRenderStateDirty();
 		}
+		else if (PropertyName == GET_MEMBER_NAME_STRING_CHECKED(UUnLive2DRendererComponent, UnLive2DRenderType))
+		{
+			MarkRenderStateDirty();
+		}
 	}
 
 	Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -137,7 +135,11 @@ void UUnLive2DRendererComponent::PostEditChangeProperty(FPropertyChangedEvent& P
 
 FPrimitiveSceneProxy* UUnLive2DRendererComponent::CreateSceneProxy()
 {
-	UnLive2DSceneProxy = new FUnLive2DSceneProxy(this);
+	UnLive2DSceneProxy = nullptr;
+	if (UnLive2DRenderType == EUnLive2DRenderType::Mesh)
+		UnLive2DSceneProxy = new FUnLive2DSceneProxy(this);
+	else
+		UnLive2DSceneProxy = new FUnLive2DTargetBoxProxy(this);
 	return UnLive2DSceneProxy;
 }
 
@@ -171,11 +173,7 @@ void UUnLive2DRendererComponent::GetUsedMaterials(TArray<UMaterialInterface*>& O
 {
 	if (UnLive2DSceneProxy)
 	{
-		for (auto& Item : UnLive2DSceneProxy->UnLive2DToBlendMaterialList)
-		{
-			if (Item.Value == nullptr) continue;
-			OutMaterials.Add(Item.Value);
-		}
+		UnLive2DSceneProxy->GetUsedMaterials(OutMaterials, bGetDebugMaterials);
 	}
 }
 
@@ -216,8 +214,8 @@ void UUnLive2DRendererComponent::InitUnLive2D()
 	{
 		if (Csm::CubismModel* UnLive2DModel = UnLive2DRawModel->GetModel())
 		{
-			csmFloat32 CanvasWidth = UnLive2DModel->GetCanvasWidth() * 50;
-			csmFloat32 CanvasHeight = UnLive2DModel->GetCanvasHeight() * 50;
+			csmFloat32 CanvasWidth = UnLive2DModel->GetCanvasWidth();
+			csmFloat32 CanvasHeight = UnLive2DModel->GetCanvasHeight();
 			FBox LocalBox(FVector(-CanvasWidth, 0, -CanvasHeight), FVector(CanvasWidth, 0, CanvasHeight));
 			LocalBounds = FBoxSphereBounds(LocalBox);
 		}

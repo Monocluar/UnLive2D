@@ -8,15 +8,6 @@
 #include "Framework/Application/SlateApplication.h"
 #include "FWPort/UnLive2DRawModel.h"
 
-#if UE_VERSION_OLDER_THAN(5,0,0)
-typedef FMatrix FUnLiveMatrix;
-typedef FVector4 FUnLiveVector4;
-#else
-using namespace UE::Math;
-typedef FMatrix44f FUnLiveMatrix;
-typedef FVector4f FUnLiveVector4;
-#endif
-
 static int32 UnLive2DBrushNameId = 0;
 
 struct FUnLive2DSlateMaterialBrush : public FSlateBrush
@@ -174,10 +165,10 @@ void SUnLive2DViewUI::UpDateMesh(const FGeometry& AllottedGeometry, int32 Drawab
 	for (int32 VertexIndex = 0; VertexIndex < NumVertext; ++VertexIndex)
 	{
 
-#if UE_VERSION_OLDER_THAN(5,0,0)
+#if ENGINE_MAJOR_VERSION < 5
 		FVector4 Position = FVector4(VertexArray[VertexIndex * 2], VertexArray[VertexIndex * 2 + 1], 0, 1);
 #else
-		TVector4<float> Position = TVector4<float>(VertexArray[VertexIndex * 2], VertexArray[VertexIndex * 2 + 1], 0, 1);
+		FVector4f Position = FVector4f(VertexArray[VertexIndex * 2], VertexArray[VertexIndex * 2 + 1], 0, 1);
 #endif
 
 		FSlateVertex* VertexIndexData = &MeshSectionData->InterlottingLive2DVertexData.AddDefaulted_GetRef();
@@ -186,10 +177,10 @@ void SUnLive2DViewUI::UpDateMesh(const FGeometry& AllottedGeometry, int32 Drawab
 		FVector2D UV = FVector2D(UVArray[VertexIndex * 2], 1 - UVArray[VertexIndex * 2 + 1]); // UE UV坐标与Live2D的Y坐标是相反的
 		if (ClipContext != nullptr)
 		{
-#if UE_VERSION_OLDER_THAN(5,0,0)
+#if ENGINE_MAJOR_VERSION < 5
 			FVector4 ClipPosition;
 #else
-			TVector4<float> ClipPosition;
+			FVector4f ClipPosition;
 #endif
 
 			ClipPosition = MartixForDraw.TransformFVector4(Position);

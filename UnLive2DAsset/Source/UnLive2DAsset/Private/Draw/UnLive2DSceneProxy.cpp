@@ -8,36 +8,10 @@
 #include "PrimitiveUniformShaderParametersBuilder.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Rendering/StaticLightingSystemInterface.h"
+#include "Draw/UnLive2DSepRenderer.h"
 
 DECLARE_CYCLE_STAT(TEXT("UnLive2DSceneProxy GDME"), STAT_UnLive2DSceneProxy_GetDynamicMeshElements, STATGROUP_UnLive2D);
 DECLARE_CYCLE_STAT(TEXT("UnLive2DVertexBuffer GDME"), STAT_UnLive2DVertexBuffer_UpdateSection_RenderThread, STATGROUP_UnLive2D);
-
-FMatrix44f CubismMatrix44ToMatrix44f(Csm::CubismMatrix44& InCubismMartix)
-{
-	FMatrix44f Matrix;
-
-	Matrix.M[0][0] = InCubismMartix.GetArray()[0];
-	Matrix.M[0][1] = InCubismMartix.GetArray()[1];
-	Matrix.M[0][2] = InCubismMartix.GetArray()[2];
-	Matrix.M[0][3] = InCubismMartix.GetArray()[3];
-
-	Matrix.M[1][0] = InCubismMartix.GetArray()[4];
-	Matrix.M[1][1] = InCubismMartix.GetArray()[5];
-	Matrix.M[1][2] = InCubismMartix.GetArray()[6];
-	Matrix.M[1][3] = InCubismMartix.GetArray()[7];
-
-	Matrix.M[2][0] = InCubismMartix.GetArray()[8];
-	Matrix.M[2][1] = InCubismMartix.GetArray()[9];
-	Matrix.M[2][2] = InCubismMartix.GetArray()[10];
-	Matrix.M[2][3] = InCubismMartix.GetArray()[11];
-
-	Matrix.M[3][0] = InCubismMartix.GetArray()[12];
-	Matrix.M[3][1] = InCubismMartix.GetArray()[13];
-	Matrix.M[3][2] = InCubismMartix.GetArray()[14];
-	Matrix.M[3][3] = InCubismMartix.GetArray()[15];
-
-	return Matrix;
-}
 
 SIZE_T FUnLive2DSceneProxy::GetTypeHash() const
 {
@@ -45,24 +19,16 @@ SIZE_T FUnLive2DSceneProxy::GetTypeHash() const
 	return reinterpret_cast<size_t>(&UniquePointer);
 }
 
-FUnLive2DSceneProxy::FUnLive2DSceneProxy(const UUnLive2DRendererComponent* InComponent)
-	: FPrimitiveSceneProxy(InComponent)
-	, UnLive2DRawModel(InComponent->GetUnLive2DRawModel())
+FUnLive2DSceneProxy::FUnLive2DSceneProxy(UUnLive2DRendererComponent* InComponent)
+	: UnLive2DProxyBase(InComponent)
 	, bCombinedbBatch(true)
-	, OwnerComponent(InComponent)
 {
 	if (!UnLive2DRawModel.IsValid()) return;
 	Csm::CubismModel* UnLive2DModel = UnLive2DRawModel.Pin()->GetModel();
 	if (UnLive2DModel == nullptr) return;
-	const Csm::csmInt32 DrawableCount = UnLive2DModel->GetDrawableCount();
-	UnLive2DClippingManager = MakeUnique<CubismClippingManager_UE>();
 
-	UnLive2DClippingManager->Initialize(
-		UnLive2DModel,
-		DrawableCount,
-		UnLive2DModel->GetDrawableMasks(),
-		UnLive2DModel->GetDrawableMaskCounts()
-	);
+	TSharedRef<FUnLive2DRawModel> UnLive2DRawModelRef = UnLive2DRawModel.Pin().ToSharedRef();
+	UnLive2DRenderState = MakeUnique<FUnLive2DRenderState>(InComponent->GetUnLive2D(), UnLive2DRawModelRef);
 
 	//Rendering::CubismRenderer::CubismBlendMode
 	UpdataSections();
@@ -85,15 +51,17 @@ void FUnLive2DSceneProxy::OnUpData()
 {
 	if (!UpdataSections() && Sections.Num() > 0)
 	{
-
-		/*ENQUEUE_RENDER_COMMAND(UnLive2DSceneProxy_UpdataSections)(
-			[this](FRHICommandListBase& RHICmdList)
+		ENQUEUE_RENDER_COMMAND(UnLive2DSceneProxy_UpdataSections)(
+			[this](FRHICommandListImmediate& RHICmdList)
 			{
-				for (int32 i = 0; i < Sections.Num(); i++)
+				ERHIFeatureLevel::Type FeatureLevel = GetScene().GetFeatureLevel();
+				UnLive2DRenderState->InitRHI(RHICmdList, FeatureLevel);
+				/*for (int32 i = 0; i < Sections.Num(); i++)
 				{
 					Sections[i]->UpdateSection_RenderThread(RHICmdList);
 				}
-			});*/
+				*/
+			});
 	}
 }
 
@@ -155,6 +123,15 @@ uint32 FUnLive2DSceneProxy::GetMemoryFootprint() const
 	return sizeof(*this) + FPrimitiveSceneProxy::GetAllocatedSize();
 }
 
+void FUnLive2DSceneProxy::GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials, bool bGetDebugMaterials /*= false*/) const
+{
+	for (auto& Item : UnLive2DToBlendMaterialList)
+	{
+		if (Item.Value == nullptr) continue;
+		OutMaterials.Add(Item.Value);
+	}
+}
+
 bool FUnLive2DSceneProxy::GetMeshElement(FMeshElementCollector& Collector, int32 SectionIndex, uint8 DepthPriorityGroup, FUnLive2DVertexBuffer* InSectionData, FMeshBatch& Mesh) const
 {
 	if (InSectionData == nullptr) return false;
@@ -196,7 +173,6 @@ void FUnLive2DSceneProxy::ClearSections()
 		delete VertexBuffer;
 	}
 	Sections.Empty();
-	DrawableIndexList.Empty();
 }
 
 UMaterialInstance* FUnLive2DSceneProxy::GetMaterialInstanceDynamicToIndex(const int32& DrawableIndex)
@@ -234,6 +210,7 @@ UMaterialInstance* FUnLive2DSceneProxy::GetMaterialInstanceDynamicToIndex(const 
 		if (RendererComponent->GetUnLive2D() == nullptr || !RendererComponent->GetUnLive2D()->TextureAssets.IsValidIndex(TextureIndex))
 			return nullptr;
 		Material->SetTextureParameterValue(TEXT("UnLive2D"), RendererComponent->GetUnLive2D()->TextureAssets[TextureIndex]);
+		Material->SetTextureParameterValue(TEXT("UnLive2DMask"), UnLive2DRenderState->MaskBufferRenderTarget.Get());
 
 		Material->OnAssignedAsOverride(RendererComponent);
 		Material->AddToCluster(RendererComponent, true);
@@ -260,48 +237,19 @@ UMaterialInstance* FUnLive2DSceneProxy::GetMaterialInstanceDynamicToIndex(const 
 
 bool FUnLive2DSceneProxy::UpdataSections()
 {
-	if (!UnLive2DRawModel.IsValid()) return false;
-
-	Csm::CubismModel* UnLive2DModel = UnLive2DRawModel.Pin()->GetModel();
-	if (UnLive2DModel == nullptr) return false;
-
-	if (DrawableIndexList.Num() != 0)
-	{
-		bool bUpdataSections = false;
-		for (const uint16& DrawableIndex : DrawableIndexList)
-		{
-			if (UnLive2DModel->GetDrawableDynamicFlagRenderOrderDidChange(DrawableIndex) || UnLive2DModel->GetDrawableDynamicFlagVisibilityDidChange(DrawableIndex) /*|| UnLive2DModel->GetDrawableDynamicFlagOpacityDidChange(DrawableIndex)*/)
-			{
-				bUpdataSections = true;
-				break;
-			}
-		}
-		if (!bUpdataSections) return false;
-	}
-	const Csm::csmInt32 DrawableCount = UnLive2DModel->GetDrawableCount();
+	TArray<uint16> SortedDrawableIndexList;
+	if (!UpDataDrawableIndexList(SortedDrawableIndexList)) return false;
 
 	ClearSections();
-	const Csm::csmInt32* RenderOrder = UnLive2DModel->GetDrawableRenderOrders();
 
-	TArray<Csm::csmInt32> SortedDrawableIndexList;
-	SortedDrawableIndexList.SetNum(DrawableCount);
-	DrawableIndexList.SetNum(DrawableCount);
-
-	for (csmInt32 i = 0; i < DrawableCount; i++)
-	{
-		const csmInt32 Order = RenderOrder[i];
-
-		SortedDrawableIndexList[Order] = i;
-		DrawableIndexList[Order] = i;
-	}
-
+	Csm::CubismModel* UnLive2DModel = UnLive2DRawModel.Pin()->GetModel();
 	// 当前绘制使用数据
 	TArray<FUnLive2DSectionData> UnLive2DSectionDataArr;
 
 	ERHIFeatureLevel::Type FeatureLevel = GetScene().GetFeatureLevel();
 	// 获取绘制数据
 	{
-		for (csmInt32 i = 0; i < DrawableCount; i++)
+		for (csmInt32 i = 0; i < SortedDrawableIndexList.Num(); i++)
 		{
 			const csmInt32 DrawableIndex = SortedDrawableIndexList[i];
 			// <Drawable如果不是显示状态，则通过处理
@@ -345,23 +293,32 @@ bool FUnLive2DSceneProxy::UpdataSections()
 		Sections.AddZeroed(NumSections);
 		for (int32 SectionIdx = 0; SectionIdx < NumSections; SectionIdx++)
 		{
-			FUnLive2DVertexBuffer* NewSection = new FUnLive2DVertexBuffer(UnLive2DModel,UnLive2DClippingManager.Get(), UnLive2DSectionDataArr[SectionIdx].DrawableCounts, FeatureLevel, UnLive2DSectionDataArr[SectionIdx].Material);
+			FUnLive2DVertexBuffer* NewSection = new FUnLive2DVertexBuffer(UnLive2DModel, UnLive2DRenderState.Get(), UnLive2DSectionDataArr[SectionIdx].DrawableCounts, FeatureLevel, UnLive2DSectionDataArr[SectionIdx].Material);
 			Sections[SectionIdx] = NewSection;
-			ENQUEUE_RENDER_COMMAND(UnLive2DSceneProxy_UpdataSections)(
-				[NewSection](FRHICommandListBase& RHICmdList)
-				{
-					NewSection->InitRHI(RHICmdList);
-				});
+#if WITH_EDITOR
+			//NewSection->Depth = SectionIdx * 5;
+			NewSection->Depth = 0;
+#endif
+			
 		}
+		ENQUEUE_RENDER_COMMAND(UnLive2DSceneProxy_UpdataSections)(
+			[this, FeatureLevel](FRHICommandListImmediate& RHICmdList)
+			{
+				UnLive2DRenderState->InitRHI(RHICmdList, FeatureLevel);
+				for (int32 i = 0; i < Sections.Num(); i++)
+				{
+					Sections[i]->InitRHI(RHICmdList);
+				}
+			});
 	}
 
 	return true;
 }
 
-FUnLive2DSceneProxy::FUnLive2DVertexBuffer::FUnLive2DVertexBuffer(Csm::CubismModel* InUnLive2DRawModel, CubismClippingManager_UE* InClippingManager, const TArray<int32>& InDrawableCounts, ERHIFeatureLevel::Type InFeatureLevel, UMaterialInterface* InMaterial)
+FUnLive2DSceneProxy::FUnLive2DVertexBuffer::FUnLive2DVertexBuffer(Csm::CubismModel* InUnLive2DRawModel, FUnLive2DRenderState* InClippingManager, const TArray<int32>& InDrawableCounts, ERHIFeatureLevel::Type InFeatureLevel, UMaterialInterface* InMaterial)
 	: UnLive2DRawModel(InUnLive2DRawModel)
-	, ClippingManager(InClippingManager)
 	, DrawableCounts(InDrawableCounts)
+	, RenderState(InClippingManager)
 	, ScaleMesh(100)
 	, Material(InMaterial)
 	, VertexFactory(InFeatureLevel, "FProcMeshProxySection")
@@ -406,7 +363,7 @@ void FUnLive2DSceneProxy::FUnLive2DVertexBuffer::UpdateSection_RenderThread(FRHI
 
 	TArray<uint16> Indices;
 	TArray<FDynamicMeshVertex> Vertices;
-	GetUnLive2DVertexData(Vertices, Indices);
+	GetUnLive2DVertexData(Vertices, IndexBuffer.Indices);
 
 	if (Vertices.Num() == 0) return;
 	VertexBuffers.PositionVertexBuffer.Init(Vertices.Num());
@@ -453,65 +410,55 @@ void FUnLive2DSceneProxy::FUnLive2DVertexBuffer::UpdateSection_RenderThread(FRHI
 		RHICmdList.UnlockBuffer(VertexBuffer.TexCoordVertexBuffer.VertexBufferRHI);
 	}
 
-	{
+	/*{
 		uint32 IndexSize = Indices.Num() * sizeof(uint16);
 		IndexBuffer.Indices = Indices;
 		void* IndexBufferData = RHICmdList.LockBuffer(IndexBuffer.IndexBufferRHI, 0, IndexSize, RLM_WriteOnly);
 		FMemory::Memcpy(IndexBufferData, Indices.GetData(), IndexSize);
 		RHICmdList.UnlockBuffer(IndexBuffer.IndexBufferRHI);
-	}
-}
-
-CubismClippingContext* FUnLive2DSceneProxy::FUnLive2DVertexBuffer::GetClipContextInDrawableIndex(const uint32 DrawableIndex) const
-{
-	csmVector<CubismClippingContext*>* ClippingContextArr = ClippingManager->GetClippingContextListForDraw();
-	if (ClippingContextArr != nullptr && DrawableIndex >= 0 && ClippingContextArr->GetSize() > DrawableIndex)
-	{
-		return (*ClippingContextArr)[DrawableIndex];
-	}
-
-	return nullptr;
+	}*/
 }
 
 void FUnLive2DSceneProxy::FUnLive2DVertexBuffer::GetUnLive2DVertexData(TArray<FDynamicMeshVertex>& OutVertices, TArray<uint16>& OutIndices) const
 {
 	OutVertices.Empty();
-	OutIndices.Empty();
+	bool bCreateIndices = OutIndices.Num() > 0;
 	for (auto& DrawableIndex : DrawableCounts)
 	{
-		const csmInt32 VertexIndexCount = UnLive2DRawModel->GetDrawableVertexIndexCount(DrawableIndex); // 获得Drawable的顶点索引个数
-		const csmUint16* IndicesArray = const_cast<csmUint16*>(UnLive2DRawModel->GetDrawableVertexIndices(DrawableIndex)); //顶点索引
 
 		csmFloat32 Opacity = UnLive2DRawModel->GetDrawableOpacity(DrawableIndex); // 获取不透明度
-		for (int32 VertexIndex = 0; VertexIndex < VertexIndexCount; ++VertexIndex)
+		if (!bCreateIndices)
 		{
-			OutIndices.Add(OutVertices.Num() + IndicesArray[VertexIndex]);
+			const csmInt32 VertexIndexCount = UnLive2DRawModel->GetDrawableVertexIndexCount(DrawableIndex); // 获得Drawable的顶点索引个数
+			const csmUint16* IndicesArray = const_cast<csmUint16*>(UnLive2DRawModel->GetDrawableVertexIndices(DrawableIndex)); //顶点索引
+			for (int32 VertexIndex = 0; VertexIndex < VertexIndexCount; ++VertexIndex)
+			{
+				OutIndices.Add(OutVertices.Num() + IndicesArray[VertexIndex]);
+			}
 		}
 
 		const csmInt32 NumVertext = UnLive2DRawModel->GetDrawableVertexCount(DrawableIndex); // 获得Drawable顶点的个数
 		const csmFloat32* VertexArray = UnLive2DRawModel->GetDrawableVertices(DrawableIndex); // 顶点组
 		const  Live2D::Cubism::Core::csmVector2* UVArray = UnLive2DRawModel->GetDrawableVertexUvs(DrawableIndex); // 获取UV组
 
-		FVector4f ChanelFlag = FVector4f::One();
-		CubismClippingContext* ClipContext = GetClipContextInDrawableIndex(DrawableIndex);
+		FUnLiveVector4 ChanelFlag = FVector4f::One();
+		FUnLiveMatrix MartixForDraw;
+		FUnLiveVector4 ts_BaseColor;
+		bool bMask = RenderState->UnLive2DFillMaskParameter(DrawableIndex, MartixForDraw, ts_BaseColor, ChanelFlag);
 		bool bInvertedMesk = UnLive2DRawModel->GetDrawableInvertedMask(DrawableIndex);
-		if (ClipContext)
-		{
-			const csmInt32 ChannelNo = ClipContext->_layoutChannelNo; // 通道
-			// 将通道转换为RGBA
-			Csm::Rendering::CubismRenderer::CubismTextureColor* ColorChannel = ClippingManager->GetChannelFlagAsColor(ChannelNo);
-			ChanelFlag = FVector4f(ColorChannel->R, ColorChannel->G, ColorChannel->B, ColorChannel->A);
-		}
 		for (int32 VertexIndex = 0; VertexIndex < NumVertext; ++VertexIndex)
 		{
 			FDynamicMeshVertex& Vert = OutVertices.AddDefaulted_GetRef();
+#if WITH_EDITOR
+			Vert.Position = FVector3f(VertexArray[VertexIndex * 2] * ScaleMesh, Depth, VertexArray[VertexIndex * 2 + 1] * ScaleMesh);
+#else
 			Vert.Position = FVector3f(VertexArray[VertexIndex * 2] * ScaleMesh, 0.f, VertexArray[VertexIndex * 2 + 1] * ScaleMesh);
+#endif
 			Vert.TextureCoordinate[0] = FVector2f(UVArray[VertexIndex].X, 1 - UVArray[VertexIndex].Y);// UE UV坐标与Live2D的Y坐标是相反的
 
 			FVector2f MaskUV = FVector2f::One();
-			if (ClipContext)
+			if (bMask)
 			{
-				FMatrix44f MartixForDraw = CubismMatrix44ToMatrix44f(ClipContext->_matrixForDraw);
 				FVector4f Position = FVector4f(VertexArray[VertexIndex * 2], VertexArray[VertexIndex * 2 + 1], 0.f, 1.f);
 				FVector4f ClipPosition = MartixForDraw.TransformFVector4(Position);
 				MaskUV = FVector2f(ClipPosition.X, 1 + ClipPosition.Y);
@@ -519,7 +466,7 @@ void FUnLive2DSceneProxy::FUnLive2DVertexBuffer::GetUnLive2DVertexData(TArray<FD
 			}
 
 			Vert.TextureCoordinate[1] = MaskUV;
-			Vert.TextureCoordinate[2] = FVector2f(ClipContext == nullptr ? 0.f : 1.f, bInvertedMesk ? 1.f : 0.f);
+			Vert.TextureCoordinate[2] = FVector2f(bMask ? 1.f : 0.f, bInvertedMesk ? 1.f : 0.f);
 			Vert.TextureCoordinate[3] = FVector2f(Opacity);
 			Vert.Color = FColor(ChanelFlag.X * 255, ChanelFlag.Y * 255, ChanelFlag.Z * 255, ChanelFlag.W * 255);
 			Vert.TangentX.Vector.X = 127;
