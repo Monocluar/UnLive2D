@@ -1,0 +1,49 @@
+
+#include "/Engine/Private/Common.ush"
+#include "/Engine/Public/Platform.ush"
+
+
+Texture2D InTexture;
+SamplerState InTextureSampler;
+
+void Main_Seq_Normal(
+	in float2 TextureCoordinate : TEXCOORD0,
+    in float4 BaseColor : TEXCOORD1,
+    out float4 OutColor : SV_Target0
+)
+{
+    float4 color = InTexture.Sample(InTextureSampler, TextureCoordinate) * BaseColor;
+    color.xyz *= color.w;
+	OutColor = RETURN_COLOR(color);
+}
+
+Texture2D InMaskTexture;
+
+void Main_Seq_Mask(
+	in float2 TextureCoordinate : TEXCOORD0,
+    in float4 BaseColor : TEXCOORD1,
+    in float4 ClipPosition  : TEXCOORD2,
+    in float4 ChannelFlag  : TEXCOORD3,
+    out float4 OutColor : SV_Target0
+)
+{
+    //float4 color = InTexture.Sample(InTextureSampler, TextureCoordinate) * BaseColor;
+    //color.xyz *= color.w;
+    //OutColor = color;
+    float4 color = float4(1,1,1,1);
+    float2 MaskUv = float2(ClipPosition.x, 1+ClipPosition.y);
+    MaskUv /= ClipPosition.w;
+    OutColor = InMaskTexture.Sample(InTextureSampler, MaskUv);
+    return;
+
+    float4 clipMask = (1.0 - InMaskTexture.Sample(InTextureSampler, MaskUv)) * ChannelFlag;
+    float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;
+
+#if UNLIVE2D_TARGET_INVERT_MASK
+    color = color * (1.0-maskVal);
+#else
+    color = color * maskVal;
+#endif
+    
+	OutColor = RETURN_COLOR(color);
+}

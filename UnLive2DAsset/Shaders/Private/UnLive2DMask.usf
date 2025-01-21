@@ -1,0 +1,47 @@
+
+#include "/Engine/Public/Platform.ush"
+
+
+float4x4 ProjectMatrix;
+
+void MainVS(
+	in float2 InPosition : ATTRIBUTE0,
+    in float2 InUV       : ATTRIBUTE1,
+    in float4 InViewPos  : ATTRIBUTE2,
+    in float4 InChannelFlag  : ATTRIBUTE3,
+    out float2 OutUV : TEXCOORD0,
+    out float4 OutViewPos : TEXCOORD1,
+    out float4 OutChannelFlag : TEXCOORD2,
+    out float4 OutPosition : SV_POSITION
+)
+{
+	//OutPosition = mul(float4(InPosition, 0.0f, 1.0f), ProjectMatrix);
+    OutPosition = float4(InPosition, 0.0f, 1.0f);
+    OutUV.x = InUV.x;
+	OutUV.y = 1.0 - InUV.y;
+    OutViewPos = InViewPos;
+    OutChannelFlag = InChannelFlag;
+}
+
+
+//Texture2D InTexture;
+//SamplerState InTextureSampler;
+
+void MainPS(
+    in float2 InUv : TEXCOORD0,
+    in float4 ViewPos : TEXCOORD1,
+    in float4 ChannelFlag : TEXCOORD2,
+    in float4 SvPosition : SV_POSITION,
+    out float4 OutColor : SV_Target0
+)
+{
+    float isInside =
+        step(ViewPos.x, SvPosition.x / SvPosition.w)
+        * step(ViewPos.y, SvPosition.y / SvPosition.w)
+        * step(SvPosition.x / SvPosition.w, ViewPos.z)
+        * step(SvPosition.y / SvPosition.w, ViewPos.w);
+ 
+    //OutColor = ChannelFlag * MainTexture.Sample(MainTextureSampler, InUv).a * isInside;   
+    OutColor = ChannelFlag * isInside; 
+    //OutColor = float4(isInside,0,0,1);  
+}

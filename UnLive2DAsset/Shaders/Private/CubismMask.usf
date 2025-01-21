@@ -24,9 +24,6 @@ float4x4 ClipMatrix;
 float4 BaseColor;
 float4 ChannelFlag;
 
-float TestFloat;
-
-
 void MainVS(
     in uint GlobalVertexId : SV_VertexID,
 	float2 InPosition : ATTRIBUTE0,
@@ -60,6 +57,4 @@ void MainPS(
 
     //OutColor = ChannelFlag * MainTexture.Sample(MainTextureSampler, InUv).a * isInside;    
     OutColor = ChannelFlag * MainTexture.Sample(MainTextureSampler, InUv).a * isInside;    
-	//OutColor = float4(TestFloat,0,0,1) * (1 - MainTexture.Sample(MainTextureSampler, InUv).a);
-    //OutColor = float4(TestFloat,0,0,1);
 }
