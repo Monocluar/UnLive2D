@@ -11,6 +11,7 @@
 #include "UnLive2DRendererComponent.h"
 #include "UnLive2DViewportClient.h"
 #include "UnLive2DEditorCommands.h"
+#include "UnLive2DCubismCore.h"
 
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
@@ -170,17 +171,17 @@ void FUnLive2DViewEditor::RegisterTabSpawners(const TSharedRef<FTabManager>& InT
 	InTabManager->RegisterTabSpawner(FUnLive2DViewEditorTabs::ViewportID, FOnSpawnTab::CreateSP(this, &FUnLive2DViewEditor::SpawnTab_Viewport))
 		.SetDisplayName(LOCTEXT("ViewportTab", "Viewport"))
 		.SetGroup(WorkspaceMenuCategoryRef)
-		.SetIcon(FSlateIcon(FAppStyle::GetAppStyleSetName(), "LevelEditor.Tabs.Viewports"));
+		.SetIcon(FSlateIcon(FUnLive2DAppStyle::GetStyleSetName(), "LevelEditor.Tabs.Viewports"));
 
 	InTabManager->RegisterTabSpawner(FUnLive2DViewEditorTabs::DetailsID, FOnSpawnTab::CreateSP(this, &FUnLive2DViewEditor::SpawnTab_Details))
 		.SetDisplayName(LOCTEXT("DetailsTabLabel", "Details"))
 		.SetGroup(WorkspaceMenuCategoryRef)
-		.SetIcon(FSlateIcon(FAppStyle::GetAppStyleSetName(), "LevelEditor.Tabs.Details"));
+		.SetIcon(FSlateIcon(FUnLive2DAppStyle::GetStyleSetName(), "LevelEditor.Tabs.Details"));
 
 	InTabManager->RegisterTabSpawner(FUnLive2DViewEditorTabs::ParameterGroupID, FOnSpawnTab::CreateSP(this, &FUnLive2DViewEditor::SpawnTab_ParameterGroup))
 		.SetDisplayName(LOCTEXT("ParameterGroupTabLabel", "ParameterGroup"))
 		.SetGroup(WorkspaceMenuCategoryRef)
-		.SetIcon(FSlateIcon(FAppStyle::GetAppStyleSetName(), "Persona.Tabs.AnimCurvePreviewer"));
+		.SetIcon(FSlateIcon(FUnLive2DAppStyle::GetStyleSetName(), "Persona.Tabs.AnimCurvePreviewer"));
 }
 
 void FUnLive2DViewEditor::UnregisterTabSpawners(const TSharedRef<FTabManager>& InTabManager)

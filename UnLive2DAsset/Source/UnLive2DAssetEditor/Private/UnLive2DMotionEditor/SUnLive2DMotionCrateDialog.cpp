@@ -9,6 +9,7 @@
 #include "UnLive2DMotionImportUI.h"
 #include "UnLive2DExpressionFactory.h"
 #include "AssetRegistry/AssetRegistryModule.h"
+#include "UnLive2DCubismCore.h"
 
 #define LOCTEXT_NAMESPACE "UnLive2DMotionFactory"
 
@@ -36,7 +37,7 @@ void SUnLive2DMotionCrateDialog::Construct(const FArguments& InArgs)
 	[
 		SNew(SBorder)
 		.Visibility(EVisibility::Visible)
-		.BorderImage(FAppStyle::GetBrush("Menu.Background"))
+		.BorderImage(FUnLive2DStyle::GetBrush("Menu.Background"))
 		[
 			
 			SNew(SVerticalBox)
@@ -45,7 +46,7 @@ void SUnLive2DMotionCrateDialog::Construct(const FArguments& InArgs)
 			.FillHeight(1)
 			[
 				SNew(SBorder)
-				.BorderImage(FAppStyle::GetBrush("ToolPanel.GroupBorder"))
+				.BorderImage(FUnLive2DStyle::GetBrush("ToolPanel.GroupBorder"))
 				.Content()
 				[
 					SAssignNew(UnLive2DContainer, SVerticalBox)
@@ -57,7 +58,7 @@ void SUnLive2DMotionCrateDialog::Construct(const FArguments& InArgs)
 			.Padding(0.0f, 10.0f, 0.0f, 0.0f)
 			[
 				SAssignNew(MotionPamesBorder, SBorder)
-				.BorderImage(FAppStyle::GetBrush("ToolPanel.GroupBorder"))
+				.BorderImage(FUnLive2DStyle::GetBrush("ToolPanel.GroupBorder"))
 				.Content()
 				[
 					SAssignNew(UnLive2DMotionPames, SVerticalBox)
@@ -71,14 +72,14 @@ void SUnLive2DMotionCrateDialog::Construct(const FArguments& InArgs)
 			.Padding(8)
 			[
 				SNew(SUniformGridPanel)
-				.SlotPadding(FAppStyle::GetMargin("StandardDialog.SlotPadding"))
-				.MinDesiredSlotWidth(FAppStyle::GetFloat("StandardDialog.MinDesiredSlotWidth"))
-				.MinDesiredSlotHeight(FAppStyle::GetFloat("StandardDialog.MinDesiredSlotHeight"))
+				.SlotPadding(FUnLive2DStyle::GetMargin("StandardDialog.SlotPadding"))
+				.MinDesiredSlotWidth(FUnLive2DStyle::GetFloat("StandardDialog.MinDesiredSlotWidth"))
+				.MinDesiredSlotHeight(FUnLive2DStyle::GetFloat("StandardDialog.MinDesiredSlotHeight"))
 				+ SUniformGridPanel::Slot(0, 0)
 				[
 					SNew(SButton)
 					.HAlign(HAlign_Center)
-					.ContentPadding(FAppStyle::GetMargin("StandardDialog.ContentPadding"))
+					.ContentPadding(FUnLive2DStyle::GetMargin("StandardDialog.ContentPadding"))
 					.OnClicked(this, &SUnLive2DMotionCrateDialog::OkClicked)
 					.Text(NSLOCTEXT("AnimBlueprintFactory", "CreateAnimBlueprintOk", "OK"))
 				]
@@ -86,7 +87,7 @@ void SUnLive2DMotionCrateDialog::Construct(const FArguments& InArgs)
 				[
 					SNew(SButton)
 					.HAlign(HAlign_Center)
-					.ContentPadding(FAppStyle::GetMargin("StandardDialog.ContentPadding"))
+					.ContentPadding(FUnLive2DStyle::GetMargin("StandardDialog.ContentPadding"))
 					.OnClicked(this, &SUnLive2DMotionCrateDialog::CancelClicked)
 					.Text(NSLOCTEXT("AnimBlueprintFactory", "CreateAnimBlueprintCancel", "Cancel"))
 				]

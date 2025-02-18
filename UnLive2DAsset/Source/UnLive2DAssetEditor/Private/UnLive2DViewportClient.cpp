@@ -27,7 +27,7 @@ FUnLive2DViewportClient::FUnLive2DViewportClient(UUnLive2D* InUnLive2DBeingEdite
 	PreviewScene = &OwnedPreviewScene;
 
 	SetViewModes(VMI_Lit, VMI_Lit);
-	SetViewportType(LVT_OrthoXZ);
+	SetViewportType(LVT_OrthoNegativeYZ);
 	bDeferZoomToUnLive2D = true;
 	bDeferZoomToUnLive2DIsInstant = true;
 

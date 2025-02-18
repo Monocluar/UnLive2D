@@ -3,7 +3,6 @@
 #include "Slate/WidgetRenderer.h"
 #include "ThumbnailRendering/ThumbnailManager.h"
 #include "Slate/SUnLive2DViewUI.h"
-#include "Draw/UnLive2DSepRenderer.h"
 #include "UnLive2DSetting.h"
 #include "UnLive2D.h"
 

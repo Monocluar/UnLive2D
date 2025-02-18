@@ -1,5 +1,6 @@
 #pragma once
 
+#include "UnLive2DCubismCore.h"
 #include "Live2DCubismCore.hpp"
 #include "Rendering/CubismRenderer.hpp"
 #include "Type/csmRectF.hpp"
@@ -7,15 +8,6 @@
 
 using namespace Csm;
 using Rendering::CubismRenderer;
-
-
-#if ENGINE_MAJOR_VERSION < 5
-typedef FMatrix FUnLiveMatrix;
-typedef FVector4 FUnLiveVector4;
-#else
-typedef FMatrix44f FUnLiveMatrix;
-typedef FVector4f FUnLiveVector4;
-#endif
 
 /**
  * 剪裁的上下文
@@ -55,6 +47,8 @@ public:
     csmVector<csmInt32>* _clippedDrawableIndexList;  ///< 列表将被裁剪到此遮罩中的绘图对象
 
     CubismClippingManager_UE* _owner;        ///< 管理此遮罩的管理实例
+
+    uint8 ClippingManager_UID;
 };
 
 // 裁剪处理
@@ -65,10 +59,10 @@ class CubismClippingManager_UE
 
     struct FUnLive2DMaskVertex
     {
-        FVector2f Position;
-		FVector2f UV;
-        FVector4f ViewPos;
-        FLinearColor ClipColor;
+        FULVector2f Position;
+        FULVector2f UV;
+        //FUnLiveVector4 ViewPos;
+        //FLinearColor ClipColor;
     };
 public:
 	class FUnLive2DMaskVertexDeclaration : public FRenderResource
@@ -79,7 +73,11 @@ public:
 
 		virtual ~FUnLive2DMaskVertexDeclaration() {}
 
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
 		virtual void InitRHI(FRHICommandListBase& RHICmdList) override;
+#else
+		virtual void InitRHI() override;
+#endif
 		virtual void ReleaseRHI() override;
 	};
 
@@ -93,26 +91,25 @@ public:
 
 protected:
     // 查看顶点缓存是否有变化
-    bool IsVertexPositionsDidChange(CubismModel* UnLive2DModel) const;
+    bool IsVertexPositionsDidChange() const;
 
 public:
 
     // 获取颜色通道(0:R , 1:G , 2:B, 3:A)
-    CubismRenderer::CubismTextureColor* GetChannelFlagAsColor(csmInt32 ChannelNo);
+    const CubismRenderer::CubismTextureColor* GetChannelFlagAsColor(csmInt32 ChannelNo) const;
 
-	CubismRenderer::CubismTextureColor* GetChannelFlagAsColorByDrawableIndex(const uint16& InDrawableIndex);
+	const CubismRenderer::CubismTextureColor* GetChannelFlagAsColorByDrawableIndex(const uint16& InDrawableIndex) const;
 
-    bool GetFillMaskMartixForMask(const uint16& InDrawableIndex, FUnLiveMatrix& OutMartixForMask, FVector4f& OutMaskPos);
+    bool GetFillMaskMartixForMask(const uint16& InDrawableIndex, FUnLiveMatrix& OutMartixForMask, FUnLiveVector4& OutMaskPos);
 
-    void RenderMask_Full(FRHICommandListImmediate& RHICmdList, CubismModel* UnLive2DModel, ERHIFeatureLevel::Type FeatureLevel, FTextureRHIRef OutMaskBuffer);
+    void RenderMask_Full(FRHICommandListImmediate& RHICmdList, ERHIFeatureLevel::Type FeatureLevel, FTextureRHIRef OutMaskBuffer);
 
     /**
      * 计算覆盖整个绘图对象的矩形（模型坐标系）
      *
-     * @param Model            ->  模型实例
      * @param ClippingContext  ->  裁剪实例
      */
-    void CalcClippedDrawTotalBounds(CubismModel* Model, CubismClippingContext* ClippingContext);
+    void CalcClippedDrawTotalBounds(CubismClippingContext* ClippingContext);
 
     /**
      * 管理器初始化处理，
@@ -128,10 +125,9 @@ public:
     /**
      * 创建消减上下文。绘制模型时执行。
      *
-     * @param Model       ->  模型实例
-     * @param Renderer    ->  渲染实例
+     * @param bNoLowPreciseMask    ->  是否使用复杂遮罩模式
      */
-    void SetupClippingContext(CubismModel* Model, class FUnLive2DRenderState* Renderer = nullptr);
+    void SetupClippingContext( bool& bNoLowPreciseMask);
 
     /**
      * 如果正在制作，则返回相应的剪裁实例，
@@ -205,14 +201,19 @@ private:
     struct FUnLive2DRenderBufferInfo
     {
         //FBufferRHIRef IndexBufferRHI; // 缓存遮罩顶点索引
-        FBufferRHIRef VertexBufferRHI; // 缓存遮罩顶点数据
+        FUVBufferRHIRef VertexBufferRHI; // 缓存遮罩顶点数据
         csmUint32 ClipIndex;
         uint16 NumVertext;
 		uint16 NumPrimitives;
     };
 
-    TArray<FBufferRHIRef> CacheIndexBufferRHI; // 缓存遮罩顶点索引
+    TArray<FUIBufferRHIRef> CacheIndexBufferRHI; // 缓存遮罩顶点索引
 
     TArray<FUnLive2DRenderBufferInfo> CacheRenderBufferRHI;
 
+    uint8 MaskIndex;
+
+    CubismModel* UnLive2DModel;
+
+    friend class CubismClippingContext;
 };

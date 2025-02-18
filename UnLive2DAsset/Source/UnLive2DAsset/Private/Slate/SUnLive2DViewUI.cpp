@@ -1,79 +1,52 @@
 #include "Slate/SUnLive2DViewUI.h"
 #include "UnLive2D.h"
-#include "Draw/UnLive2DSepRenderer.h"
 #include "Templates/SharedPointer.h"
 #include "Model/CubismModel.hpp"
 #include "Styling/SlateBrush.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Framework/Application/SlateApplication.h"
 #include "FWPort/UnLive2DRawModel.h"
+#include "FWPort/UnLive2DModelRender.h"
+#include "Rendering/DrawElements.h"
+#include "Engine/TextureRenderTarget2D.h"
 
 static int32 UnLive2DBrushNameId = 0;
 
-struct FUnLive2DSlateMaterialBrush : public FSlateBrush
-{
-	FUnLive2DSlateMaterialBrush(UMaterialInterface* InMaterial, const FVector2D& InImageSize)
-		: FSlateBrush(ESlateBrushDrawType::Image, TEXT("None"), FMargin(), ESlateBrushTileType::NoTile, ESlateBrushImageType::FullColor, InImageSize, FLinearColor::White, InMaterial)
-	{
-		FString BrushName = TEXT("UnLive2DBrush");
-		BrushName.AppendInt(UnLive2DBrushNameId++);
-		ResourceName = FName(BrushName);
-	}
-};
 
 void SUnLive2DViewUI::Construct(const FArguments& InArgs, const UUnLive2D* InUnLive2D)
 {
-	OnUpDataRender = InArgs._OnUpDataRender;
-	OnInitUnLive2DRender = InArgs._OnInitUnLive2DRender;
-	PlayRate = 1.f;
-	SourceUnLive2DPtr = InUnLive2D;
-	InitUnLive2D();
+	bCombinedbBatch = true;
+	PlayRate = InArgs._PlayRate;
+	RenderTargetSize = InArgs._RenderTargetSize;
+	UnLive2DRenderType = InArgs._UnLive2DRenderType;
+	NormalMaterial = InArgs._NormalMaterial;
+	AdditiveMaterial = InArgs._AdditiveMaterial;
+	MultiplyMaterial = InArgs._MultiplyMaterial;
+	RTMaterial = InArgs._RTMaterial;
+	SetUnLive2D(InUnLive2D);
+}
+
+SUnLive2DViewUI::~SUnLive2DViewUI()
+{
+	ClearRTCache();
 }
 
 void SUnLive2DViewUI::SetUnLive2D(const UUnLive2D* InUnLive2D)
 {
+	if (SourceUnLive2DPtr.IsValid() && SourceUnLive2DPtr.Get() == InUnLive2D) return;
 	SourceUnLive2DPtr = InUnLive2D;
 	InitUnLive2D();
-	
 }
 
-void SUnLive2DViewUI::ReleaseRenderStateData()
+void SUnLive2DViewUI::SetPlayRate(const TAttribute<float>& InValueAttribute)
 {
-	UnLive2DRawModel.Reset();
+	PlayRate = InValueAttribute;
 }
 
-void SUnLive2DViewUI::PlayMotion(class UUnLive2DMotion* InMotion)
+void SUnLive2DViewUI::SetLive2DRenderType(EUnLive2DRenderType InUnLive2DRenderType)
 {
-	if (UnLive2DRawModel.IsValid())
-	{
-		UnLive2DRawModel->StartMotion(InMotion);
-	}
-}
-
-void SUnLive2DViewUI::PlayExpression(class UUnLive2DExpression* InExpression)
-{
-	if (UnLive2DRawModel.IsValid())
-	{
-		UnLive2DRawModel->StartExpressions(InExpression);
-	}
-}
-
-void SUnLive2DViewUI::StopMotion()
-{
-	if (UnLive2DRawModel.IsValid())
-	{
-		UnLive2DRawModel->StopMotion();
-	}
-}
-
-void SUnLive2DViewUI::SetPlayRate(float InPlayRate)
-{
-	PlayRate = InPlayRate;
-}
-
-void SUnLive2DViewUI::SetUnLive2DRender(TSharedRef<class FUnLive2DRenderState> InUnLive2DRenderState)
-{
-	UnLive2DRender = InUnLive2DRenderState;
+	UnLive2DRenderType = InUnLive2DRenderType;
+	InitLive2DRenderType();
 }
 
 void SUnLive2DViewUI::InitUnLive2D()
@@ -87,7 +60,7 @@ void SUnLive2DViewUI::InitUnLive2D()
 	if (!UnLive2DRawModel.IsValid())
 	{
 		UnLive2DRawModel = SourceUnLive2D->CreateLive2DRawModel();
-		//UnLive2DRawModel->OnMotionPlayEnd.BindUObject(this, &SUnLive2DViewUI::OnMotionPlayeEnd);
+		UnLive2DRawModel->OnMotionPlayEnd.BindSP(this, &SUnLive2DViewUI::OnMotionPlayeEnd);
 	}
 	else
 	{
@@ -95,219 +68,255 @@ void SUnLive2DViewUI::InitUnLive2D()
 		{
 			UnLive2DRawModel.Reset();
 			UnLive2DRawModel = SourceUnLive2D->CreateLive2DRawModel();
-			//UnLive2DRawModel->OnMotionPlayEnd.BindUObject(this, &SUnLive2DViewUI::OnMotionPlayeEnd);
+			UnLive2DRawModel->OnMotionPlayEnd.BindSP(this, &SUnLive2DViewUI::OnMotionPlayeEnd);
 		}
 	}
-
-	/*if (OwnerWidget.IsValid())
-	{
-		OwnerWidget->InitUnLive2DRender();
-	}*/
-	if (OnInitUnLive2DRender.IsBound())
-	{
-		UnLive2DRender = OnInitUnLive2DRender.Execute();
-	}
-	
+	CreateClippingManager();
+	InitLive2DRenderType();
 }
 
-void SUnLive2DViewUI::UpDateMesh(const FGeometry& AllottedGeometry, int32 DrawableIndex, class CubismClippingContext* ClipContext, const FWidgetStyle& InWidgetStyle)
+void SUnLive2DViewUI::InitLive2DRenderType()
 {
-	//TArray<SlateIndex> Live2DIndexData;
-
-	const Csm::CubismModel* UnLive2DModel = UnLive2DRawModel->GetModel();
-
-	FLinearColor WidgetStyleColor = InWidgetStyle.GetColorAndOpacityTint();
-
-	csmFloat32 Opacity = UnLive2DModel->GetDrawableOpacity(DrawableIndex) * FMath::Clamp(WidgetStyleColor.A, 0.f, 1.f) ; // 获取不透明度
-
-	if (Opacity == 0.f || !UnLive2DRender.IsValid()) return;
-
-	TSharedPtr<FUnLive2DRenderState> UnLive2DRenderPtr = UnLive2DRender.Pin();
-
-	UMaterialInstanceDynamic* DynamicMat = UnLive2DRenderPtr->GetMaterialInstanceDynamicToIndex(UnLive2DModel, DrawableIndex, ClipContext != nullptr); // 获取当前动态材质
-
-	if (!IsValid(DynamicMat)) return;
-
-	FVector2D BoundsSize = FVector2D(UnLive2DModel->GetCanvasWidth(), UnLive2DModel->GetCanvasHeight());
-
-	const FVector2D WidgetSize = AllottedGeometry.GetLocalSize();
-
-	const FVector2D WidgetScale = WidgetSize / BoundsSize;
-	const float SetupScale = WidgetScale.GetMin();
-	const FSlateRenderTransform &Transform = AllottedGeometry.GetAccumulatedRenderTransform();
-
-	FCustomVertsData* MeshSectionData = nullptr;
-
-	if (UnLive2DCustomVertsData.Num() == 0 || UnLive2DCustomVertsData.Top().InterlottingDynamicMat != DynamicMat)
+	ClearRTCache();
+	if (UnLive2DRenderType == EUnLive2DRenderType::RenderTarget)
 	{
-		MeshSectionData = &UnLive2DCustomVertsData.AddDefaulted_GetRef();
-		MeshSectionData->InterlottingDynamicMat = DynamicMat;
+		RenderTarget = NewObject<UTextureRenderTarget2D>(GetTransientPackage());
+		RenderTarget->ClearColor = FLinearColor(0.f, 0.f, 0.f, 0.f);
+		const EPixelFormat RequestedFormat = FSlateApplication::Get().GetRenderer()->GetSlateRecommendedColorFormat();
+		RenderTarget->InitCustomFormat(RenderTargetSize, RenderTargetSize, RequestedFormat, false);
+		RenderTarget->AddToRoot();
+	}
+
+	if (!UnLive2DClippingManager.IsValid()) return;
+	const csmInt32 BufferHeight = UnLive2DClippingManager->GetClippingMaskBufferSize();
+	if (UnLive2DRenderType == EUnLive2DRenderType::Mesh)
+	{
+		MaskBufferRenderTarget = NewObject<UTextureRenderTarget2D>(GetTransientPackage());
+		MaskBufferRenderTarget->ClearColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		MaskBufferRenderTarget->InitCustomFormat(BufferHeight, BufferHeight, EPixelFormat::PF_B8G8R8A8, false);
+		MaskBufferRenderTarget->AddToRoot();
 	}
 	else
 	{
-		MeshSectionData = &UnLive2DCustomVertsData.Top();
-	}
+		ETextureCreateFlags Flags = ETextureCreateFlags(TexCreate_None | TexCreate_RenderTargetable | TexCreate_ShaderResource);
+#if ENGINE_MAJOR_VERSION >= 5
+		const FRHITextureCreateDesc Desc = FRHITextureCreateDesc::Create2D(TEXT("FUnLive2DTargetBoxProxy_UpdateSection_RenderThread"), BufferHeight, BufferHeight, PF_R8G8B8A8)
+			.SetFlags(Flags).SetClearValue(FClearValueBinding(FLinearColor::White));
 
-
-	int32 InterlottingIndiceIndex = MeshSectionData->InterlottingLive2DVertexData.Num();
-
-	const csmInt32 NumVertext = UnLive2DModel->GetDrawableVertexCount(DrawableIndex); // 获得Drawable顶点的个数
-
-	const csmFloat32* UVArray = reinterpret_cast<csmFloat32*>(const_cast<Live2D::Cubism::Core::csmVector2*>(UnLive2DModel->GetDrawableVertexUvs(DrawableIndex))); // 获取UV组
-	const csmFloat32* VertexArray = const_cast<csmFloat32*>(UnLive2DModel->GetDrawableVertices(DrawableIndex)); // 顶点组
-
-	FUnLiveVector4 ChanelFlag;
-	FUnLiveMatrix MartixForDraw = UnLive2DRenderPtr->GetUnLive2DPosToClipMartix(ClipContext, ChanelFlag);
-
-	/*Live2DVertexData.SetNumUninitialized(NumVertext);
-	FSlateVertex* VertexDataPtr = (FSlateVertex*)Live2DVertexData.GetData();*/
-
-	for (int32 VertexIndex = 0; VertexIndex < NumVertext; ++VertexIndex)
-	{
-
-#if ENGINE_MAJOR_VERSION < 5
-		FVector4 Position = FVector4(VertexArray[VertexIndex * 2], VertexArray[VertexIndex * 2 + 1], 0, 1);
+		MaskBuffer = RHICreateTexture(Desc);
 #else
-		FVector4f Position = FVector4f(VertexArray[VertexIndex * 2], VertexArray[VertexIndex * 2 + 1], 0, 1);
+		FRHIResourceCreateInfo CreateInfo(TEXT("FUnLive2DTargetBoxProxy_UpdateSection_RenderThread"));
+		CreateInfo.ClearValueBinding = FClearValueBinding(FLinearColor::White);
+		MaskBuffer = RHICreateTexture2D(BufferHeight, BufferHeight, PF_R8G8B8A8, 1, 1, Flags, CreateInfo);
 #endif
-
-		FSlateVertex* VertexIndexData = &MeshSectionData->InterlottingLive2DVertexData.AddDefaulted_GetRef();
-
-		float MaskVal = 1;
-		FVector2D UV = FVector2D(UVArray[VertexIndex * 2], 1 - UVArray[VertexIndex * 2 + 1]); // UE UV坐标与Live2D的Y坐标是相反的
-		if (ClipContext != nullptr)
-		{
-#if ENGINE_MAJOR_VERSION < 5
-			FVector4 ClipPosition;
-#else
-			FVector4f ClipPosition;
-#endif
-
-			ClipPosition = MartixForDraw.TransformFVector4(Position);
-			FVector2D MaskUV = FVector2D(ClipPosition.X, 1 + ClipPosition.Y);
-			MaskUV /= ClipPosition.W;
-
-			//VertexIndexData->Color = FColor(255 * ChanelFlag.X, 255 * ChanelFlag.Y, 255 * ChanelFlag.Z, 255 * ChanelFlag.W);
-			VertexIndexData->PixelSize[0] = ChanelFlag.Z;
-			VertexIndexData->PixelSize[1] = ChanelFlag.W;
-
-#if UE_VERSION_OLDER_THAN(5,0,0)
-			VertexIndexData->MaterialTexCoords = MaskUV;
-			VertexIndexData->SetTexCoords(FVector4(UV.X, UV.Y, ChanelFlag.X, ChanelFlag.Y));
-#else
-			VertexIndexData->MaterialTexCoords = FVector2f(MaskUV.X, MaskUV.Y);
-			VertexIndexData->SetTexCoords(FVector4f(UV.X, UV.Y, ChanelFlag.X, ChanelFlag.Y));
-#endif
-
-		}
-		else
-		{
-#if UE_VERSION_OLDER_THAN(5,0,0)
-			VertexIndexData->MaterialTexCoords = UV;
-			VertexIndexData->SetTexCoords(FVector4(UV.X, UV.Y, 1, 1));
-#else
-			VertexIndexData->MaterialTexCoords = FVector2f(UV.X, UV.Y);
-			VertexIndexData->SetTexCoords(FVector4f(UV.X, UV.Y, 1, 1));
-#endif
-			//VertexIndexData->Color = FColor(255, 255, 255, 255);
-		}
-
-		
-		FVector2D NewPos = Transform.TransformPoint(FVector2D(Position.X, Position.Y) * SetupScale * FVector2D(1.f, -1.f) + (WidgetSize / 2));
-
-#if UE_VERSION_OLDER_THAN(5,0,0)
-		//VertexIndexData->SetTexCoords(FVector4(UV.X, UV.Y, Opacity, Opacity));
-		VertexIndexData->SetPosition(NewPos);
-#else
-		//VertexIndexData->SetTexCoords(FVector4f(UV.X, UV.Y, Opacity, Opacity));
-		VertexIndexData->SetPosition(FVector2f(NewPos.X, NewPos.Y));
-#endif
-		VertexIndexData->Color = FColor(255 * WidgetStyleColor.R, 255 * WidgetStyleColor.G, 255 * WidgetStyleColor.B, 255 * Opacity);
-	}
-
-	const csmInt32 VertexIndexCount = UnLive2DModel->GetDrawableVertexIndexCount(DrawableIndex); // 获得Drawable的顶点索引个数
-
-	check(VertexIndexCount > 0 && "Bad Index Count");
-
-	const csmUint16* IndicesArray = const_cast<csmUint16*>(UnLive2DModel->GetDrawableVertexIndices(DrawableIndex)); //顶点索引
-
-	for (int32 VertexIndex = 0; VertexIndex < VertexIndexCount; ++VertexIndex)
-	{
-		MeshSectionData->InterlottingLive2DIndexData.Add(InterlottingIndiceIndex + (SlateIndex)IndicesArray[VertexIndex]);
-	}
-	
+}
 }
 
-void SUnLive2DViewUI::Flush(int32 LayerId, FSlateWindowElementList& OutDrawElements, bool bParentEnabled)
+void SUnLive2DViewUI::ClearRTCache()
 {
-
-	const bool bIsEnabled = ShouldBeEnabled(bParentEnabled);
-
-	const ESlateDrawEffect DrawEffects = bIsEnabled ? ESlateDrawEffect::None : ESlateDrawEffect::DisabledEffect;
-	for (int32 i = 0; i < UnLive2DCustomVertsData.Num(); i++)
+	if (UnLive2DRenderType == EUnLive2DRenderType::Mesh)
 	{
-		TSharedPtr<FSlateBrush> Brush = MakeShareable(new FUnLive2DSlateMaterialBrush(UnLive2DCustomVertsData[i].InterlottingDynamicMat, FVector2D(64.f, 64.f)));
-		FSlateResourceHandle RenderingResourceHandle = FSlateApplication::Get().GetRenderer()->GetResourceHandle(*Brush);
-
-		FSlateDrawElement::MakeCustomVerts(OutDrawElements, LayerId, RenderingResourceHandle, UnLive2DCustomVertsData[i].InterlottingLive2DVertexData, UnLive2DCustomVertsData[i].InterlottingLive2DIndexData, nullptr, 0, 0, DrawEffects);
+		if (MaskBufferRenderTarget.IsValid())
+		{
+			MaskBufferRenderTarget->RemoveFromRoot();
+			MaskBufferRenderTarget.Reset();
+		}
 	}
+	else
+	{
+		MaskBuffer.SafeRelease();
+		if (IsValid(RenderTarget))
+		{
+			RenderTarget->RemoveFromRoot();
+			RenderTarget = nullptr;
+		}
+	}
+	for (auto& Item : UnLive2DToBlendMaterialList)
+	{
+		if (Item.Value->UnLive2DRenderType == EUnLive2DRenderType::RenderTarget ) continue;
+		UMaterialInstanceDynamic* InstanceDynamic = Cast<UMaterialInstanceDynamic>(Item.Value->GetResourceObject());
+		InstanceDynamic->RemoveFromRoot();
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 4
+		InstanceDynamic->OnRemovedAsOverride(OwnerComponent.Get());
+#endif
+	}
+	UnLive2DToBlendMaterialList.Empty();
 
 	UnLive2DCustomVertsData.Empty();
+	ClearRenderBaseData();
+}
+
+bool SUnLive2DViewUI::UpdataSections()
+{
+	TArray<uint16> SortedDrawableIndexList;
+	if (!UpDataDrawableIndexList(SortedDrawableIndexList)) return false;
+	UnLive2DCustomVertsData.Empty();
+	Csm::CubismModel* UnLive2DModel = UnLive2DRawModel->GetModel();
+	for (const uint16& DrawableIndex : SortedDrawableIndexList)
+	{
+		if (!GetDrawableDynamicIsVisible(DrawableIndex)) continue;
+
+		const csmInt32 TextureIndex = UnLive2DModel->GetDrawableTextureIndices(DrawableIndex);
+
+		uint8 MaskID;
+		uint8 Flags = GetUnLive2DShaderFlagsByDrawableIndex(DrawableIndex, MaskID);
+		FCustomVertsData* MeshSectionData = nullptr;
+		if (!bCombinedbBatch || UnLive2DCustomVertsData.Num() == 0 || !UnLive2DCustomVertsData.Top().Equals(Flags, TextureIndex, MaskID))
+		{
+			MeshSectionData = &UnLive2DCustomVertsData.AddDefaulted_GetRef();
+			MeshSectionData->Flags = Flags;
+			MeshSectionData->MaskUID = MaskID;
+			MeshSectionData->TextureIndex = TextureIndex;
+			MeshSectionData->Brush = MakeSlateBrushByFlags(Flags, TextureIndex);
+		}
+		else
+			MeshSectionData = &UnLive2DCustomVertsData.Top();
+
+		MeshSectionData->DrawableCounts.Add(DrawableIndex);
+	}
+	return true;
+}
+
+void SUnLive2DViewUI::Flush(int32 LayerId, FSlateWindowElementList& OutDrawElements, bool bParentEnabled) const
+{
+	const bool bIsEnabled = ShouldBeEnabled(bParentEnabled);
+
+	if (UnLive2DRenderType == EUnLive2DRenderType::Mesh)
+	{
+		const ESlateDrawEffect DrawEffects = bIsEnabled ? ESlateDrawEffect::None : ESlateDrawEffect::DisabledEffect;
+		for (int32 i = 0; i < UnLive2DCustomVertsData.Num(); i++)
+		{
+			//TSharedPtr<FSlateBrush> Brush = MakeShareable(new FUnLive2DSlateMaterialBrush(UnLive2DCustomVertsData[i].Brush, FVector2D(64.f, 64.f)));
+			FSlateResourceHandle RenderingResourceHandle = FSlateApplication::Get().GetRenderer()->GetResourceHandle(*UnLive2DCustomVertsData[i].Brush);
+
+			FSlateDrawElement::MakeCustomVerts(OutDrawElements, LayerId, RenderingResourceHandle, UnLive2DCustomVertsData[i].InterlottingLive2DVertexData, UnLive2DCustomVertsData[i].InterlottingLive2DIndexData, nullptr, 0, 0, DrawEffects);
+		}
+	}
+
 }
 
 void SUnLive2DViewUI::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
 {
 	SLeafWidget::Tick(AllottedGeometry, InCurrentTime, InDeltaTime);
-	if (!UnLive2DRawModel.IsValid() ) return;
 
-	UnLive2DRawModel->OnUpDate(InDeltaTime * PlayRate);
+	if (UnLive2DRawModel.IsValid())
+	{
+		UnLive2DRawModel->OnUpDate(InDeltaTime * PlayRate.Get());
+		//UpdateRenderer();
+	}
+}
+
+TSharedPtr<FSlateBrush> SUnLive2DViewUI::MakeSlateBrushByFlags(const uint8& Flags, const int32& InTextureIndex)
+{
+	FSoftObjectPath UnLive2DMaterialSoftObject;
+	uint16 MapIndex = 0;
+	if (UnLive2DRenderType == EUnLive2DRenderType::Mesh)
+	{
+		int32 BlendMode = 0;
+
+		if (Flags & EUnLive2DShaderFlags::BlendMode_Add)
+		{
+			BlendMode = 1;
+			UnLive2DMaterialSoftObject = AdditiveMaterial;
+		}
+		else if (Flags & EUnLive2DShaderFlags::BlendMode_Mul)
+		{
+			BlendMode = 1;
+			UnLive2DMaterialSoftObject = MultiplyMaterial;
+		}
+		else
+			UnLive2DMaterialSoftObject = NormalMaterial;
+		uint16 BlendModeIndex = BlendMode * 100;
+		MapIndex = BlendModeIndex + InTextureIndex;
+
+	}
+
+	TSharedRef<FUnLive2DSlateMaterialBrush> const* FindMaterial = UnLive2DToBlendMaterialList.Find(MapIndex);
+
+	if (FindMaterial)  return *FindMaterial;
+	if (UnLive2DRenderType == EUnLive2DRenderType::RenderTarget)
+	{
+		TSharedPtr<FUnLive2DSlateMaterialBrush> SlateBrush = MakeShareable(new FUnLive2DSlateMaterialBrush(RenderTarget));
+		UnLive2DToBlendMaterialList.Add(MapIndex, SlateBrush.ToSharedRef());
+		return SlateBrush;
+	}
+
+	if (UnLive2DMaterialSoftObject.IsNull()) return nullptr;
+	if (UMaterialInterface* MaterialInterface = Cast<UMaterialInterface>(UnLive2DMaterialSoftObject.TryLoad()))
+	{
+		UUnLive2D* Owner = const_cast<UUnLive2D*>(SourceUnLive2DPtr.Get()) ;
+		if (Owner == nullptr || !Owner->TextureAssets.IsValidIndex(InTextureIndex)) return nullptr;
+		UMaterialInstanceDynamic* Material = UMaterialInstanceDynamic::Create(MaterialInterface, Owner);
+		Material->SetTextureParameterValue(TEXT("UnLive2D"), Owner->TextureAssets[InTextureIndex]);
+		if (MaskBufferRenderTarget.IsValid())
+		{
+			Material->SetTextureParameterValue(TEXT("UnLive2DMask"), MaskBufferRenderTarget.Get());
+		}
+
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 4
+		Material->OnAssignedAsOverride(Owner);
+		Material->AddToCluster(Owner, true);
+#endif
+		Material->AddToRoot();
+		TSharedPtr<FUnLive2DSlateMaterialBrush> SlateBrush = MakeShareable(new FUnLive2DSlateMaterialBrush(Material, FVector2D(64.f, 64.f)));
+		UnLive2DToBlendMaterialList.Add(MapIndex, SlateBrush.ToSharedRef());
+		return  SlateBrush;
+	}
+	return nullptr;
+}
+
+const UTexture2D* SUnLive2DViewUI::GetTexture(const uint8& InTextureIndex) const
+{
+	if (!SourceUnLive2DPtr.IsValid() || !SourceUnLive2DPtr->TextureAssets.IsValidIndex(InTextureIndex)) return nullptr;
+	return SourceUnLive2DPtr->TextureAssets[InTextureIndex];
 }
 
 int32 SUnLive2DViewUI::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyCullingRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const
 {
-	if (!UnLive2DRawModel.IsValid() || !UnLive2DRender.IsValid()) return LayerId;
+	if (!UnLive2DRawModel.IsValid()) return LayerId;
 
-	TSharedPtr<FUnLive2DRenderState> UnLive2DRenderPtr = UnLive2DRender.Pin();
+	FLinearColor WidgetStyleColor = InWidgetStyle.GetColorAndOpacityTint();
+	if (WidgetStyleColor.A <=0) return LayerId;
 
-	if (OnUpDataRender.IsBound())
-	{
-		OnUpDataRender.Execute(UnLive2DRawModel);
-	}
-
-	const Csm::CubismModel* UnLive2DModel = UnLive2DRawModel->GetModel();
-
-	const Csm::csmInt32 DrawableCount = UnLive2DModel->GetDrawableCount();
-	const Csm::csmInt32* RenderOrder = UnLive2DModel->GetDrawableRenderOrders();
-
-	TArray<Csm::csmInt32> SortedDrawableIndexList;
-	SortedDrawableIndexList.SetNum(DrawableCount);
-
-	for (csmInt32 i = 0; i < DrawableCount; i++)
-	{
-		const csmInt32 Order = RenderOrder[i];
-
-		SortedDrawableIndexList[Order] = i;
-	}
 
 	SUnLive2DViewUI* ThisPtr = const_cast<SUnLive2DViewUI*>(this);
-	// 合批
-	for (csmInt32 i = 0; i < DrawableCount; i++)
+	ENQUEUE_RENDER_COMMAND(SUnLive2DViewUI_OnPaint)([ThisPtr](FRHICommandListImmediate& RHICmdList)
 	{
-		const csmInt32 DrawableIndex = SortedDrawableIndexList[i];
-		// <Drawable如果不是显示状态，则通过处理
-		if (!UnLive2DModel->GetDrawableDynamicFlagIsVisible(DrawableIndex)) continue;
+		if (ThisPtr->UnLive2DClippingManager.IsValid())
+		{
+			bool bNoLowPreciseMask = false;
+			ThisPtr->UnLive2DClippingManager->SetupClippingContext(bNoLowPreciseMask);
+			ThisPtr->UnLive2DClippingManager->RenderMask_Full(RHICmdList, GMaxRHIFeatureLevel, ThisPtr->GetMaskTextureRHIRef());
+		}
 
-		if (0 == UnLive2DModel->GetDrawableVertexIndexCount(DrawableIndex)) continue;
+		if (ThisPtr->UnLive2DRenderType == EUnLive2DRenderType::RenderTarget)
+		{
+			ThisPtr->UpdataRTSections(RHICmdList, ThisPtr->bCombinedbBatch);
+			ThisPtr->DrawSeparateToRenderTarget_RenderThread(RHICmdList, ThisPtr->RenderTarget->GetRenderTargetResource(), GMaxRHIFeatureLevel, ThisPtr->MaskBuffer);
+		}
+	});
 
-		CubismClippingContext* ClipContext = UnLive2DRenderPtr->GetClipContextInDrawableIndex(DrawableIndex);
+	if (UnLive2DRenderType == EUnLive2DRenderType::Mesh)
+	{
+		ThisPtr->UpdataSections();
+		for (FCustomVertsData& Item : ThisPtr->UnLive2DCustomVertsData)
+		{
+			bool bCreateIndexData = Item.InterlottingLive2DIndexData.Num() > 0;
+			if (bCreateIndexData && !IsCombinedbBatchDidChange(Item.DrawableCounts)) continue;
+			Item.UpDataVertsData(AllottedGeometry, UnLive2DRawModel.ToSharedRef(), UnLive2DClippingManager);
+		}
 
-		const bool IsMaskDraw = (nullptr != ClipContext);
-
-		ThisPtr->UpDateMesh(AllottedGeometry, DrawableIndex, ClipContext, InWidgetStyle);
+		// 描画
+		ThisPtr->Flush(LayerId, OutDrawElements, bParentEnabled);
 	}
+	else
+	{
+		const ESlateDrawEffect DrawEffects = ShouldBeEnabled(bParentEnabled) ? ESlateDrawEffect::None : ESlateDrawEffect::DisabledEffect;
+		const FLinearColor FinalColorAndOpacity(InWidgetStyle.GetColorAndOpacityTint() * SourceUnLive2DPtr->TintColorAndOpacity);
+		TSharedPtr<FSlateBrush> SlateBrush = ThisPtr->MakeSlateBrushByFlags(0,0);
+		FSlateDrawElement::MakeBox(OutDrawElements, LayerId, AllottedGeometry.ToPaintGeometry(), SlateBrush.Get(), DrawEffects, FinalColorAndOpacity);
 
-	// 描画
-	ThisPtr->Flush(LayerId, OutDrawElements, bParentEnabled);
+	}
 
 	return LayerId;
 }
@@ -315,4 +324,111 @@ int32 SUnLive2DViewUI::OnPaint(const FPaintArgs& Args, const FGeometry& Allotted
 FVector2D SUnLive2DViewUI::ComputeDesiredSize(float) const
 {
 	return FVector2D(64.f, 64.f);
+}
+
+void SUnLive2DViewUI::OnMotionPlayeEnd()
+{
+
+}
+
+FTextureRHIRef SUnLive2DViewUI::GetMaskTextureRHIRef() const
+{
+	if (UnLive2DRenderType == EUnLive2DRenderType::Mesh)
+	{
+#if ENGINE_MAJOR_VERSION >=5 && ENGINE_MINOR_VERSION > 1
+		const FTextureRHIRef RenderTargetTexture = MaskBufferRenderTarget->GetRenderTargetResource()->GetRenderTargetTexture();
+#else
+		FRHITexture2D* RenderTargetTexture = MaskBufferRenderTarget->GetRenderTargetResource()->GetRenderTargetTexture();
+#endif
+		return RenderTargetTexture;
+	}
+	else
+		return MaskBuffer;
+}
+
+void SUnLive2DViewUI::FCustomVertsData::UpDataVertsData(const FGeometry& AllottedGeometry,TSharedRef<FUnLive2DRawModel> InUnLive2DRawModel, TWeakPtr<CubismClippingManager_UE> InUnLive2DClippingManager)
+{
+	bool bCreateIndexData = InterlottingLive2DIndexData.Num() > 0;
+	uint16 VerticesIndex = 0;
+
+	Csm::CubismModel* UnLive2DModel = InUnLive2DRawModel->GetModel();
+	FULVector2f BoundsSize = FULVector2f(UnLive2DModel->GetCanvasWidth(), UnLive2DModel->GetCanvasHeight());
+
+	const FULVector2f WidgetSize = AllottedGeometry.GetLocalSize();
+
+	const FULVector2f WidgetScale = WidgetSize / BoundsSize;
+	const float SetupScale = WidgetScale.GetMin();
+	const FSlateRenderTransform& Transform = AllottedGeometry.GetAccumulatedRenderTransform();
+
+	bool bMask = Flags & EUnLive2DShaderFlags::Mesk;
+	for (const int32& DrawableIndex : DrawableCounts)
+	{
+		if (!bCreateIndexData)
+		{
+			const csmInt32 VertexIndexCount = UnLive2DModel->GetDrawableVertexIndexCount(DrawableIndex); // 获得Drawable的顶点索引个数
+			const csmUint16* IndicesArray = UnLive2DModel->GetDrawableVertexIndices(DrawableIndex); //顶点索引
+			for (int32 Index = 0; Index < VertexIndexCount; ++Index)
+			{
+				InterlottingLive2DIndexData.Add(VerticesIndex + IndicesArray[Index]);
+			}
+		}
+
+		csmFloat32 Opacity = UnLive2DModel->GetDrawableOpacity(DrawableIndex); // 获取不透明度
+
+		const csmInt32 NumVertext = UnLive2DModel->GetDrawableVertexCount(DrawableIndex); // 获得Drawable顶点的个数
+		const csmFloat32* VertexArray = UnLive2DModel->GetDrawableVertices(DrawableIndex); // 顶点组
+		const  Live2D::Cubism::Core::csmVector2* UVArray = UnLive2DModel->GetDrawableVertexUvs(DrawableIndex); // 获取UV组
+
+		FUnLiveMatrix MartixForDraw;
+		FUnLiveVector4 ts_BaseColor;
+		FColor ClipColor = FColor::White;
+		if (bMask && InUnLive2DClippingManager.IsValid())
+		{
+			InUnLive2DClippingManager.Pin()->GetFillMaskMartixForMask(DrawableIndex, MartixForDraw, ts_BaseColor);
+			if (const CubismRenderer::CubismTextureColor* ChanelFlagColor = InUnLive2DClippingManager.Pin()->GetChannelFlagAsColorByDrawableIndex(DrawableIndex))
+				ClipColor = FColor(ChanelFlagColor->R * 255, ChanelFlagColor->G * 255, ChanelFlagColor->B * 255, ChanelFlagColor->A * 255);
+			
+		}
+		bool bInvertedMesk = UnLive2DModel->GetDrawableInvertedMask(DrawableIndex);
+		for (int32 VertexIndex = 0; VertexIndex < NumVertext; ++VertexIndex)
+		{
+			FUnLiveVector4 Position = FUnLiveVector4(VertexArray[VertexIndex * 2], VertexArray[VertexIndex * 2 + 1], 0, 1);
+			FULVector2f NewPos = Transform.TransformPoint(FULVector2f(Position.X, Position.Y) * SetupScale * FULVector2f(1.f, -1.f) + (WidgetSize / 2));
+
+			FULVector2f MaskUV = FULVector2f(1.f, 1.f);
+			if (bMask)
+			{
+				FUnLiveVector4 ClipPosition = MartixForDraw.TransformFVector4(Position);
+				MaskUV = FULVector2f(ClipPosition.X, 1 + ClipPosition.Y);
+				MaskUV /= ClipPosition.W;
+			}
+			FSlateVertex* VertexIndexData = bCreateIndexData ? &InterlottingLive2DVertexData[VerticesIndex + VertexIndex] : &InterlottingLive2DVertexData.AddDefaulted_GetRef();
+			VertexIndexData->SetPosition(NewPos);
+			VertexIndexData->MaterialTexCoords = FULVector2f(Opacity); // TexCoord4
+			VertexIndexData->PixelSize[0] = bMask ? 1.f : 0.f; // TexCoord3 X
+			VertexIndexData->PixelSize[1] = bInvertedMesk ? 1.f : 0.f; // TexCoord3 Y
+			VertexIndexData->Color = ClipColor;
+			VertexIndexData->SetTexCoords(FUnLiveVector4(UVArray[VertexIndex].X, 1 - UVArray[VertexIndex].Y, MaskUV.X, MaskUV.Y)); // TexCoord0 and TexCoord1
+
+		}
+		VerticesIndex += NumVertext;
+	}
+}
+
+SUnLive2DViewUI::FUnLive2DSlateMaterialBrush::FUnLive2DSlateMaterialBrush(UTexture* InTexture)
+	: FSlateBrush(ESlateBrushDrawType::Image, TEXT("None"), FMargin(), ESlateBrushTileType::NoTile, ESlateBrushImageType::FullColor, FVector2D(64.f, 64.f), FLinearColor::White, InTexture)
+	, UnLive2DRenderType(EUnLive2DRenderType::RenderTarget)
+{
+	FString BrushName = TEXT("UnLive2DBrush");
+	BrushName.AppendInt(UnLive2DBrushNameId++);
+	ResourceName = FName(BrushName);
+}
+
+SUnLive2DViewUI::FUnLive2DSlateMaterialBrush::FUnLive2DSlateMaterialBrush(UMaterialInterface* InMaterial, const FVector2D& InImageSize)
+	: FSlateBrush(ESlateBrushDrawType::Image, TEXT("None"), FMargin(), ESlateBrushTileType::NoTile, ESlateBrushImageType::FullColor, InImageSize, FLinearColor::White, InMaterial)
+	, UnLive2DRenderType(EUnLive2DRenderType::Mesh)
+{
+	FString BrushName = TEXT("UnLive2DBrush");
+	BrushName.AppendInt(UnLive2DBrushNameId++);
+	ResourceName = FName(BrushName);
 }

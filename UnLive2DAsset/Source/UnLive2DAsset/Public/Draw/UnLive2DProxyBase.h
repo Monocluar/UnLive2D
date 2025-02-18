@@ -1,26 +1,26 @@
 ﻿#pragma once
 #include "PrimitiveSceneProxy.h"
+#include "IUnLive2DRenderBase.h"
 
 class UUnLive2DRendererComponent;
 class FUnLive2DRawModel;
 
-class UnLive2DProxyBase : public FPrimitiveSceneProxy
+class UnLive2DProxyBase : public FPrimitiveSceneProxy 
 {
 public:
 
 	UnLive2DProxyBase(UUnLive2DRendererComponent* InComponent);
 
-protected:
-
-	bool UpDataDrawableIndexList(TArray<uint16>& OutSortedDrawableIndexList);
-
 public:
 	virtual void OnUpData(){};
 	virtual void GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials, bool bGetDebugMaterials = false) const {};
+	virtual const FBoxSphereBounds& GetLocalBox() const;
+
+#if WITH_EDITOR
+	virtual void UpDataUnLive2DProperty(FName PropertyName){};
+#endif
 
 protected:
-	// Live2D模型设置模块
-	TWeakPtr<FUnLive2DRawModel> UnLive2DRawModel;
 
 #if ENGINE_MAJOR_VERSION < 5
 	UUnLive2DRendererComponent* OwnerComponent;
@@ -31,4 +31,8 @@ protected:
 private:
 	// 绘制Buffer数
 	TArray<uint16> DrawableIndexList;
+
+protected:
+	uint8 Live2DScale;
+	FBoxSphereBounds LocalBox;
 };

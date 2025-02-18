@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "UObject/ObjectMacros.h"
 #include "Components/Widget.h"
+#include "CubismConfig.h"
 #include "UnLive2DViewRendererUI.generated.h"
 
 class SUnLive2DViewUI;
@@ -22,18 +23,40 @@ protected:
 	UPROPERTY(EditAnywhere, Category = Live2D)
 		UUnLive2D* SourceUnLive2D;
 
+	// 动画频率
+	UPROPERTY(EditAnywhere, Category = Live2D, meta = (ClampMin = 0.0f))
+		float PlayRate;
+
+	UPROPERTY()
+	FGetFloat PlayRateDelegate;
+
 public:
+	// 渲染模式
+	UPROPERTY(EditAnywhere, Category = Rendering)
+		EUnLive2DRenderType UnLive2DRenderType;
+
+
+public: // Mesh
 	// Live2D颜色混合模式为CubismBlendMode_Normal使用的材质
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
-		UMaterialInterface* UnLive2DNormalMaterial;
+	UPROPERTY(EditAnywhere, Category = Rendering, meta = (AllowedClasses = "MaterialInterface", EditCondition = "UnLive2DRenderType == EUnLive2DRenderType::Mesh", EditConditionHides))
+		FSoftObjectPath UnLive2DNormalMaterial;
 
 	// Live2D颜色混合模式为CubismBlendMode_Additive使用的材质
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
-		UMaterialInterface* UnLive2DAdditiveMaterial;
+	UPROPERTY(EditAnywhere, Category = Rendering, meta = (AllowedClasses = "MaterialInterface", EditCondition = "UnLive2DRenderType == EUnLive2DRenderType::Mesh", EditConditionHides))
+		FSoftObjectPath UnLive2DAdditiveMaterial;
 
 	// Live2D颜色混合模式为CubismBlendMode_Multiplicative使用的材质
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
-		UMaterialInterface* UnLive2DMultiplyMaterial;
+	UPROPERTY(EditAnywhere, Category = Rendering, meta = (AllowedClasses = "MaterialInterface", EditCondition = "UnLive2DRenderType == EUnLive2DRenderType::Mesh", EditConditionHides))
+		FSoftObjectPath UnLive2DMultiplyMaterial;
+
+public: // RenderTarget
+
+	// 渲染大小
+	UPROPERTY(EditAnywhere, Category = Rendering, meta = (UIMin = "256", UIMax = "2048", EditCondition = "UnLive2DRenderType == EUnLive2DRenderType::RenderTarget", EditConditionHides))
+		int32 RenderTargetSize;
+
+	UPROPERTY(EditAnywhere, Category = Rendering, meta = (AllowedClasses = "MaterialInterface", EditCondition = "UnLive2DRenderType == EUnLive2DRenderType::RenderTarget", EditConditionHides))
+		FSoftObjectPath UnLive2DRTMaterial;
 
 public:
 	// 播放动画
@@ -52,11 +75,7 @@ public:
 
 	FORCEINLINE const UUnLive2D* GetUnLive2D() const { return SourceUnLive2D; };
 
-protected:
 
-	virtual void SlateUpDataRender(TWeakPtr<class FUnLive2DRawModel> InUnLive2DRawModel);
-
-	TSharedRef<class FUnLive2DRenderState> InitUnLive2DRender();
 
 #if WITH_EDITOR
 protected:
@@ -78,8 +97,6 @@ protected:
 
 	TSharedPtr<SUnLive2DViewUI> MySlateWidget;
 
-	// UnLive2D 渲染模块
-	TSharedPtr<class FUnLive2DRenderState> UnLive2DRenderPtr;
-
-	friend class SUnLive2DViewUI;
+protected:
+	PROPERTY_BINDING_IMPLEMENTATION(float, PlayRate);
 };

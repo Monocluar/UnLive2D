@@ -17,8 +17,7 @@ public class UnLive2DAsset : ModuleRules
         PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
-                "Core",
-                "ProceduralMeshComponent",
+                "Core"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -37,7 +36,8 @@ public class UnLive2DAsset : ModuleRules
                 "Projects",
 				"RigVM",
                 "Json",
-                "CubismSdkForNative"
+                "CubismSdkForNative",
+                "PhysicsCore",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

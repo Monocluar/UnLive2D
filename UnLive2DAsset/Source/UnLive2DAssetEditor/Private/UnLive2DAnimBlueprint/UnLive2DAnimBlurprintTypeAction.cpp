@@ -12,6 +12,7 @@
 #include "ToolMenuSection.h"
 #include "UnLive2D.h"
 #include "IContentBrowserSingleton.h"
+#include "UnLive2DCubismCore.h"
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
 
@@ -32,7 +33,7 @@ TSharedPtr<SWidget> FUnLive2DAnimBlurprintTypeAction::GetThumbnailOverlay(const 
 	const FSlateBrush* Icon = FSlateIconFinder::FindIconBrushForClass(UUnLive2DAnimBlueprint::StaticClass());
 
 	return SNew(SBorder)
-		.BorderImage(FAppStyle::GetNoBrush())
+		.BorderImage(FUnLive2DStyle::GetNoBrush())
 		.Visibility(EVisibility::HitTestInvisible)
 		.Padding(FMargin(0.0f, 0.0f, 0.0f, 3.0f))
 		.HAlign(HAlign_Right)

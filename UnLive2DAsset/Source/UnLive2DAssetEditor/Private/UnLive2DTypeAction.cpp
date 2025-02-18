@@ -8,6 +8,7 @@
 #include "ContentBrowserModule.h"
 #include "Animation/UnLive2DAnimBlueprint.h"
 #include "IContentBrowserSingleton.h"
+#include "UnLive2DCubismCore.h"
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
 
@@ -48,7 +49,7 @@ void FUnLive2DTypeAction::GetActions(const TArray<UObject*>& InObjects, struct F
 		NSLOCTEXT("AssetTypeActions", "CreateSkeletonSubmenu_ToolTip", "Create assets for this skeleton"),
 		FNewMenuDelegate::CreateSP(this, &FUnLive2DTypeAction::FillCreateMenu, UnLive2DArr),
 		false,
-		FSlateIcon(FAppStyle::GetAppStyleSetName(), "Persona.AssetActions.CreateAnimAsset")
+		FSlateIcon(FUnLive2DAppStyle::GetStyleSetName(), "Persona.AssetActions.CreateAnimAsset")
 	);
 }
 

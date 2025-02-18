@@ -53,7 +53,7 @@ public:
 #if ENGINE_MAJOR_VERSION >= 5
 		AssetDirtyBrush = FAppStyle::GetBrush("ContentBrowser.ContentDirty");
 #else
-		AssetDirtyBrush = FAppStyle::Get().GetBrush("Icons.DirtyBadge");
+		AssetDirtyBrush = FEditorStyle::Get().GetBrush("Icons.DirtyBadge");
 #endif
 
 		{
@@ -172,7 +172,7 @@ protected:
 				];
 #else
 	return SAssignNew(CheckBox, SCheckBox)
-			.Style(FAppStyle::Get(), "SegmentedCombo.Left")
+			.Style(FEditorStyle::Get(), "SegmentedCombo.Left")
 			.OnCheckStateChanged(this, &SUnLive2DAssetShortcut::HandleOpenAssetShortcut)
 			.IsChecked(this, &SUnLive2DAssetShortcut::GetCheckState)
 			.Visibility(this, &SUnLive2DAssetShortcut::GetButtonVisibility)
@@ -360,7 +360,11 @@ protected:
 	FSlateColor GetAssetTextColor() const
 	{
 		static const FName InvertedForeground("InvertedForeground");
+#if ENGINE_MAJOR_VERSION >= 5
 		return GetCheckState() == ECheckBoxState::Checked || CheckBox->IsHovered() ? FAppStyle::GetSlateColor(InvertedForeground) : FSlateColor::UseForeground();
+#else
+		return GetCheckState() == ECheckBoxState::Checked || CheckBox->IsHovered() ? FEditorStyle::GetSlateColor(InvertedForeground) : FSlateColor::UseForeground();
+#endif
 	}
 
 	EVisibility GetButtonVisibility() const

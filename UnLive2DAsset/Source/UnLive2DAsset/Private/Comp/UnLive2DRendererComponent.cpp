@@ -3,7 +3,6 @@
 #include "FWPort/UnLive2DRawModel.h"
 #include "UnLive2D.h"
 #include "CubismConfig.h"
-#include "Draw/UnLive2DSepRenderer.h"
 
 #include "CubismFramework.hpp"
 #include "Model/CubismModel.hpp"
@@ -16,10 +15,6 @@
 #include "UnLive2DSetting.h"
 #include "PhysicsEngine/BodySetup.h"
 
-#if !UE_VERSION_OLDER_THAN(5,0,0)
-#include "Math/Vector4.h"
-#endif
-
 #if WITH_EDITOR
 #include "Id/CubismIdManager.hpp"
 #endif
@@ -31,10 +26,11 @@ using namespace Csm;
 UUnLive2DRendererComponent::UUnLive2DRendererComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, SourceUnLive2D(nullptr)
-	, UnLive2DRenderType(EUnLive2DRenderType::RenderTarget)
-	, UnLive2DSceneProxy(nullptr)
+	, PlayRate(1.f)
+	, UnLive2DRenderType(EUnLive2DRenderType::Mesh)
+	, RenderTargetSize(512)
 {
-	BoundsScale = 1024.f;
+	//BoundsScale = 1024.f;
 	if (!ObjectInitializer.GetObj()->HasAnyFlags(RF_ClassDefaultObject))
 	{
 		PrimaryComponentTick.bCanEverTick = true;
@@ -49,6 +45,7 @@ UUnLive2DRendererComponent::UUnLive2DRendererComponent(const FObjectInitializer&
 
 	UnLive2DMultiplyMaterial = Setting->DefaultUnLive2DMultiplyMaterial_Mesh;
 
+	UnLive2DRTMaterial = Setting->DefaultUnLive2DRenderTargetMaterial;
 }
 
 
@@ -72,15 +69,24 @@ void UUnLive2DRendererComponent::TickComponent(float DeltaTime, ELevelTick TickT
 
 	if (UnLive2DRawModel.IsValid())
 	{
-		UnLive2DRawModel->OnUpDate(DeltaTime * SourceUnLive2D->PlayRate);
+		UnLive2DRawModel->OnUpDate(DeltaTime * PlayRate);
 		//UpdateRenderer();
-	}
-	if (UnLive2DSceneProxy)
-	{
-		UnLive2DSceneProxy->OnUpData();
+		MarkRenderDynamicDataDirty();
 	}
 
 #endif
+}
+
+void UUnLive2DRendererComponent::SendRenderDynamicData_Concurrent()
+{
+	if (UnLive2DProxyBase* UnLive2DSceneProxy = static_cast<UnLive2DProxyBase*>(SceneProxy))
+	{
+		UnLive2DSceneProxy->OnUpData();
+		if (UnLive2DRenderType == EUnLive2DRenderType::Mesh)
+		{
+			LocalBounds = UnLive2DSceneProxy->GetLocalBox();
+		}
+	}
 }
 
 void UUnLive2DRendererComponent::OnRegister()
@@ -126,6 +132,16 @@ void UUnLive2DRendererComponent::PostEditChangeProperty(FPropertyChangedEvent& P
 		{
 			MarkRenderStateDirty();
 		}
+
+		static TArray<FName> MaterialPropertyArr = { GET_MEMBER_NAME_STRING_CHECKED(UUnLive2DRendererComponent, UnLive2DNormalMaterial),
+			GET_MEMBER_NAME_STRING_CHECKED(UUnLive2DRendererComponent, UnLive2DAdditiveMaterial),
+			GET_MEMBER_NAME_STRING_CHECKED(UUnLive2DRendererComponent, UnLive2DMultiplyMaterial),
+			GET_MEMBER_NAME_STRING_CHECKED(UUnLive2DRendererComponent, UnLive2DRTMaterial) };
+
+		if (MaterialPropertyArr.Contains(PropertyName))
+		{
+			MarkRenderStateDirty();
+		}
 	}
 
 	Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -135,11 +151,13 @@ void UUnLive2DRendererComponent::PostEditChangeProperty(FPropertyChangedEvent& P
 
 FPrimitiveSceneProxy* UUnLive2DRendererComponent::CreateSceneProxy()
 {
-	UnLive2DSceneProxy = nullptr;
+	if (SourceUnLive2D == nullptr) return nullptr;
+	UnLive2DProxyBase* UnLive2DSceneProxy = nullptr;
 	if (UnLive2DRenderType == EUnLive2DRenderType::Mesh)
 		UnLive2DSceneProxy = new FUnLive2DSceneProxy(this);
 	else
 		UnLive2DSceneProxy = new FUnLive2DTargetBoxProxy(this);
+	LocalBounds = UnLive2DSceneProxy->GetLocalBox();
 	return UnLive2DSceneProxy;
 }
 
@@ -155,23 +173,47 @@ void UUnLive2DRendererComponent::PostLoad()
 
 UBodySetup* UUnLive2DRendererComponent::GetBodySetup()
 {
-	if (ProcMeshBodySetup == nullptr)
+	if (ProcMeshBodySetup == nullptr && UnLive2DRawModel.IsValid())
 	{
-		UBodySetup* NewBodySetup = NewObject<UBodySetup>(this, NAME_None, (IsTemplate() ? RF_Public | RF_ArchetypeObject : RF_NoFlags));
-		NewBodySetup->BodySetupGuid = FGuid::NewGuid();
+		UBodySetup* NewBodySetup = NewObject<UBodySetup>(this);
+		NewBodySetup->CollisionTraceFlag = CTF_UseSimpleAsComplex;
+		NewBodySetup->AggGeom.BoxElems.Add(FKBoxElem());
+		FKBoxElem* BoxElem = NewBodySetup->AggGeom.BoxElems.GetData();
+		const float Width = LocalBounds.BoxExtent.X;
+		const float Height = LocalBounds.BoxExtent.Y;
+		const FVector Origin = FVector(.5f,
+			-(Width)+(Width),
+			-(Height)+(Height));
 
-		NewBodySetup->bGenerateMirroredCollision = false;
-		NewBodySetup->bDoubleSidedGeometry = true;
-		NewBodySetup->CollisionTraceFlag = CTF_UseComplexAsSimple ;
+		BoxElem->X = 0.01f;
+		BoxElem->Y = Width;
+		BoxElem->Z = Height;
+
+		BoxElem->SetTransform(FTransform::Identity);
+		BoxElem->Center = Origin;
 		ProcMeshBodySetup = NewBodySetup;
+
 	}
 	return ProcMeshBodySetup;
 }
 
 
+FCollisionShape UUnLive2DRendererComponent::GetCollisionShape(float Inflation) const
+{
+	FVector BoxHalfExtent = (FVector(0.01f, LocalBounds.BoxExtent.X, LocalBounds.BoxExtent.Y) * GetComponentTransform().GetScale3D()) + Inflation;
+
+	if (Inflation < 0.0f)
+	{
+		// Don't shrink below zero size.
+		BoxHalfExtent = BoxHalfExtent.ComponentMax(FVector::ZeroVector);
+	}
+
+	return FCollisionShape::MakeBox(BoxHalfExtent);
+}
+
 void UUnLive2DRendererComponent::GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials, bool bGetDebugMaterials /*= false*/) const
 {
-	if (UnLive2DSceneProxy)
+	if (UnLive2DProxyBase* UnLive2DSceneProxy = static_cast<UnLive2DProxyBase*>(SceneProxy))
 	{
 		UnLive2DSceneProxy->GetUsedMaterials(OutMaterials, bGetDebugMaterials);
 	}
@@ -179,7 +221,6 @@ void UUnLive2DRendererComponent::GetUsedMaterials(TArray<UMaterialInterface*>& O
 
 FBoxSphereBounds UUnLive2DRendererComponent::CalcBounds(const FTransform& LocalToWorld) const
 {
-	//return Super::CalcBounds(LocalToWorld);
 	FBoxSphereBounds Ret(LocalBounds.TransformBy(LocalToWorld));
 
 	Ret.BoxExtent *= BoundsScale;
@@ -192,7 +233,7 @@ void UUnLive2DRendererComponent::InitUnLive2D()
 {
 	UWorld* World = GetWorld();
 
-	if (World == nullptr || World->bIsTearingDown || SourceUnLive2D == nullptr ) return;
+	if (World == nullptr || World->bIsTearingDown || SourceUnLive2D == nullptr) return;
 
 
 	if (!UnLive2DRawModel.IsValid())
@@ -209,35 +250,26 @@ void UUnLive2DRendererComponent::InitUnLive2D()
 			UnLive2DRawModel->OnMotionPlayEnd.BindUObject(this, &UUnLive2DRendererComponent::OnMotionPlayeEnd);
 		}
 	}
-
-	if (UnLive2DRawModel.IsValid())
-	{
-		if (Csm::CubismModel* UnLive2DModel = UnLive2DRawModel->GetModel())
-		{
-			csmFloat32 CanvasWidth = UnLive2DModel->GetCanvasWidth();
-			csmFloat32 CanvasHeight = UnLive2DModel->GetCanvasHeight();
-			FBox LocalBox(FVector(-CanvasWidth, 0, -CanvasHeight), FVector(CanvasWidth, 0, CanvasHeight));
-			LocalBounds = FBoxSphereBounds(LocalBox);
-		}
-	}
+	// Need to send to render thread
+	MarkRenderStateDirty();
 
 	// Update global bounds
 	UpdateBounds();
-	// Need to send to render thread
-	MarkRenderTransformDirty();
 }
 
 bool UUnLive2DRendererComponent::SetUnLive2D(UUnLive2D* NewUnLive2D)
 {
 	if (NewUnLive2D == nullptr) return false;
-	
-	if(NewUnLive2D == SourceUnLive2D) return false;
+
+	if (NewUnLive2D == SourceUnLive2D) return false;
 
 	if ((GetOwner() != nullptr) && !AreDynamicDataChangesAllowed()) return false;
 
 	SourceUnLive2D = NewUnLive2D;
 
-	//SourceUnLive2D->OnUpDataUnLive2DProperty.BindUObject(this, &UUnLive2DRendererComponent::UpDataUnLive2DProperty);
+#if WITH_EDITOR
+	SourceUnLive2D->OnUpDataUnLive2DProperty.BindUObject(this, &UUnLive2DRendererComponent::UpDataUnLive2DProperty);
+#endif
 
 	InitUnLive2D();
 
@@ -292,12 +324,12 @@ bool UUnLive2DRendererComponent::GetModelParamterGroup(TArray<FUnLive2DParameter
 		const char* ParameterIDName = ParameterIds[i];
 
 		ParameterArr.Add(FUnLive2DParameterData(
-		i,
-		ParameterIDName,
-		UnLive2DModel->GetParameterValue(i), // 当前值
-		UnLive2DModel->GetParameterDefaultValue(i), // 默认值
-		UnLive2DModel->GetParameterMinimumValue(i), // 最小值
-		UnLive2DModel->GetParameterMaximumValue(i))); // 最大值
+			i,
+			ParameterIDName,
+			UnLive2DModel->GetParameterValue(i), // 当前值
+			UnLive2DModel->GetParameterDefaultValue(i), // 默认值
+			UnLive2DModel->GetParameterMinimumValue(i), // 最小值
+			UnLive2DModel->GetParameterMaximumValue(i))); // 最大值
 	}
 
 	return true;
@@ -358,6 +390,25 @@ bool UUnLive2DRendererComponent::GetModelParamterID(FName ParameterStr, int32& P
 
 	ParameterID = UnLive2DModel->GetParameterIndex(ParameterHandle);
 	return true;
+}
+
+void UUnLive2DRendererComponent::UpDataUnLive2DProperty(FName PropertyName)
+{
+	if (PropertyName == TEXT("TintColorAndOpacity"))
+	{
+		if (UnLive2DProxyBase* UnLive2DSceneProxy = static_cast<UnLive2DProxyBase*>(SceneProxy))
+		{
+			UnLive2DSceneProxy->UpDataUnLive2DProperty(PropertyName);
+		}
+	}
+	else if (PropertyName == TEXT("Live2DScale"))
+	{
+		// Need to send to render thread
+		MarkRenderStateDirty();
+
+		// Update global bounds
+		UpdateBounds();
+	}
 }
 
 #endif

@@ -17,7 +17,7 @@ class FUnLive2DRawModel;
 
 
 
-UCLASS(ClassGroup = UnLive2D, meta = (BlueprintSpawnableComponent), hidecategories=(Material,Mesh))
+UCLASS(ClassGroup = UnLive2D, meta = (BlueprintSpawnableComponent), hidecategories = (Material, Mesh))
 class UNLIVE2DASSET_API UUnLive2DRendererComponent : public UMeshComponent
 {
 	GENERATED_UCLASS_BODY()
@@ -26,7 +26,9 @@ protected:
 
 	virtual void BeginPlay() override;
 
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+	virtual void SendRenderDynamicData_Concurrent() override;
 
 	virtual void OnRegister() override;
 
@@ -44,11 +46,14 @@ protected:
 
 	//~ Begin UPrimitiveComponent Interface.
 	virtual FPrimitiveSceneProxy* CreateSceneProxy() override;
-	virtual class UBodySetup* GetBodySetup() override;
+	virtual FCollisionShape GetCollisionShape(float Inflation) const override;
 	//~ End UPrimitiveComponent Interface.
 
 
 	virtual void GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials, bool bGetDebugMaterials = false) const override;
+
+public:
+	virtual class UBodySetup* GetBodySetup() override;
 
 protected:
 
@@ -61,22 +66,36 @@ protected:
 		UUnLive2D* SourceUnLive2D;
 
 
+	// 动画频率
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Live2D, meta = (ClampMin = 0.0f))
+		float PlayRate;
+
 public:
+	// 渲染模式
+	UPROPERTY(EditAnywhere, Category = Rendering)
+		EUnLive2DRenderType UnLive2DRenderType;
+
+public: // Mesh
 	// Live2D颜色混合模式为CubismBlendMode_Normal使用的材质
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering, meta = (AllowedClasses = "UMaterialInterface"))
-	FSoftObjectPath UnLive2DNormalMaterial;
+	UPROPERTY(EditAnywhere, Category = Rendering, meta = (AllowedClasses = "MaterialInterface", EditCondition = "UnLive2DRenderType == EUnLive2DRenderType::Mesh", EditConditionHides))
+		FSoftObjectPath UnLive2DNormalMaterial;
 
 	// Live2D颜色混合模式为CubismBlendMode_Additive使用的材质
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering, meta = (AllowedClasses = "UMaterialInterface"))
-	FSoftObjectPath UnLive2DAdditiveMaterial;
+	UPROPERTY(EditAnywhere, Category = Rendering, meta = (AllowedClasses = "MaterialInterface", EditCondition = "UnLive2DRenderType == EUnLive2DRenderType::Mesh", EditConditionHides))
+		FSoftObjectPath UnLive2DAdditiveMaterial;
 
 	// Live2D颜色混合模式为CubismBlendMode_Multiplicative使用的材质
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering, meta = (AllowedClasses = "UMaterialInterface"))
-	FSoftObjectPath UnLive2DMultiplyMaterial;
+	UPROPERTY(EditAnywhere, Category = Rendering, meta = (AllowedClasses = "MaterialInterface", EditCondition = "UnLive2DRenderType == EUnLive2DRenderType::Mesh", EditConditionHides))
+		FSoftObjectPath UnLive2DMultiplyMaterial;
 
-	// 渲染模式
-	UPROPERTY(EditAnywhere)
-	EUnLive2DRenderType UnLive2DRenderType;
+public: // RenderTarget
+
+	// 渲染大小
+	UPROPERTY(EditAnywhere, Category = Rendering, meta = (UIMin = "256", UIMax = "2048", EditCondition = "UnLive2DRenderType == EUnLive2DRenderType::RenderTarget", EditConditionHides))
+		int32 RenderTargetSize;
+
+	UPROPERTY(EditAnywhere, Category = Rendering, meta = (AllowedClasses = "MaterialInterface", EditCondition = "UnLive2DRenderType == EUnLive2DRenderType::RenderTarget", EditConditionHides))
+		FSoftObjectPath UnLive2DRTMaterial;
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Live2D")
@@ -101,13 +120,15 @@ public:
 	FORCEINLINE TWeakPtr<FUnLive2DRawModel> GetUnLive2DRawModel() const { return UnLive2DRawModel; }
 
 #if WITH_EDITOR
-	 bool GetModelParamterGroup(TArray<FUnLive2DParameterData>& ParameterArr);
+	bool GetModelParamterGroup(TArray<FUnLive2DParameterData>& ParameterArr);
 
-	 void SetModelParamterValue(int32  ParameterID, float NewParameter, EUnLive2DExpressionBlendType::Type BlendType = EUnLive2DExpressionBlendType::ExpressionBlendType_Overwrite);
+	void SetModelParamterValue(int32  ParameterID, float NewParameter, EUnLive2DExpressionBlendType::Type BlendType = EUnLive2DExpressionBlendType::ExpressionBlendType_Overwrite);
 
-	 bool GetModelParamterIDData(FName ParameterStr, FUnLive2DParameterData& Parameter);
+	bool GetModelParamterIDData(FName ParameterStr, FUnLive2DParameterData& Parameter);
 
-	 bool GetModelParamterID(FName ParameterStr, int32& ParameterID);
+	bool GetModelParamterID(FName ParameterStr, int32& ParameterID);
+
+	void UpDataUnLive2DProperty(FName PropertyName);
 #endif
 
 protected:
@@ -121,9 +142,8 @@ private:
 	// Live2D模型设置模块
 	TSharedPtr<FUnLive2DRawModel> UnLive2DRawModel;
 
-	FBoxSphereBounds LocalBounds;
-	TObjectPtr<class UBodySetup> ProcMeshBodySetup;
+	class UBodySetup* ProcMeshBodySetup;
 
-	class UnLive2DProxyBase* UnLive2DSceneProxy;
+	FBoxSphereBounds LocalBounds;
 
 };

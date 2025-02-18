@@ -11,10 +11,10 @@
 
 UUnLive2D::UUnLive2D(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
-	, PlayRate(1.f)
+	, Live2DScale(100)
 	, TintColorAndOpacity(FLinearColor::White)
 {
-	bTryLowPreciseMask = true;
+	//bTryLowPreciseMask = true;
 	// 初始化Live2D库（只需要初始化一次）
 	UCubismBpLib::InitCubism();
 }
@@ -28,12 +28,12 @@ void UUnLive2D::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEve
 
 	if ( MemberPropertyName == GET_MEMBER_NAME_STRING_CHECKED(UUnLive2D, TintColorAndOpacity))
 	{
-		if (OnUpDataUnLive2DProperty.IsBound())
-		{
-			OnUpDataUnLive2DProperty.Execute();
-		}
+		if (OnUpDataUnLive2DProperty.IsBound()) OnUpDataUnLive2DProperty.Execute(TEXT("TintColorAndOpacity"));
 	}
-
+	else if (MemberPropertyName == GET_MEMBER_NAME_STRING_CHECKED(UUnLive2D, Live2DScale))
+	{
+		if (OnUpDataUnLive2DProperty.IsBound()) OnUpDataUnLive2DProperty.Execute(TEXT("Live2DScale"));
+	}
 	 
 }
 #endif

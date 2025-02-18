@@ -19,6 +19,7 @@
 #include "ClassViewerModule.h"
 #include "ContentBrowserModule.h"
 #include "IContentBrowserSingleton.h"
+#include "UnLive2DCubismCore.h"
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
 
@@ -40,7 +41,7 @@ public:
 		[
 			SNew(SBorder)
 			.Visibility(EVisibility::Visible)
-			.BorderImage(FAppStyle::GetBrush("Menu.Background"))
+			.BorderImage(FUnLive2DStyle::GetBrush("Menu.Background"))
 			[
 				SNew(SBox)
 				.Visibility(EVisibility::Visible)
@@ -52,7 +53,7 @@ public:
 					.Padding(0.0f, 10.0f, 0.0f, 0.0f)
 					[
 						SNew(SBorder)
-						.BorderImage(FAppStyle::GetBrush("ToolPanel.GroupBorder"))
+						.BorderImage(FUnLive2DStyle::GetBrush("ToolPanel.GroupBorder"))
 						.Content()
 						[
 							SAssignNew(UnLive2DContainer, SVerticalBox)
@@ -67,14 +68,14 @@ public:
 					.Padding(8.f)
 					[
 						SNew(SUniformGridPanel)
-						.SlotPadding(FAppStyle::GetMargin("StandardDialog.SlotPadding"))
-						.MinDesiredSlotWidth(FAppStyle::GetFloat("StandardDialog.MinDesiredSlotWidth"))
-						.MinDesiredSlotHeight(FAppStyle::GetFloat("StandardDialog.MinDesiredSlotHeight"))
+						.SlotPadding(FUnLive2DStyle::GetMargin("StandardDialog.SlotPadding"))
+						.MinDesiredSlotWidth(FUnLive2DStyle::GetFloat("StandardDialog.MinDesiredSlotWidth"))
+						.MinDesiredSlotHeight(FUnLive2DStyle::GetFloat("StandardDialog.MinDesiredSlotHeight"))
 						+ SUniformGridPanel::Slot(0, 0)
 						[
 							SNew(SButton)
 							.HAlign(HAlign_Center)
-							.ContentPadding(FAppStyle::GetMargin("StandardDialog.ContentPadding"))
+							.ContentPadding(FUnLive2DStyle::GetMargin("StandardDialog.ContentPadding"))
 							.OnClicked(this, &SUnLive2DBlueprintCreateDialog::OkClicked)
 							.Text(NSLOCTEXT("AnimBlueprintFactory", "CreateAnimBlueprintOk", "OK"))
 						]
@@ -82,7 +83,7 @@ public:
 						[
 							SNew(SButton)
 							.HAlign(HAlign_Center)
-							.ContentPadding(FAppStyle::GetMargin("StandardDialog.ContentPadding"))
+							.ContentPadding(FUnLive2DStyle::GetMargin("StandardDialog.ContentPadding"))
 							.OnClicked(this, &SUnLive2DBlueprintCreateDialog::CancelClicked)
 							.Text(NSLOCTEXT("AnimBlueprintFactory", "CreateAnimBlueprintCancel", "Cancel"))
 						]

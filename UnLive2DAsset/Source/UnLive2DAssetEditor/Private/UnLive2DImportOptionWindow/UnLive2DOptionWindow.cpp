@@ -3,6 +3,7 @@
 #include "IDetailsView.h"
 #include "IDocumentation.h"
 #include "UnLive2DImportUI.h"
+#include "UnLive2DCubismCore.h"
 
 #define LOCTEXT_NAMESPACE "UnLive2DOptionWindow"
 
@@ -37,14 +38,14 @@ void SUnLive2DOptionWindow::Construct(const FArguments& InArgs)
 			[
 				SNew(SBorder)
 				.Padding(FMargin(3.f))
-				.BorderImage(FAppStyle::GetBrush("ToolPanel.GroupBorder"))
+				.BorderImage(FUnLive2DStyle::GetBrush("ToolPanel.GroupBorder"))
 				[
 					SNew(SHorizontalBox)
 					+ SHorizontalBox::Slot()
 					.AutoWidth()
 					[
 						SNew(STextBlock)
-						.Font(FAppStyle::GetFontStyle("CurveEd.LabelFont"))
+						.Font(FUnLive2DStyle::GetFontStyle("CurveEd.LabelFont"))
 						.Text(NSLOCTEXT("FBXOption", "Import_CurrentFileTitle", "Current Asset: "))
 					]
 					
@@ -54,7 +55,7 @@ void SUnLive2DOptionWindow::Construct(const FArguments& InArgs)
 					.VAlign(VAlign_Center)
 					[
 						SNew(STextBlock)
-						.Font(FAppStyle::GetFontStyle("CurveEd.InfoFont"))
+						.Font(FUnLive2DStyle::GetFontStyle("CurveEd.InfoFont"))
 						.Text(FText::FromName(InArgs._FullPath))
 						.ToolTipText(FText::FromName(InArgs._FullPath))
 					]
@@ -119,7 +120,7 @@ void SUnLive2DOptionWindow::Construct(const FArguments& InArgs)
 	(
 		SNew(SBorder)
 		.Padding(FMargin(3.f))
-		.BorderImage(FAppStyle::GetBrush("ToolPanel.GroupBorder"))
+		.BorderImage(FUnLive2DStyle::GetBrush("ToolPanel.GroupBorder"))
 		[
 			SNew(SHorizontalBox)
 

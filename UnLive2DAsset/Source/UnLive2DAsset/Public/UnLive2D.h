@@ -22,21 +22,24 @@ class UNLIVE2DASSET_API UUnLive2D : public UObject
 {
     GENERATED_UCLASS_BODY()
 
-
+#if WITH_EDITOR
 public:
-    // 动画频率
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Live2D , meta = (ClampMin = 0.0f))
-        float PlayRate;
+		DECLARE_DELEGATE_OneParam(FOnUpDataUnLive2DProperty, FName);
+#endif
+public:
+
+	// 对资源模型进行缩放
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Live2D)
+		uint8 Live2DScale;
 
 	// 贴图资源
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, AssetRegistrySearchable, Category = Live2D)
 		TArray<UTexture2D*> TextureAssets;
-
 public:
 
-	// 是否使用单遮罩图（ 为false 遮罩图不更新）
+	/*// 是否使用单遮罩图（ 为false 遮罩图不更新）
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Rendering)
-		bool bTryLowPreciseMask = true;
+		bool bTryLowPreciseMask = true;*/
 
 	/** 此组件的着色颜色和不透明度 */
 	UPROPERTY(EditAnywhere, Category = Rendering)
@@ -46,7 +49,7 @@ public:
 
 #if WITH_EDITOR
 	// 更新UnLive2D其他参数
-	FSimpleDelegate OnUpDataUnLive2DProperty;
+	FOnUpDataUnLive2DProperty OnUpDataUnLive2DProperty;
 #endif
 
 public:

@@ -7,6 +7,7 @@
 #include "Widgets/Notifications/SNotificationList.h"
 #include "Widgets/Layout/SUniformGridPanel.h"
 #include "Widgets/Input/SSpinBox.h"
+#include "UnLive2DCubismCore.h"
 
 
 #define LOCTEXT_NAMESPACE "UnLive2DAssetEditor"
@@ -43,7 +44,7 @@ void SUnLive2DAddParameterWidget::Construct(const FArguments& InArgs, TSharedPtr
 	[
 		SNew(SBorder)
 		.Visibility(EVisibility::Visible)
-		.BorderImage(FAppStyle::GetBrush("Menu.Background"))
+		.BorderImage(FUnLive2DStyle::GetBrush("Menu.Background"))
 		[
 			SNew(SVerticalBox)
 
@@ -157,14 +158,14 @@ void SUnLive2DAddParameterWidget::Construct(const FArguments& InArgs, TSharedPtr
 			.Padding(8.f)
 			[
 				SNew(SUniformGridPanel)
-				.SlotPadding(FAppStyle::GetMargin("StandardDialog.SlotPadding"))
-				.MinDesiredSlotWidth(FAppStyle::GetFloat("StandardDialog.MinDesiredSlotWidth"))
-				.MinDesiredSlotHeight(FAppStyle::GetFloat("StandardDialog.MinDesiredSlotHeight"))
+				.SlotPadding(FUnLive2DStyle::GetMargin("StandardDialog.SlotPadding"))
+				.MinDesiredSlotWidth(FUnLive2DStyle::GetFloat("StandardDialog.MinDesiredSlotWidth"))
+				.MinDesiredSlotHeight(FUnLive2DStyle::GetFloat("StandardDialog.MinDesiredSlotHeight"))
 				+ SUniformGridPanel::Slot(0, 0)
 				[
 					SNew(SButton)
 					.HAlign(HAlign_Center)
-					.ContentPadding(FAppStyle::GetMargin("StandardDialog.ContentPadding"))
+					.ContentPadding(FUnLive2DStyle::GetMargin("StandardDialog.ContentPadding"))
 					.IsEnabled_Lambda([this]() { return SelectParameterInfo.IsValid(); })
 					.OnClicked(this, &SUnLive2DAddParameterWidget::OkClicked)
 					.Text(NSLOCTEXT("AnimBlueprintFactory", "CreateAnimBlueprintOk", "OK"))
@@ -173,7 +174,7 @@ void SUnLive2DAddParameterWidget::Construct(const FArguments& InArgs, TSharedPtr
 				[
 					SNew(SButton)
 					.HAlign(HAlign_Center)
-					.ContentPadding(FAppStyle::GetMargin("StandardDialog.ContentPadding"))
+					.ContentPadding(FUnLive2DStyle::GetMargin("StandardDialog.ContentPadding"))
 					.OnClicked(this, &SUnLive2DAddParameterWidget::CancelClicked)
 					.Text(NSLOCTEXT("AnimBlueprintFactory", "CreateAnimBlueprintCancel", "Cancel"))
 				]

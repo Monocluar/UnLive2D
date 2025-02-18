@@ -12,6 +12,7 @@
 #include "UnLive2DViewportClient.h"
 #include "UnLive2DRendererComponent.h"
 #include "UnLive2DParameterEditor/SUnLive2DParameterGroup.h"
+#include "UnLive2DCubismCore.h"
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
 
@@ -166,22 +167,22 @@ void FUnLive2DAnimBaseViewEditor::RegisterTabSpawners(const TSharedRef<FTabManag
 	InTabManager->RegisterTabSpawner(FUnLive2DMotionViewEditorTabs::ViewportID, FOnSpawnTab::CreateSP(this, &FUnLive2DAnimBaseViewEditor::SpawnTab_Viewport))
 		.SetDisplayName(LOCTEXT("ViewportTab", "Viewport"))
 		.SetGroup(WorkspaceMenuCategoryRef)
-		.SetIcon(FSlateIcon(FAppStyle::GetAppStyleSetName(), "LevelEditor.Tabs.Viewports"));
+		.SetIcon(FSlateIcon(FUnLive2DAppStyle::GetStyleSetName(), "LevelEditor.Tabs.Viewports"));
 
 	InTabManager->RegisterTabSpawner(FUnLive2DMotionViewEditorTabs::DetailsID, FOnSpawnTab::CreateSP(this, &FUnLive2DAnimBaseViewEditor::SpawnTab_Details))
 		.SetDisplayName(LOCTEXT("DetailsTabLabel", "Details"))
 		.SetGroup(WorkspaceMenuCategoryRef)
-		.SetIcon(FSlateIcon(FAppStyle::GetAppStyleSetName(), "LevelEditor.Tabs.Details"));
+		.SetIcon(FSlateIcon(FUnLive2DAppStyle::GetStyleSetName(), "LevelEditor.Tabs.Details"));
 
 	InTabManager->RegisterTabSpawner(FUnLive2DMotionViewEditorTabs::AssetBrowserTab, FOnSpawnTab::CreateSP(this, &FUnLive2DAnimBaseViewEditor::SpawnTab_AssetBrowser))
 		.SetDisplayName(LOCTEXT("AssetBrowserTab", "AssetBrowser"))
 		.SetGroup(WorkspaceMenuCategoryRef)
-		.SetIcon(FSlateIcon(FAppStyle::GetAppStyleSetName(), "LevelEditor.Tabs.ContentBrowser"));
+		.SetIcon(FSlateIcon(FUnLive2DAppStyle::GetStyleSetName(), "LevelEditor.Tabs.ContentBrowser"));
 
 	InTabManager->RegisterTabSpawner(FUnLive2DMotionViewEditorTabs::ParmeterGroupID, FOnSpawnTab::CreateSP(this, &FUnLive2DAnimBaseViewEditor::SpawnTab_ParameterGroup))
 		.SetDisplayName(LOCTEXT("ParameterGroupTabLabel", "ParameterGroup"))
 		.SetGroup(WorkspaceMenuCategoryRef)
-		.SetIcon(FSlateIcon(FAppStyle::GetAppStyleSetName(), "Persona.Tabs.AnimCurvePreviewer"));
+		.SetIcon(FSlateIcon(FUnLive2DAppStyle::GetStyleSetName(), "Persona.Tabs.AnimCurvePreviewer"));
 }
 
 void FUnLive2DAnimBaseViewEditor::UnregisterTabSpawners(const TSharedRef<FTabManager>& InTabManager)
@@ -357,7 +358,7 @@ TSharedRef<SDockTab> FUnLive2DAnimBaseViewEditor::SpawnTab_Viewport(const FSpawn
 TSharedRef<SDockTab> FUnLive2DAnimBaseViewEditor::SpawnTab_Details(const FSpawnTabArgs& Args)
 {
 	return SNew(SDockTab)
-		//.Icon(FAppStyle::GetBrush("LevelEditor.Tabs.Details"))
+		//.Icon(FUnLive2DStyle::GetBrush("LevelEditor.Tabs.Details"))
 		.Label(LOCTEXT("DetailsTab_Title", "Details"))
 		[
 			SNew(SUnLive2DMotionPropertiesTabBody, SharedThis(this))
@@ -367,7 +368,7 @@ TSharedRef<SDockTab> FUnLive2DAnimBaseViewEditor::SpawnTab_Details(const FSpawnT
 TSharedRef<SDockTab> FUnLive2DAnimBaseViewEditor::SpawnTab_AssetBrowser(const FSpawnTabArgs& Args)
 {
 	return SNew(SDockTab)
-		//.Icon(FAppStyle::GetBrush("LevelEditor.Tabs.ContentBrowser"))
+		//.Icon(FUnLive2DStyle::GetBrush("LevelEditor.Tabs.ContentBrowser"))
 		.Label(LOCTEXT("AssetBrowserTab", "AssetBrowser"))
 		[
 			//SNew(SUnLive2DMotionPropertiesTabBody, SharedThis(this))
