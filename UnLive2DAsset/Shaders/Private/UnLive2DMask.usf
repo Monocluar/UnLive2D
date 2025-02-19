@@ -23,6 +23,7 @@ float4 ViewPos;
 float4 ChannelFlag;
 
 void MainPS(
+    in float2 InUv : TEXCOORD0,
     in float4 ClipPosition : TEXCOORD1,
     out float4 OutColor : SV_Target0
 )
@@ -33,5 +34,5 @@ void MainPS(
         * step(ClipPosition.x / ClipPosition.w, ViewPos.z)
         * step(ClipPosition.y / ClipPosition.w, ViewPos.w);
  
-    OutColor = ChannelFlag * isInside; 
+    OutColor =  ChannelFlag * isInside; 
 }

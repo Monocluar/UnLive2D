@@ -28,6 +28,7 @@ void FUnLive2DTargetBoxProxy::UpdateSection_RenderThread(FRHICommandListImmediat
 			UnLive2DClippingManager->SetupClippingContext(bNoLowPreciseMask);
 			// 先绘制遮罩Buffer
 			UnLive2DClippingManager->RenderMask_Full(RHICmdList, GetScene().GetFeatureLevel(), MaskBuffer);
+			//UnLive2DClippingManager->RenderMask_Full(RHICmdList, GetScene().GetFeatureLevel(), RenderTarget->GetRenderTargetResource()->TextureRHI);
 		}
 		DrawSeparateToRenderTarget_RenderThread(RHICmdList, RenderTarget->GetRenderTargetResource(),GetScene().GetFeatureLevel(), MaskBuffer);
 	}

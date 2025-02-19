@@ -421,7 +421,7 @@ void IUnLive2DRTRender::DrawSeparateToRenderTarget_RenderThread(FRHICommandListI
 	// DrawClear
 	{
 #if ENGINE_MAJOR_VERSION < 5
-		RHICmdList.TransitionResource(FExclusiveDepthStencil::DepthWrite_StencilWrite, RenderTargetTexture);
+		RHICmdList.TransitionResource(ERHIAccess::WritableMask, RenderTargetTexture);
 #else
 		RHICmdList.Transition(FRHITransitionInfo(RenderTargetTexture, ERHIAccess::WritableMask));
 #endif
@@ -432,7 +432,7 @@ void IUnLive2DRTRender::DrawSeparateToRenderTarget_RenderThread(FRHICommandListI
 
 	// Update viewport.
 	RHICmdList.SetViewport(0.f, 0.f, 0.f, OutTextureRenderTargetResource->GetSizeX(), OutTextureRenderTargetResource->GetSizeY(), 1.f);
-
+	
 	for (FUnLive2DRTSectionData& SectionData : UnLive2DSectionDataArr)
 	{
 		bool bMask = SectionData.Flags & EUnLive2DShaderFlags::Mesk;
@@ -440,7 +440,7 @@ void IUnLive2DRTRender::DrawSeparateToRenderTarget_RenderThread(FRHICommandListI
 		// DrawSeparate
 		{
 #if ENGINE_MAJOR_VERSION < 5
-			RHICmdList.TransitionResource(FExclusiveDepthStencil::DepthWrite_StencilWrite, RenderTargetTexture);
+			RHICmdList.TransitionResource(ERHIAccess::EWritable, RenderTargetTexture);
 #else
 			RHICmdList.Transition(FRHITransitionInfo(RenderTargetTexture, ERHIAccess::WritableMask));
 #endif

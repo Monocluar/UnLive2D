@@ -115,7 +115,7 @@ private:
 		}
 
 
-		void UpDataVertsData(const FGeometry& AllottedGeometry,TSharedRef<FUnLive2DRawModel> UnLive2DRawModel, TWeakPtr<CubismClippingManager_UE> UnLive2DClippingManager);
+		void UpDataVertsData(const FGeometry& AllottedGeometry,TWeakPtr<FUnLive2DRawModel> UnLive2DRawModel, TWeakPtr<CubismClippingManager_UE> UnLive2DClippingManager);
 
 	};
 

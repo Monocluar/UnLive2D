@@ -13,6 +13,7 @@
 UUnLive2DViewRendererUI::UUnLive2DViewRendererUI(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, PlayRate(1.f)
+	, UnLive2DRenderType(EUnLive2DRenderType::Mesh)
 	, RenderTargetSize(1024)
 {
 	const UUnLive2DSetting* Setting = GetDefault<UUnLive2DSetting>();
@@ -73,7 +74,7 @@ TSharedRef<SWidget> UUnLive2DViewRendererUI::RebuildWidget()
 			.MultiplyMaterial(UnLive2DMultiplyMaterial)
 			.NormalMaterial(UnLive2DNormalMaterial)
 			.RTMaterial(UnLive2DRTMaterial)
-			.UnLive2DRenderType(EUnLive2DRenderType::Mesh);
+			.UnLive2DRenderType(UnLive2DRenderType);
 }
 
 

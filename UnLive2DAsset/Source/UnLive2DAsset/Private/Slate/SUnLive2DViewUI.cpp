@@ -307,7 +307,7 @@ int32 SUnLive2DViewUI::OnPaint(const FPaintArgs& Args, const FGeometry& Allotted
 		{
 			bool bCreateIndexData = Item.InterlottingLive2DIndexData.Num() > 0;
 			if (bCreateIndexData && !IsCombinedbBatchDidChange(Item.DrawableCounts)) continue;
-			Item.UpDataVertsData(AllottedGeometry, UnLive2DRawModel.ToSharedRef(), UnLive2DClippingManager);
+			Item.UpDataVertsData(AllottedGeometry, UnLive2DRawModel, UnLive2DClippingManager);
 		}
 
 		// 描画
@@ -351,12 +351,13 @@ FTextureRHIRef SUnLive2DViewUI::GetMaskTextureRHIRef() const
 		return MaskBuffer;
 }
 
-void SUnLive2DViewUI::FCustomVertsData::UpDataVertsData(const FGeometry& AllottedGeometry,TSharedRef<FUnLive2DRawModel> InUnLive2DRawModel, TWeakPtr<CubismClippingManager_UE> InUnLive2DClippingManager)
+void SUnLive2DViewUI::FCustomVertsData::UpDataVertsData(const FGeometry& AllottedGeometry,TWeakPtr<FUnLive2DRawModel> InUnLive2DRawModel, TWeakPtr<CubismClippingManager_UE> InUnLive2DClippingManager)
 {
+	if (!InUnLive2DRawModel.IsValid()) return;
 	bool bCreateIndexData = InterlottingLive2DIndexData.Num() > 0;
 	uint16 VerticesIndex = 0;
 
-	Csm::CubismModel* UnLive2DModel = InUnLive2DRawModel->GetModel();
+	Csm::CubismModel* UnLive2DModel = InUnLive2DRawModel.Pin()->GetModel();
 	FULVector2f BoundsSize = FULVector2f(UnLive2DModel->GetCanvasWidth(), UnLive2DModel->GetCanvasHeight());
 
 	const FULVector2f WidgetSize = AllottedGeometry.GetLocalSize();

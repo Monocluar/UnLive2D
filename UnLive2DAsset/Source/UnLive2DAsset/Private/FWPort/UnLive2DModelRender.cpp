@@ -301,7 +301,7 @@ void CubismClippingManager_UE::SetupClippingContext( bool& bNoLowPreciseMask)
 		//}
 
 		// 各マスクのレイアウトを決定していく
-		const bool tb_SetupGood = SetupLayoutBounds(true ? 0 : usingClipCount);
+		const bool tb_SetupGood = SetupLayoutBounds(bNoLowPreciseMask ? 0 : usingClipCount);
 		if (!tb_SetupGood)
 		{
             bNoLowPreciseMask = true;
@@ -612,6 +612,7 @@ void CubismClippingManager_UE::RenderMask_Full(FRHICommandListImmediate& RHICmdL
 		RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
 		GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, CF_Always>::GetRHI();
 		GraphicsPSOInit.BlendState = TStaticBlendState<CW_RGBA, BO_Add, BF_Zero, BF_InverseSourceColor, BO_Add, BF_Zero, BF_InverseSourceAlpha>::GetRHI();
+		//GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
 		GraphicsPSOInit.RasterizerState = TStaticRasterizerState<FM_Solid, CM_None>::GetRHI();
 		GraphicsPSOInit.PrimitiveType = PT_TriangleList;
         GraphicsPSOInit.BoundShaderState.VertexDeclarationRHI = GUnLive2DMaskVertexDeclaration.VertexDeclarationRHI;
@@ -730,7 +731,7 @@ void CubismClippingManager_UE::RenderMask_Full(FRHICommandListImmediate& RHICmdL
 			// チャンネルをRGBAに変換
 			const Csm::Rendering::CubismRenderer::CubismTextureColor* colorChannel = GetChannelFlagAsColor(channelNo);
 			csmRectF* rect = clipContext->_layoutBounds;
-			FLinearColor ClipColor = colorChannel == nullptr ? FLinearColor::White : FLinearColor(colorChannel->R, colorChannel->G, colorChannel->B, colorChannel->A);
+            FLinearColor ClipColor = colorChannel == nullptr ? FLinearColor::White : FLinearColor(colorChannel->R, colorChannel->G, colorChannel->B, colorChannel->A);
 
 			FUnLiveVector4 ViewPos = rect == nullptr ? FUnLiveVector4(1.f,1.f,1.f) : FUnLiveVector4(rect->X * 2.0f - 1.0f, rect->Y * 2.0f - 1.0f, rect->GetRight() * 2.0f - 1.0f, rect->GetBottom() * 2.0f - 1.0f);
 
@@ -739,7 +740,7 @@ void CubismClippingManager_UE::RenderMask_Full(FRHICommandListImmediate& RHICmdL
 			SetShaderParametersLegacyPS(RHICmdList, PixelShader, ClipColor, ViewPos);
 #else
 			VertexShader->SetParameters(RHICmdList, VertexShader.GetVertexShader(), MartixForMask);
-			PixelShader->SetParameters(RHICmdList, PixelShader.GetVertexShader(), ClipColor, ViewPos);
+			PixelShader->SetParameters(RHICmdList, PixelShader.GetPixelShader(), ClipColor, ViewPos);
 #endif
 			RHICmdList.SetStreamSource(0, CacheRenderBufferRHI[i].VertexBufferRHI, 0);
 

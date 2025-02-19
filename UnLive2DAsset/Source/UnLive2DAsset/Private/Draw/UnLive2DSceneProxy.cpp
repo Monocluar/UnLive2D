@@ -525,7 +525,7 @@ void FUnLive2DSceneProxy::FUnLive2DVertexBuffer::UpdateSection_RenderThread(FRHI
 		VertexBuffers.StaticMeshVertexBuffer.SetVertexUV(i, 3, Vertex.TextureCoordinate[3]);
 		VertexBuffers.ColorVertexBuffer.VertexColor(i) = Vertex.Color;
 	}
-
+	Vertices.Empty();
 	{
 		auto& VertexBuffer = VertexBuffers.PositionVertexBuffer;
 #if ENGINE_MAJOR_VERSION >= 5
