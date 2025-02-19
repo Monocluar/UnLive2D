@@ -293,8 +293,10 @@ int32 SUnLive2DViewUI::OnPaint(const FPaintArgs& Args, const FGeometry& Allotted
 		if (ThisPtr->UnLive2DRenderType == EUnLive2DRenderType::RenderTarget)
 		{
 			if (ThisPtr->RenderTarget == nullptr) return;
-			ThisPtr->UpdataRTSections(RHICmdList, ThisPtr->bCombinedbBatch);
-			ThisPtr->DrawSeparateToRenderTarget_RenderThread(RHICmdList, ThisPtr->RenderTarget->GetRenderTargetResource(), GMaxRHIFeatureLevel, ThisPtr->MaskBuffer);
+			if (ThisPtr->UpdataRTSections(ThisPtr->bCombinedbBatch))
+			{
+				ThisPtr->DrawSeparateToRenderTarget_RenderThread(RHICmdList, ThisPtr->RenderTarget->GetRenderTargetResource(), GMaxRHIFeatureLevel, ThisPtr->MaskBuffer);
+			}
 		}
 	});
 

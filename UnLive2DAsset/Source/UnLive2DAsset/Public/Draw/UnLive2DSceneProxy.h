@@ -40,6 +40,9 @@ protected:
 
 		FBox LocalBox;
 		//FUnLive2DDynamicMeshSectionData MeshSectionData;
+		TArray<FDynamicMeshVertex> Vertices;
+
+		bool bMarkDirty;
 	public:
 		TArray<int32> DrawableCounts;
 		/** Material applied to this section */
@@ -60,15 +63,13 @@ protected:
 
 	public:
 
-		/* Moves all the PaperVertex data onto the RHI buffers. */
-		void CommitVertexData(FRHICommandListBase& RHICmdList);
-	public:
-
 		void InitRHI(FRHICommandListBase& RHICmdList);
 		void ReleaseResource();
 		void UpdateSection_RenderThread(FRHICommandListBase& RHICmdList);
 
 		const FBox& GetLocalBox() const;
+
+		void UpdateVertices();
 	protected:
 
 		void GetUnLive2DVertexData(TArray<FDynamicMeshVertex>& OutVertices, TArray<uint16>& OutIndices, FBox& OutLocalBox) const;
@@ -81,7 +82,9 @@ public:
 	~FUnLive2DSceneProxy();
 
 protected:
-	virtual void OnUpData() override;
+	virtual bool OnUpData() override;
+
+	virtual void OnUpDataRenderer() override;
 
 	SIZE_T GetTypeHash() const override;
 	virtual bool CanBeOccluded() const override;
@@ -105,10 +108,15 @@ protected:
 
 	UMaterialInstance* GetMaterialInstanceDynamicToIndex(const int32& DrawableIndex);
 
+private:
+	void ClearDirtySections();
+
 protected:
 	TWeakObjectPtr<class UTextureRenderTarget2D> MaskBufferRenderTarget; //遮罩渲染缓冲图片
 
 	TArray<FUnLive2DVertexBuffer*> Sections;
+
+	TArray<FUnLive2DVertexBuffer*> DirtySections;
 
 	// 是否合批
 	bool bCombinedbBatch;

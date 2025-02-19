@@ -54,7 +54,7 @@ public:
 	}
 	FUnLive2DTargetShaderPS_Base() {}
 
-#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 4
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
 	void SetParameters(FRHIBatchedShaderParameters& BatchedParameters, const FTexture* NormalTexture)
 	{
 		SetTextureParameter(BatchedParameters, Texture, TextureSampler, NormalTexture);
@@ -113,7 +113,7 @@ public:
 		OutEnvironment.SetDefine(TEXT("UNLIVE2D_TARGET_INVERT_MASK"), bInvertMask);
 	}
 
-#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 4
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
 	void SetParameters(FRHIBatchedShaderParameters& BatchedParameters, const FTexture* NormalTexture, FTextureRHIRef MaskTextureRef, const FUnLiveMatrix& InMartixForMask, const FLinearColor& InClipColor)
 	{
 		SetShaderValue(BatchedParameters, ChannelFlag, InClipColor);
@@ -267,19 +267,18 @@ void IUnLive2DRenderBase::ClearRenderBaseData()
 	DrawableIndexList.Empty();
 }
 
-uint16 IUnLive2DRTRender::GetVertexBySectionData(FRHICommandListImmediate& RHICmdList, FUnLive2DRTSectionData& SectionData)
+bool IUnLive2DRTRender::UpdateVertexBySectionData(FUnLive2DRTSectionData& InSectionData) const
 {
 	check(UnLive2DRawModel.IsValid());
 	Csm::CubismModel* UnLive2DModel = UnLive2DRawModel->GetModel();
 
-	TArray<FUnLive2DRenderTargetVertex> OutVertexs;
-	TArray<uint16> OutIndices;
-	uint16 VerticesIndex = 0;
-	bool bCreateIndexBuffers = SectionData.CacheIndexBuffersRHI.IsValid();
-	if (bCreateIndexBuffers && !IsCombinedbBatchDidChange(SectionData.DrawableCounts)) return SectionData.CacheVerticesIndexCount;
-
-	for (const int32& DrawableIndex : SectionData.DrawableCounts)
+	bool bCreateIndexBuffers = InSectionData.CacheIndexBuffersRHI.IsValid();
+	if (bCreateIndexBuffers && !IsCombinedbBatchDidChange(InSectionData.DrawableCounts)) return false;
+	InSectionData.bMarkDirty = true;
+	InSectionData.Vertexs.Empty();
+	for (const int32& DrawableIndex : InSectionData.DrawableCounts)
 	{
+		const csmInt32 NumVertext = UnLive2DModel->GetDrawableVertexCount(DrawableIndex); // 获得Drawable顶点的个数
 		if (!bCreateIndexBuffers)
 		{
 			const csmInt32 VertexIndexCount = UnLive2DModel->GetDrawableVertexIndexCount(DrawableIndex); // 获得Drawable的顶点索引个数
@@ -287,72 +286,82 @@ uint16 IUnLive2DRTRender::GetVertexBySectionData(FRHICommandListImmediate& RHICm
 
 			for (int32 Index = 0; Index < VertexIndexCount; ++Index)
 			{
-				OutIndices.Add(VerticesIndex + IndicesArray[Index]);
+				InSectionData.Indices.Add(InSectionData.CacheVerticesIndexCount + IndicesArray[Index]);
 			}
-			SectionData.CacheIndexCount += VertexIndexCount;
+			InSectionData.CacheIndexCount += VertexIndexCount;
+			InSectionData.CacheVerticesIndexCount += NumVertext;
 		}
 		csmFloat32 Opacity = UnLive2DModel->GetDrawableOpacity(DrawableIndex); // 获取不透明度
 
-		const csmInt32 NumVertext = UnLive2DModel->GetDrawableVertexCount(DrawableIndex); // 获得Drawable顶点的个数
 		const csmFloat32* VertexArray = UnLive2DModel->GetDrawableVertices(DrawableIndex); // 顶点组
 		const  Live2D::Cubism::Core::csmVector2* UVArray = UnLive2DModel->GetDrawableVertexUvs(DrawableIndex); // 获取UV组
 
 		FLinearColor BaseColor = FLinearColor(1.f, 1.f, 1.f, Opacity);
 		for (int32 VertexIndex = 0; VertexIndex < NumVertext; ++VertexIndex)
 		{
-			FUnLive2DRenderTargetVertex& Vert = OutVertexs.AddDefaulted_GetRef();
+			FUnLive2DRenderTargetVertex& Vert = InSectionData.Vertexs.AddDefaulted_GetRef();
 			Vert.Position = FULVector2f(VertexArray[VertexIndex * 2], VertexArray[VertexIndex * 2 + 1]);
 			Vert.UV = FULVector2f(UVArray[VertexIndex].X, UVArray[VertexIndex].Y);
 			Vert.Color = BaseColor;
 
 		}
-		VerticesIndex += NumVertext;
 	}
+	return true;
+}
 
+void IUnLive2DRTRender::GetVertexBySectionData(FRHICommandListImmediate& RHICmdList, FUnLive2DRTSectionData& SectionData)
+{
+	if (!SectionData.bMarkDirty) return;
+	SectionData.bMarkDirty = false;
 	// UpDataBuffers
 	{
-		if (OutIndices.Num() > 0)
+		if (!SectionData.CacheIndexBuffersRHI.IsValid())
 		{
 			const uint32 IndexSize = SectionData.CacheIndexCount * sizeof(uint16);
 			FRHIResourceCreateInfo CreateInfo(TEXT("UnLive2DCacheIndexBuffer"));
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
+			SectionData.CacheIndexBuffersRHI = RHICmdList.CreateIndexBuffer(sizeof(uint16), IndexSize, BUF_Static, CreateInfo);
+#else
 			SectionData.CacheIndexBuffersRHI = RHICreateIndexBuffer(sizeof(uint16), IndexSize, BUF_Static, CreateInfo);
-			//SectionData.CacheIndexBuffersRHI = RHICmdList.CreateIndexBuffer(sizeof(uint16), IndexSize, BUF_Static, CreateInfo);
+#endif
 #if ENGINE_MAJOR_VERSION >= 5
 			void* IndexBufferData = RHICmdList.LockBuffer(SectionData.CacheIndexBuffersRHI, 0, IndexSize, RLM_WriteOnly);
-			FMemory::Memcpy(IndexBufferData, OutIndices.GetData(), IndexSize);
+			FMemory::Memmove(IndexBufferData, SectionData.Indices.GetData(), IndexSize);
 			RHICmdList.UnlockBuffer(SectionData.CacheIndexBuffersRHI);
 #else
 			void* IndexBufferData = RHILockIndexBuffer(SectionData.CacheIndexBuffersRHI, 0, IndexSize, RLM_WriteOnly);
-			FMemory::Memcpy(IndexBufferData, OutIndices.GetData(), IndexSize);
+			FMemory::Memmove(IndexBufferData, SectionData.Indices.GetData(), IndexSize);
 			RHIUnlockIndexBuffer(SectionData.CacheIndexBuffersRHI);
 #endif
+			SectionData.Indices.Empty();
 		}
-		const uint32 VertexSize = VerticesIndex * sizeof(FUnLive2DRenderTargetVertex);
+		const uint32 VertexSize = SectionData.CacheVerticesIndexCount * sizeof(FUnLive2DRenderTargetVertex);
 		if (!SectionData.CacheVertexBufferRHI.IsValid())
 		{
 			FRHIResourceCreateInfo CreateInfo(TEXT("UnLive2DCacheVertexBufferRHI"));
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
+			SectionData.CacheVertexBufferRHI = RHICmdList.CreateVertexBuffer(VertexSize, BUF_Dynamic, CreateInfo);
+#else
 			SectionData.CacheVertexBufferRHI = RHICreateVertexBuffer(VertexSize, BUF_Dynamic, CreateInfo);
-			//SectionData.CacheVertexBufferRHI = RHICmdList.CreateVertexBuffer(VertexSize, BUF_Dynamic, CreateInfo);
-			SectionData.CacheVerticesIndexCount = VerticesIndex;
+#endif
 		}
 #if ENGINE_MAJOR_VERSION >= 5
 		void* VertexBufferData = RHICmdList.LockBuffer(SectionData.CacheVertexBufferRHI, 0, VertexSize, RLM_WriteOnly);
-		FMemory::Memcpy(VertexBufferData, OutVertexs.GetData(), VertexSize);
+		FMemory::Memmove(VertexBufferData, SectionData.Vertexs.GetData(), VertexSize);
 		RHICmdList.UnlockBuffer(SectionData.CacheVertexBufferRHI);
 #else
 		void* VertexBufferData = RHILockVertexBuffer(SectionData.CacheVertexBufferRHI, 0, VertexSize, RLM_WriteOnly);
-		FMemory::Memcpy(VertexBufferData, OutVertexs.GetData(), VertexSize);
+		FMemory::Memmove(VertexBufferData, SectionData.Vertexs.GetData(), VertexSize);
 		RHIUnlockVertexBuffer(SectionData.CacheVertexBufferRHI);
 #endif
 	}
-	return VerticesIndex;
 }
 
-bool IUnLive2DRTRender::UpdataRTSections(FRHICommandListImmediate& RHICmdList, bool bCombinedbBatch)
+bool IUnLive2DRTRender::UpdataRTSections(bool bCombinedbBatch)
 {
 	check(UnLive2DRawModel.IsValid());
 	TArray<uint16> SortedDrawableIndexList;
-	if (!UpDataDrawableIndexList(SortedDrawableIndexList)) return false;
+	if (!UpDataDrawableIndexList(SortedDrawableIndexList)) return UpDataSeparate_GameThread();
 
 	UnLive2DSectionDataArr.Empty();
 	Csm::CubismModel* UnLive2DModel = UnLive2DRawModel->GetModel();
@@ -372,21 +381,37 @@ bool IUnLive2DRTRender::UpdataRTSections(FRHICommandListImmediate& RHICmdList, b
 			MeshSectionData->TextureIndex = TextureIndex;
 			MeshSectionData->CacheIndexCount = 0;
 			MeshSectionData->MaskUID = MaskID;
+			MeshSectionData->bMarkDirty = false;
+			MeshSectionData->CacheVerticesIndexCount = 0;
 		}
 		else
 			MeshSectionData = &UnLive2DSectionDataArr.Top();
 
 		MeshSectionData->DrawableCounts.Add(DrawableIndex);
 	}
+	UpDataSeparate_GameThread();
 	return true;
+}
+
+bool IUnLive2DRTRender::UpDataSeparate_GameThread()
+{
+	Csm::CubismModel* UnLive2DModel = UnLive2DRawModel->GetModel();
+	if (UnLive2DModel == nullptr) return false;
+	bool bUpDate = false;
+	for (FUnLive2DRTSectionData& SectionData : UnLive2DSectionDataArr)
+	{
+		if (UpdateVertexBySectionData(SectionData))
+		{
+			bUpDate = true;
+		}
+	}
+
+	return bUpDate;
 }
 
 void IUnLive2DRTRender::DrawSeparateToRenderTarget_RenderThread(FRHICommandListImmediate& RHICmdList, FTextureRenderTargetResource* OutTextureRenderTargetResource, ERHIFeatureLevel::Type FeatureLevel, FTextureRHIRef InMaskBuffer)
 {
 	if (OutTextureRenderTargetResource == nullptr || !UnLive2DRawModel.IsValid()) return;
-
-	Csm::CubismModel* UnLive2DModel = UnLive2DRawModel->GetModel();
-	if (UnLive2DModel == nullptr) return;
 
 #if ENGINE_MAJOR_VERSION >=5 && ENGINE_MINOR_VERSION > 1
 	const FTextureRHIRef RenderTargetTexture = OutTextureRenderTargetResource->GetRenderTargetTexture();
@@ -404,10 +429,14 @@ void IUnLive2DRTRender::DrawSeparateToRenderTarget_RenderThread(FRHICommandListI
 		RHICmdList.BeginRenderPass(RPInfo, TEXT("DrawClear"));
 		RHICmdList.EndRenderPass();
 	}
+
+	// Update viewport.
+	RHICmdList.SetViewport(0.f, 0.f, 0.f, OutTextureRenderTargetResource->GetSizeX(), OutTextureRenderTargetResource->GetSizeY(), 1.f);
+
 	for (FUnLive2DRTSectionData& SectionData : UnLive2DSectionDataArr)
 	{
 		bool bMask = SectionData.Flags & EUnLive2DShaderFlags::Mesk;
-		uint16 NumVertext = GetVertexBySectionData(RHICmdList, SectionData);
+		GetVertexBySectionData(RHICmdList, SectionData);
 		// DrawSeparate
 		{
 #if ENGINE_MAJOR_VERSION < 5
@@ -418,10 +447,6 @@ void IUnLive2DRTRender::DrawSeparateToRenderTarget_RenderThread(FRHICommandListI
 			FRHIRenderPassInfo RPInfo(RenderTargetTexture, ERenderTargetActions::Load_Store);
 			RHICmdList.BeginRenderPass(RPInfo, TEXT("DrawSeparate"));
 			{
-				// Update viewport.
-				RHICmdList.SetViewport(
-					0.f, 0.f, 0.f,
-					OutTextureRenderTargetResource->GetSizeX(), OutTextureRenderTargetResource->GetSizeY(), 1.f);
 
 				FGlobalShaderMap* GlobalShaderMap = GetGlobalShaderMap(FeatureLevel);
 
@@ -430,7 +455,7 @@ void IUnLive2DRTRender::DrawSeparateToRenderTarget_RenderThread(FRHICommandListI
 				RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
 				GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, CF_Always>::GetRHI();
 				GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
-#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 4
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
 				GraphicsPSOInit.RasterizerState = TStaticRasterizerState<FM_Solid, CM_None, ERasterizerDepthClipMode::DepthClip, true>::GetRHI();
 #else
 				GraphicsPSOInit.RasterizerState = TStaticRasterizerState<FM_Solid, CM_None, true, true>::GetRHI();
@@ -473,7 +498,7 @@ void IUnLive2DRTRender::DrawSeparateToRenderTarget_RenderThread(FRHICommandListI
 #else
 						SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit);
 #endif
-#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 4
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
 						SetShaderParametersLegacyPS(RHICmdList, PixelShader, TextureResource, InMaskBuffer->GetTexture2D(), MartixForMask, ClipColor);
 #else
 						PixelShader->SetParameters(RHICmdList, PixelShader.GetPixelShader(), TextureResource, InMaskBuffer->GetTexture2D(), MartixForMask, ClipColor);
@@ -488,7 +513,7 @@ void IUnLive2DRTRender::DrawSeparateToRenderTarget_RenderThread(FRHICommandListI
 #else
 						SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit);
 #endif
-#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 4
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
 						SetShaderParametersLegacyPS(RHICmdList, PixelShader, TextureResource, InMaskBuffer->GetTexture2D(), MartixForMask, ClipColor);
 #else
 						PixelShader->SetParameters(RHICmdList, PixelShader.GetPixelShader(), TextureResource, InMaskBuffer->GetTexture2D(), MartixForMask, ClipColor);
@@ -504,7 +529,7 @@ void IUnLive2DRTRender::DrawSeparateToRenderTarget_RenderThread(FRHICommandListI
 #else
 					SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit);
 #endif
-#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 4
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
 					SetShaderParametersLegacyPS(RHICmdList, PixelShader, TextureResource);
 #else
 					PixelShader->SetParameters(RHICmdList, PixelShader.GetPixelShader(), TextureResource);
@@ -516,7 +541,7 @@ void IUnLive2DRTRender::DrawSeparateToRenderTarget_RenderThread(FRHICommandListI
 					SectionData.CacheIndexBuffersRHI,
 					/*BaseVertexIndex=*/ 0,
 					/*MinIndex=*/ 0,
-					/*NumVertices=*/ NumVertext,
+					/*NumVertices=*/ SectionData.CacheVerticesIndexCount,
 					/*StartIndex=*/ 0,
 					/*NumPrimitives=*/ SectionData.CacheIndexCount / 3,
 					/*NumInstances=*/ 1
@@ -540,7 +565,7 @@ IUnLive2DRTRender::FUnLive2DRTSectionData::~FUnLive2DRTSectionData()
 	CacheVertexBufferRHI.SafeRelease();
 }
 
-#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 4
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
 void IUnLive2DRTRender::FUnLive2DTargetVertexDeclaration::InitRHI(FRHICommandListBase& RHICmdList)
 #else
 void IUnLive2DRTRender::FUnLive2DTargetVertexDeclaration::InitRHI()

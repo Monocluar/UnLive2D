@@ -13,7 +13,7 @@
 UUnLive2DViewRendererUI::UUnLive2DViewRendererUI(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, PlayRate(1.f)
-	, RenderTargetSize(512)
+	, RenderTargetSize(1024)
 {
 	const UUnLive2DSetting* Setting = GetDefault<UUnLive2DSetting>();
 	UnLive2DNormalMaterial = Setting->DefaultUnLive2DNormalMaterial_UI;

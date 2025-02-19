@@ -12,7 +12,8 @@ public:
 	UnLive2DProxyBase(UUnLive2DRendererComponent* InComponent);
 
 public:
-	virtual void OnUpData(){};
+	virtual bool OnUpData() = 0;
+	virtual void OnUpDataRenderer(){};
 	virtual void GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials, bool bGetDebugMaterials = false) const {};
 	virtual const FBoxSphereBounds& GetLocalBox() const;
 

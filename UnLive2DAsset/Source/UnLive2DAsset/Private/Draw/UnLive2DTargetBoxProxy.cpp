@@ -19,26 +19,6 @@
 void FUnLive2DTargetBoxProxy::UpdateSection_RenderThread(FRHICommandListImmediate& RHICmdList)
 {
 	if (!UnLive2DRawModel.IsValid()) return;
-	Csm::CubismModel* UnLive2DModel = UnLive2DRawModel->GetModel();
-	if (UnLive2DModel == nullptr) return;
-
-	if (CreateClippingManager())
-	{
-		ETextureCreateFlags Flags = ETextureCreateFlags(TexCreate_None | TexCreate_RenderTargetable | TexCreate_ShaderResource);
-		const csmInt32 BufferHeight = UnLive2DClippingManager->GetClippingMaskBufferSize();
-#if ENGINE_MAJOR_VERSION >= 5
-		const FRHITextureCreateDesc Desc = FRHITextureCreateDesc::Create2D(TEXT("FUnLive2DTargetBoxProxy_UpdateSection_RenderThread"), BufferHeight, BufferHeight, PF_R8G8B8A8)
-			.SetFlags(Flags).SetClearValue(FClearValueBinding(FLinearColor::White));
-
-		MaskBuffer = RHICreateTexture(Desc);
-#else
-		FRHIResourceCreateInfo CreateInfo(TEXT("FUnLive2DTargetBoxProxy_UpdateSection_RenderThread"));
-		CreateInfo.ClearValueBinding = FClearValueBinding(FLinearColor::White);
-		MaskBuffer = RHICreateTexture2D(BufferHeight, BufferHeight, PF_R8G8B8A8, 1, 1, Flags, CreateInfo);
-#endif
-	}
-
-	UpdataRTSections(RHICmdList, bCombinedbBatch);
 
 	if (RenderTarget)
 	{
@@ -58,14 +38,19 @@ void FUnLive2DTargetBoxProxy::GetUsedMaterials(TArray<UMaterialInterface*>& OutM
 	OutMaterials.Add(MaterialInstance);
 }
 
-void FUnLive2DTargetBoxProxy::OnUpData()
+bool FUnLive2DTargetBoxProxy::OnUpData()
 {
-	ENQUEUE_RENDER_COMMAND(UnLive2DTargetBoxProxy_OnUpData)(
-	[this](FRHICommandListImmediate& RHICmdList)
+	return UpdataRTSections(bCombinedbBatch);
+}
+
+void FUnLive2DTargetBoxProxy::OnUpDataRenderer()
+{
+	ENQUEUE_RENDER_COMMAND(UnLive2DTargetBoxProxy_OnUpData)([this](FRHICommandListImmediate& RHICmdList)
 		{
 			UpdateSection_RenderThread(RHICmdList);
 		});
 }
+
 
 SIZE_T FUnLive2DTargetBoxProxy::GetTypeHash() const
 {
@@ -233,7 +218,7 @@ const UTexture2D* FUnLive2DTargetBoxProxy::GetTexture(const uint8& TextureIndex)
 
 FUnLive2DTargetBoxProxy::FUnLive2DTargetBoxProxy(UUnLive2DRendererComponent* InComponent)
 	: UnLive2DProxyBase(InComponent)
-	, bCombinedbBatch(false)
+	, bCombinedbBatch(true)
 	, BodySetup(InComponent->GetBodySetup())
 {
 	UnLive2DRawModel = InComponent->GetUnLive2DRawModel().Pin();
@@ -242,17 +227,35 @@ FUnLive2DTargetBoxProxy::FUnLive2DTargetBoxProxy(UUnLive2DRendererComponent* InC
 	if (UnLive2DModel == nullptr) return;
 
 
-	csmFloat32 CanvasWidth = UnLive2DModel->GetCanvasWidth();
-	csmFloat32 CanvasHeight = UnLive2DModel->GetCanvasHeight();
-	CurrentDrawSize = FIntPoint(Live2DScale, Live2DScale);
+	if (CreateClippingManager())
+	{
+		ETextureCreateFlags Flags = ETextureCreateFlags(TexCreate_None | TexCreate_RenderTargetable | TexCreate_ShaderResource);
+		const csmInt32 BufferHeight = UnLive2DClippingManager->GetClippingMaskBufferSize();
+#if ENGINE_MAJOR_VERSION >= 5
+		const FRHITextureCreateDesc Desc = FRHITextureCreateDesc::Create2D(TEXT("FUnLive2DTargetBoxProxy_UpdateSection_RenderThread"), BufferHeight, BufferHeight, PF_R8G8B8A8)
+			.SetFlags(Flags).SetClearValue(FClearValueBinding(FLinearColor::White));
 
-	const FVector Origin = FVector(.5f,
-		-(CurrentDrawSize.X) + (CurrentDrawSize.X),
-		-(CurrentDrawSize.Y) + (CurrentDrawSize.Y));
+		MaskBuffer = RHICreateTexture(Desc);
+#else
+		FRHIResourceCreateInfo CreateInfo(TEXT("FUnLive2DTargetBoxProxy_UpdateSection_RenderThread"));
+		CreateInfo.ClearValueBinding = FClearValueBinding(FLinearColor::White);
+		MaskBuffer = RHICreateTexture2D(BufferHeight, BufferHeight, PF_R8G8B8A8, 1, 1, Flags, CreateInfo);
+#endif
+	}
 
-	const FVector BoxExtent = FVector(1.f, CurrentDrawSize.X / 2.0f, CurrentDrawSize.Y / 2.0f);
+	{
+		csmFloat32 CanvasWidth = UnLive2DModel->GetCanvasWidth();
+		csmFloat32 CanvasHeight = UnLive2DModel->GetCanvasHeight();
+		CurrentDrawSize = FIntPoint(Live2DScale, Live2DScale);
 
-	LocalBox = FBoxSphereBounds(Origin, BoxExtent, CurrentDrawSize.Size() / 2.0f);
+		const FVector Origin = FVector(.5f,
+			-(CurrentDrawSize.X) + (CurrentDrawSize.X),
+			-(CurrentDrawSize.Y) + (CurrentDrawSize.Y));
+
+		const FVector BoxExtent = FVector(1.f, CurrentDrawSize.X / 2.0f, CurrentDrawSize.Y / 2.0f);
+
+		LocalBox = FBoxSphereBounds(Origin, BoxExtent, CurrentDrawSize.Size() / 2.0f);
+	}
 
 
 	RenderTarget = NewObject<UTextureRenderTarget2D>(GetTransientPackage());

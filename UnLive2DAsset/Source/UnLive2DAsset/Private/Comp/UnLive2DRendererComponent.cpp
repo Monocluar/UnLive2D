@@ -27,8 +27,8 @@ UUnLive2DRendererComponent::UUnLive2DRendererComponent(const FObjectInitializer&
 	: Super(ObjectInitializer)
 	, SourceUnLive2D(nullptr)
 	, PlayRate(1.f)
-	, UnLive2DRenderType(EUnLive2DRenderType::Mesh)
-	, RenderTargetSize(512)
+	, UnLive2DRenderType(EUnLive2DRenderType::RenderTarget)
+	, RenderTargetSize(1024)
 {
 	//BoundsScale = 1024.f;
 	if (!ObjectInitializer.GetObj()->HasAnyFlags(RF_ClassDefaultObject))
@@ -71,7 +71,14 @@ void UUnLive2DRendererComponent::TickComponent(float DeltaTime, ELevelTick TickT
 	{
 		UnLive2DRawModel->OnUpDate(DeltaTime * PlayRate);
 		//UpdateRenderer();
-		MarkRenderDynamicDataDirty();
+	}
+	if (UnLive2DProxyBase* UnLive2DSceneProxy = static_cast<UnLive2DProxyBase*>(SceneProxy))
+	{
+		if (UnLive2DSceneProxy->OnUpData())
+		{
+			LocalBounds = UnLive2DSceneProxy->GetLocalBox();
+			MarkRenderDynamicDataDirty();
+		}
 	}
 
 #endif
@@ -81,11 +88,7 @@ void UUnLive2DRendererComponent::SendRenderDynamicData_Concurrent()
 {
 	if (UnLive2DProxyBase* UnLive2DSceneProxy = static_cast<UnLive2DProxyBase*>(SceneProxy))
 	{
-		UnLive2DSceneProxy->OnUpData();
-		if (UnLive2DRenderType == EUnLive2DRenderType::Mesh)
-		{
-			LocalBounds = UnLive2DSceneProxy->GetLocalBox();
-		}
+		UnLive2DSceneProxy->OnUpDataRenderer();
 	}
 }
 

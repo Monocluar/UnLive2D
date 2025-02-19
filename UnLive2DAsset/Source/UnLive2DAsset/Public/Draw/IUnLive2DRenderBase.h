@@ -57,7 +57,7 @@ public:
 
 		virtual ~FUnLive2DTargetVertexDeclaration() {}
 
-#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 4
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
 		virtual void InitRHI(FRHICommandListBase& RHICmdList) override;
 #else
 		virtual void InitRHI() override;
@@ -85,6 +85,10 @@ protected:
 		uint16 CacheVerticesIndexCount;
 		uint8 MaskUID;
 
+		TArray<uint16> Indices;
+		TArray<FUnLive2DRenderTargetVertex> Vertexs;
+		bool bMarkDirty;
+
 		~FUnLive2DRTSectionData();
 	public:
 		bool Equals(const uint8& InFlags, const uint8& InTextureIndex, const uint8& InMaskUID)
@@ -94,18 +98,23 @@ protected:
 	};
 
 protected:
-	uint16 GetVertexBySectionData(FRHICommandListImmediate& RHICmdList, FUnLive2DRTSectionData& InSectionData);
 
-	bool UpdataRTSections(FRHICommandListImmediate& RHICmdList, bool bCombinedbBatch = true);
+	bool UpdataRTSections( bool bCombinedbBatch = true);
 
 	void DrawSeparateToRenderTarget_RenderThread(FRHICommandListImmediate& RHICmdList, FTextureRenderTargetResource* OutTextureRenderTargetResource, ERHIFeatureLevel::Type FeatureLevel, FTextureRHIRef InMaskBuffer);
 
 	void ClearSectionData();
 
+private:
+
+	bool UpDataSeparate_GameThread();
+	bool UpdateVertexBySectionData(FUnLive2DRTSectionData& InSectionData) const;
+	void GetVertexBySectionData(FRHICommandListImmediate& RHICmdList, FUnLive2DRTSectionData& InSectionData);
+
 protected:
 	virtual const UTexture2D* GetTexture(const uint8& TextureIndex) const = 0;
 
-protected:
+private:
 	// 当前绘制使用数据
 	TArray<FUnLive2DRTSectionData> UnLive2DSectionDataArr;
 };

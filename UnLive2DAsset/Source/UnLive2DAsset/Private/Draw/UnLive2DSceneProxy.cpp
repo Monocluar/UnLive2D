@@ -88,39 +88,58 @@ FUnLive2DSceneProxy::~FUnLive2DSceneProxy()
 	{
 		MaskBufferRenderTarget->RemoveFromRoot();
 	}
+	ClearDirtySections();
 }
 
-void FUnLive2DSceneProxy::OnUpData()
+bool FUnLive2DSceneProxy::OnUpData()
 {
-	ENQUEUE_RENDER_COMMAND(UnLive2DSceneProxy_OnUpData)(
-		[this](FRHICommandListImmediate& RHICmdList)
+	bool bUpdate = true;
+	if (!UpdataSections())
+	{
+		bUpdate = false;
+		for (int32 i = 0; i < Sections.Num(); i++)
 		{
-			ERHIFeatureLevel::Type FeatureLevel = GetScene().GetFeatureLevel();
-			if (UnLive2DClippingManager.IsValid())
+			if (IsCombinedbBatchDidChange(Sections[i]->DrawableCounts))
 			{
-				bool bNoLowPreciseMask = false;
-				UnLive2DClippingManager->SetupClippingContext(bNoLowPreciseMask);
-				// 先绘制遮罩Buffer
+				Sections[i]->UpdateVertices();
+				bUpdate = true;
+			}
+		}
+	}
+
+	return bUpdate;
+}
+
+void FUnLive2DSceneProxy::OnUpDataRenderer()
+{
+	FBox NewLocalBox(ForceInit);
+	for (int32 i = 0; i < Sections.Num(); i++)
+	{
+		NewLocalBox += Sections[i]->GetLocalBox();
+	}
+	LocalBox = FBoxSphereBounds(NewLocalBox);
+
+	ENQUEUE_RENDER_COMMAND(UnLive2DSceneProxy_OnUpData)([this](FRHICommandListImmediate& RHICmdList)
+	{
+		ClearDirtySections();
+		ERHIFeatureLevel::Type FeatureLevel = GetScene().GetFeatureLevel();
+		if (UnLive2DClippingManager.IsValid())
+		{
+			bool bNoLowPreciseMask = false;
+			UnLive2DClippingManager->SetupClippingContext(bNoLowPreciseMask);
+			// 先绘制遮罩Buffer
 #if ENGINE_MAJOR_VERSION >=5 && ENGINE_MINOR_VERSION > 1
 				const FTextureRHIRef RenderTargetTexture = MaskBufferRenderTarget->GetRenderTargetResource()->GetRenderTargetTexture();
 #else
 				FRHITexture2D* RenderTargetTexture = MaskBufferRenderTarget->GetRenderTargetResource()->GetRenderTargetTexture();
 #endif
 				UnLive2DClippingManager->RenderMask_Full(RHICmdList, FeatureLevel, RenderTargetTexture);
-			}
-			if (!UpdataSections() && Sections.Num() > 0)
-			{
-				FBox NewLocalBox(ForceInit);
-				for (int32 i = 0; i < Sections.Num(); i++)
-				{
-					if (!IsCombinedbBatchDidChange(Sections[i]->DrawableCounts)) continue;
-					Sections[i]->UpdateSection_RenderThread(RHICmdList);
-					NewLocalBox += Sections[i]->GetLocalBox();
-				}
-
-				LocalBox = FBoxSphereBounds(NewLocalBox);
-			}
-		});
+		}
+		for (int32 i = 0; i < Sections.Num(); i++)
+		{
+			Sections[i]->UpdateSection_RenderThread(RHICmdList);
+		}
+	});
 }
 
 void FUnLive2DSceneProxy::GetDynamicMeshElements(const TArray<const FSceneView*>& Views, const FSceneViewFamily& ViewFamily, uint32 VisibilityMap, FMeshElementCollector& Collector) const
@@ -240,7 +259,7 @@ bool FUnLive2DSceneProxy::GetMeshElement(FMeshElementCollector& Collector, int32
 	{
 		FDynamicPrimitiveUniformBuffer& DynamicPrimitiveUniformBuffer = Collector.AllocateOneFrameResource<FDynamicPrimitiveUniformBuffer>();
 
-#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 4
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
 		FPrimitiveUniformShaderParametersBuilder Builder;
 		BuildUniformShaderParameters(Builder);
 		DynamicPrimitiveUniformBuffer.Set(Collector.GetRHICommandList(), Builder);
@@ -267,13 +286,7 @@ bool FUnLive2DSceneProxy::GetMeshElement(FMeshElementCollector& Collector, int32
 
 void FUnLive2DSceneProxy::ClearSections()
 {
-	for (FUnLive2DVertexBuffer* VertexBuffer : Sections)
-	{
-		if (VertexBuffer == nullptr) continue;
-
-		VertexBuffer->ReleaseResource();
-		delete VertexBuffer;
-	}
+	DirtySections = Sections;
 	Sections.Empty();
 }
 
@@ -350,6 +363,18 @@ UMaterialInstance* FUnLive2DSceneProxy::GetMaterialInstanceDynamicToIndex(const 
 	return Material;
 }
 
+void FUnLive2DSceneProxy::ClearDirtySections()
+{
+	for (FUnLive2DVertexBuffer* VertexBuffer : DirtySections)
+	{
+		if (VertexBuffer == nullptr) continue;
+
+		VertexBuffer->ReleaseResource();
+		delete VertexBuffer;
+	}
+	DirtySections.Empty();
+}
+
 bool FUnLive2DSceneProxy::UpdataSections()
 {
 	TArray<uint16> SortedDrawableIndexList;
@@ -415,6 +440,7 @@ bool FUnLive2DSceneProxy::UpdataSections()
 
 	// 获取渲染数据
 	{
+		FBox NewLocalBox(ForceInit);
 		// Copy each section
 		const int32 NumSections = UnLive2DSectionDataArr.Num();
 		Sections.AddZeroed(NumSections);
@@ -426,18 +452,18 @@ bool FUnLive2DSceneProxy::UpdataSections()
 			//NewSection->Depth = SectionIdx * 5;
 			NewSection->Depth = 0;
 #endif
+			NewLocalBox += NewSection->GetLocalBox();
 			
 		}
+		LocalBox = FBoxSphereBounds(NewLocalBox);
 		ENQUEUE_RENDER_COMMAND(UnLive2DSceneProxy_UpdataSections)(
 			[this, FeatureLevel](FRHICommandListImmediate& RHICmdList)
 			{
-				FBox NewLocalBox(ForceInit);
+				ClearDirtySections();
 				for (int32 i = 0; i < Sections.Num(); i++)
 				{
 					Sections[i]->InitRHI(RHICmdList);
-					NewLocalBox += Sections[i]->GetLocalBox();
 				}
-				LocalBox = FBoxSphereBounds(NewLocalBox);
 			});
 	}
 
@@ -448,6 +474,7 @@ FUnLive2DSceneProxy::FUnLive2DVertexBuffer::FUnLive2DVertexBuffer(Csm::CubismMod
 	: UnLive2DRawModel(InUnLive2DRawModel)
 	, RenderState(InClippingManager)
 	, ScaleMesh(InScaleMesh)
+	, bMarkDirty(false)
 	, DrawableCounts(InDrawableCounts)
 	, Material(InMaterial)
 	, VertexFactory(InFeatureLevel, "FProcMeshProxySection")
@@ -456,13 +483,13 @@ FUnLive2DSceneProxy::FUnLive2DVertexBuffer::FUnLive2DVertexBuffer(Csm::CubismMod
 	{
 		Material = UMaterial::GetDefaultMaterial(MD_Surface);
 	}
+	
+	GetUnLive2DVertexData(Vertices, IndexBuffer.Indices, LocalBox);
 }
 
-void FUnLive2DSceneProxy::FUnLive2DVertexBuffer::CommitVertexData(FRHICommandListBase& RHICmdList)
+void FUnLive2DSceneProxy::FUnLive2DVertexBuffer::InitRHI(FRHICommandListBase& RHICmdList)
 {
 	//ReleaseResource();
-	TArray<FDynamicMeshVertex> Vertices;
-	GetUnLive2DVertexData(Vertices, IndexBuffer.Indices, LocalBox);
 	VertexBuffers.InitFromDynamicVertex(&VertexFactory, Vertices, 4);
 
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 4
@@ -472,16 +499,11 @@ void FUnLive2DSceneProxy::FUnLive2DVertexBuffer::CommitVertexData(FRHICommandLis
 #endif
 }
 
-void FUnLive2DSceneProxy::FUnLive2DVertexBuffer::InitRHI(FRHICommandListBase& RHICmdList)
-{
-	CommitVertexData(RHICmdList);
-}
-
 void FUnLive2DSceneProxy::FUnLive2DVertexBuffer::ReleaseResource()
 {
 	VertexBuffers.PositionVertexBuffer.ReleaseResource();
-	VertexBuffers.StaticMeshVertexBuffer.ReleaseResource();;
-	VertexBuffers.ColorVertexBuffer.ReleaseResource();;
+	VertexBuffers.StaticMeshVertexBuffer.ReleaseResource();
+	VertexBuffers.ColorVertexBuffer.ReleaseResource();
 	IndexBuffer.ReleaseResource();
 	VertexFactory.ReleaseResource();
 }
@@ -490,13 +512,8 @@ void FUnLive2DSceneProxy::FUnLive2DVertexBuffer::UpdateSection_RenderThread(FRHI
 {
 	SCOPE_CYCLE_COUNTER(STAT_UnLive2DVertexBuffer_UpdateSection_RenderThread);
 
-
-	TArray<uint16> Indices;
-	TArray<FDynamicMeshVertex> Vertices;
-	GetUnLive2DVertexData(Vertices, IndexBuffer.Indices, LocalBox);
-
-	if (Vertices.Num() == 0) return;
-
+	if (!bMarkDirty || Vertices.Num() == 0) return;
+	bMarkDirty = false;
 	for (int32 i = 0; i < Vertices.Num(); i++)
 	{
 		const FDynamicMeshVertex& Vertex = Vertices[i];
@@ -565,6 +582,13 @@ void FUnLive2DSceneProxy::FUnLive2DVertexBuffer::UpdateSection_RenderThread(FRHI
 const FBox& FUnLive2DSceneProxy::FUnLive2DVertexBuffer::GetLocalBox() const
 {
 	return LocalBox;
+}
+
+void FUnLive2DSceneProxy::FUnLive2DVertexBuffer::UpdateVertices()
+{
+	TArray<uint16> Indices;
+	GetUnLive2DVertexData(Vertices, IndexBuffer.Indices, LocalBox);
+	bMarkDirty = true;
 }
 
 void FUnLive2DSceneProxy::FUnLive2DVertexBuffer::GetUnLive2DVertexData(TArray<FDynamicMeshVertex>& OutVertices, TArray<uint16>& OutIndices, FBox& OutLocalBox) const

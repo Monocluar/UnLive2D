@@ -25,7 +25,8 @@ private:
 	void UpdateSection_RenderThread(FRHICommandListImmediate& RHICmdList);
 
 protected:
-	virtual void OnUpData() override;
+	virtual bool OnUpData() override;
+	virtual void OnUpDataRenderer() override;
 	virtual void GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials, bool bGetDebugMaterials = false) const override;
 
 	SIZE_T GetTypeHash() const override;
