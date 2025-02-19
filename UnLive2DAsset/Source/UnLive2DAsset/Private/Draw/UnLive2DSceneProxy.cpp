@@ -50,8 +50,7 @@ bool FUnLive2DSceneProxy::CanBeOccluded() const
 
 FUnLive2DSceneProxy::FUnLive2DSceneProxy(UUnLive2DRendererComponent* InComponent)
 	: UnLive2DProxyBase(InComponent)
-	, bCombinedbBatch(false)
-	, bInitWaitDraw(false)
+	, bCombinedbBatch(true)
 {
 	UnLive2DRawModel = InComponent->GetUnLive2DRawModel().Pin();
 	if (!UnLive2DRawModel.IsValid()) return;

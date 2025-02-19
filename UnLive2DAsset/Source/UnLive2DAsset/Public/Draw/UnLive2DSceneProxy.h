@@ -124,6 +124,4 @@ private:
 	TMap<uint16, TObjectPtr<class UMaterialInstanceDynamic>> UnLive2DToBlendMaterialList;
 #endif
 
-	mutable bool bInitWaitDraw;
-
 };

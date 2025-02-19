@@ -45,6 +45,7 @@ void SUnLive2DViewUI::SetPlayRate(const TAttribute<float>& InValueAttribute)
 
 void SUnLive2DViewUI::SetLive2DRenderType(EUnLive2DRenderType InUnLive2DRenderType)
 {
+	if (UnLive2DRenderType == InUnLive2DRenderType) return;
 	UnLive2DRenderType = InUnLive2DRenderType;
 	InitLive2DRenderType();
 }
@@ -278,19 +279,20 @@ int32 SUnLive2DViewUI::OnPaint(const FPaintArgs& Args, const FGeometry& Allotted
 	FLinearColor WidgetStyleColor = InWidgetStyle.GetColorAndOpacityTint();
 	if (WidgetStyleColor.A <=0) return LayerId;
 
-
-	SUnLive2DViewUI* ThisPtr = const_cast<SUnLive2DViewUI*>(this);
-	ENQUEUE_RENDER_COMMAND(SUnLive2DViewUI_OnPaint)([ThisPtr](FRHICommandListImmediate& RHICmdList)
+	TSharedRef<SUnLive2DViewUI> ThisPtr = ConstCastSharedRef<SUnLive2DViewUI>(SharedThis(this));
+	TSharedPtr<CubismClippingManager_UE> ClippingManager = ThisPtr->UnLive2DClippingManager;
+	ENQUEUE_RENDER_COMMAND(SUnLive2DViewUI_OnPaint)([ThisPtr,ClippingManager](FRHICommandListImmediate& RHICmdList)
 	{
-		if (ThisPtr->UnLive2DClippingManager.IsValid())
+		if (ClippingManager.IsValid())
 		{
 			bool bNoLowPreciseMask = false;
-			ThisPtr->UnLive2DClippingManager->SetupClippingContext(bNoLowPreciseMask);
-			ThisPtr->UnLive2DClippingManager->RenderMask_Full(RHICmdList, GMaxRHIFeatureLevel, ThisPtr->GetMaskTextureRHIRef());
+			ClippingManager->SetupClippingContext(bNoLowPreciseMask);
+			ClippingManager->RenderMask_Full(RHICmdList, GMaxRHIFeatureLevel, ThisPtr->GetMaskTextureRHIRef());
 		}
 
 		if (ThisPtr->UnLive2DRenderType == EUnLive2DRenderType::RenderTarget)
 		{
+			if (ThisPtr->RenderTarget == nullptr) return;
 			ThisPtr->UpdataRTSections(RHICmdList, ThisPtr->bCombinedbBatch);
 			ThisPtr->DrawSeparateToRenderTarget_RenderThread(RHICmdList, ThisPtr->RenderTarget->GetRenderTargetResource(), GMaxRHIFeatureLevel, ThisPtr->MaskBuffer);
 		}
@@ -335,6 +337,7 @@ FTextureRHIRef SUnLive2DViewUI::GetMaskTextureRHIRef() const
 {
 	if (UnLive2DRenderType == EUnLive2DRenderType::Mesh)
 	{
+		if (!MaskBufferRenderTarget.IsValid()) return FTextureRHIRef();
 #if ENGINE_MAJOR_VERSION >=5 && ENGINE_MINOR_VERSION > 1
 		const FTextureRHIRef RenderTargetTexture = MaskBufferRenderTarget->GetRenderTargetResource()->GetRenderTargetTexture();
 #else

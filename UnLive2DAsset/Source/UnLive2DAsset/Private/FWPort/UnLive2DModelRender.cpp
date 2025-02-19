@@ -586,6 +586,7 @@ bool CubismClippingManager_UE::GetFillMaskMartixForMask(const uint16& InDrawable
 
 void CubismClippingManager_UE::RenderMask_Full(FRHICommandListImmediate& RHICmdList, ERHIFeatureLevel::Type FeatureLevel, FTextureRHIRef OutMaskBuffer)
 {
+    if (!OutMaskBuffer.IsValid()) return;
 #if ENGINE_MAJOR_VERSION < 5
 	RHICmdList.TransitionResource(FExclusiveDepthStencil::DepthWrite_StencilWrite, OutMaskBuffer->GetTexture2D());
 #else
