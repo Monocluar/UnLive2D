@@ -201,6 +201,8 @@ private:
 	void PlayAnimNode();
 	// 是否可以播放当前选择的节点
 	bool CanPlayAnimNode() const;
+	// 停止播放
+	void Stop();
 
 protected:
 

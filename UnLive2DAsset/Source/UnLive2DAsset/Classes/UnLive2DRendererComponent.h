@@ -7,6 +7,7 @@
 #include "CubismBpLib.h"
 #endif // WITH_EDITOR
 #include "CubismConfig.h"
+#include "Draw/IUnLive2DRenderBase.h"
 
 #include "UnLive2DRendererComponent.generated.h"
 
@@ -14,7 +15,7 @@ class UUnLive2D;
 class UUnLive2DMotion;
 class UMaterialInterface;
 class FUnLive2DRawModel;
-
+class UTextureRenderTarget2D;
 
 
 UCLASS(ClassGroup = UnLive2D, meta = (BlueprintSpawnableComponent), hidecategories = (Material, Mesh))
@@ -51,6 +52,7 @@ protected:
 
 
 	virtual void GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials, bool bGetDebugMaterials = false) const override;
+	virtual void BeginDestroy() override;
 
 public:
 	virtual class UBodySetup* GetBodySetup() override;
@@ -131,6 +133,14 @@ public:
 	void UpDataUnLive2DProperty(FName PropertyName);
 #endif
 
+public:
+
+	void ClearRTCache();
+	void InitLive2DRenderData(EUnLive2DRenderType InRenderType, int32 BufferHeight);
+
+	FTextureRHIRef GetMaskTextureRHIRef() const;
+	UTextureRenderTarget2D* GetTextureRenderTarget2D() const;
+
 protected:
 
 	/** 动画播放完成 */
@@ -145,5 +155,11 @@ private:
 	class UBodySetup* ProcMeshBodySetup;
 
 	FBoxSphereBounds LocalBounds;
+
+
+private:
+	TWeakObjectPtr<UTextureRenderTarget2D> MaskBufferRenderTarget; //遮罩渲染缓冲图片
+
+	FTextureRHIRef MaskBuffer; // 遮罩图
 
 };

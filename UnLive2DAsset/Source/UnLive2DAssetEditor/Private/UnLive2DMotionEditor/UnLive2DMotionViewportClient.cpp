@@ -14,8 +14,7 @@ FUnLive2DAnimBaseViewportClient::FUnLive2DAnimBaseViewportClient(UUnLive2DAnimBa
 
 	EngineShowFlags.DisableAdvancedFeatures();
 	EngineShowFlags.SetCompositeEditorPrimitives(true);
-
-	SetShowGrid();
+	EngineShowFlags.SetGrid(false);
 }
 
 void FUnLive2DAnimBaseViewportClient::Tick(float DeltaSeconds)

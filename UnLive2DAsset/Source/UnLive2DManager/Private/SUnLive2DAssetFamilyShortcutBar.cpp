@@ -9,6 +9,7 @@
 #if ENGINE_MAJOR_VERSION >= 5
 #include "Styling/AppStyle.h"
 #endif
+#include "UnLive2DCubismCore.h"
 
 #define LOCTEXT_NAMESPACE "SUnLive2DAssetFamilyShortcutBar"
 
@@ -50,10 +51,10 @@ public:
 		TArray<FAssetData> Assets;
 		InAssetFamily->FindAssetsOfType(InAssetData.GetClass(), Assets);
 		bMultipleAssetsExist = Assets.Num() > 1;
-#if ENGINE_MAJOR_VERSION >= 5
-		AssetDirtyBrush = FAppStyle::GetBrush("ContentBrowser.ContentDirty");
+#if ENGINE_MAJOR_VERSION < 5
+		AssetDirtyBrush = FEditorStyle::GetBrush("ContentBrowser.ContentDirty");
 #else
-		AssetDirtyBrush = FEditorStyle::Get().GetBrush("Icons.DirtyBadge");
+		AssetDirtyBrush = FAppStyle::Get().GetBrush("Icons.DirtyBadge");
 #endif
 
 		{
@@ -86,9 +87,13 @@ protected:
 
 	TSharedRef<SWidget> CreateSwithUI()
 	{
-#if ENGINE_MAJOR_VERSION >= 5
 		return SAssignNew(CheckBox, SCheckBox)
-				.Style(FAppStyle::Get(), "ToolBar.ToggleButton")
+
+#if ENGINE_MAJOR_VERSION < 5
+				.Style(FUnLive2DStyle::Get(), "ToolBar.ToggleButton")
+#else
+				.Style(FUnLive2DStyle::Get(), "SegmentedCombo.Left")
+#endif
 				//.ForegroundColor(FSlateColor::UseForeground())
 				.OnCheckStateChanged(this, &SUnLive2DAssetShortcut::HandleOpenAssetShortcut)
 				.IsChecked(this, &SUnLive2DAssetShortcut::GetCheckState)
@@ -96,15 +101,15 @@ protected:
 				.ToolTipText(this, &SUnLive2DAssetShortcut::GetButtonTooltip)
 				.Padding(0.0f)
 				[
+#if ENGINE_MAJOR_VERSION < 5
 					SNew(SHorizontalBox)
-
 					+ SHorizontalBox::Slot()
 					.VAlign(VAlign_Center)
 					.AutoWidth()
 					[
 						SNew(SBorder)
 						.Padding(4.0f)
-						.BorderImage(FAppStyle::GetBrush("PropertyEditor.AssetThumbnailShadow"))
+						.BorderImage(FUnLive2DStyle::GetBrush("PropertyEditor.AssetThumbnailShadow"))
 						[
 							SNew(SHorizontalBox)
 							+SHorizontalBox::Slot()
@@ -165,43 +170,35 @@ protected:
 						[
 							SNew(STextBlock)
 							.Text(this, &SUnLive2DAssetShortcut::GetAssetText)
-							.TextStyle(FAppStyle::Get(), "Toolbar.Label")
+							.TextStyle(FUnLive2DStyle::Get(), "Toolbar.Label")
 							.ShadowOffset(FVector2D::UnitVector)
 						]
 					]
-				];
 #else
-	return SAssignNew(CheckBox, SCheckBox)
-			.Style(FEditorStyle::Get(), "SegmentedCombo.Left")
-			.OnCheckStateChanged(this, &SUnLive2DAssetShortcut::HandleOpenAssetShortcut)
-			.IsChecked(this, &SUnLive2DAssetShortcut::GetCheckState)
-			.Visibility(this, &SUnLive2DAssetShortcut::GetButtonVisibility)
-			.ToolTipText(this, &SUnLive2DAssetShortcut::GetButtonTooltip)
-			.Padding(0.0f)
-			[
-				SNew(SOverlay)
+					SNew(SOverlay)
 
-				+ SOverlay::Slot()
-				.VAlign(VAlign_Center)
-				.HAlign(HAlign_Center)
-				.Padding(FMargin(16.f, 4.f))
-				[
-					SNew(SImage)
-					.ColorAndOpacity(this, &SUnLive2DAssetShortcut::GetAssetTint)
-					.Image(this, &SUnLive2DAssetShortcut::GetAssetIcon)
-				]
+					+ SOverlay::Slot()
+					.VAlign(VAlign_Center)
+					.HAlign(HAlign_Center)
+					.Padding(FMargin(16.f, 4.f))
+					[
+						SNew(SImage)
+						.ColorAndOpacity(this, &SUnLive2DAssetShortcut::GetAssetTint)
+						.Image(this, &SUnLive2DAssetShortcut::GetAssetIcon)
+					]
 
-				+ SOverlay::Slot()
-				.VAlign(VAlign_Bottom)
-				.HAlign(HAlign_Right)
-				.Padding(FMargin(2.f, 2.f))
-				[
-					SNew(SImage)
-					.ColorAndOpacity(FSlateColor::UseForeground())
-					.Image(this, &SUnLive2DAssetShortcut::GetDirtyImage)
-				]
-			];
+					+ SOverlay::Slot()
+					.VAlign(VAlign_Bottom)
+					.HAlign(HAlign_Right)
+					.Padding(FMargin(2.f, 2.f))
+					[
+						SNew(SImage)
+						.ColorAndOpacity(FSlateColor::UseForeground())
+						.Image(this, &SUnLive2DAssetShortcut::GetDirtyImage)
+					]
+
 #endif
+				];
 	}
 
 protected:
@@ -217,7 +214,11 @@ protected:
 			}
 			else
 			{
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 1
+				UE_LOG(LogUnLive2DManagerModule, Error, TEXT("Asset cannot be opened: %s"), *AssetData.GetSoftObjectPath().ToString());
+#else
 				UE_LOG(LogUnLive2DManagerModule, Error, TEXT("Asset cannot be opened: %s"), *AssetData.ObjectPath.ToString());
+#endif
 			}
 		}
 	}
@@ -263,7 +264,11 @@ protected:
 	{
 		if (AssetFamily->IsAssetCompatible(InAssetData))
 		{
-			if(InOldObjectPath == AssetData.ObjectPath.ToString())
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 1
+			if (InOldObjectPath == AssetData.GetSoftObjectPath().ToString())
+#else
+			if (InOldObjectPath == AssetData.ObjectPath.ToString())
+#endif
 			{
 				AssetData = InAssetData;
 

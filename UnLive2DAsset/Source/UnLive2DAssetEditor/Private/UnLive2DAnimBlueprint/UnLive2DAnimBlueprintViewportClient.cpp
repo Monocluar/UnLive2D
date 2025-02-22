@@ -14,6 +14,7 @@ FUnLive2DAnimBlueprintViewportClient::FUnLive2DAnimBlueprintViewportClient(UUnLi
 
 	EngineShowFlags.DisableAdvancedFeatures();
 	EngineShowFlags.SetCompositeEditorPrimitives(true);
+	EngineShowFlags.SetGrid(false);
 }
 
 

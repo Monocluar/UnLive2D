@@ -5,7 +5,6 @@
 void SUnLive2DAnimBlueprintEditorViewport::Construct(const FArguments& InArgs)
 {
 	UnLive2DAnimBlueprintEdited = InArgs._UnLive2DAnimBlueprintEdited;
-
 	SEditorViewport::Construct(SEditorViewport::FArguments());
 }
 

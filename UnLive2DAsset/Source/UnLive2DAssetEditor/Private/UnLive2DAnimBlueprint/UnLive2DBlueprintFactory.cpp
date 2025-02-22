@@ -161,7 +161,11 @@ private:
 		FContentBrowserModule& ContentBrowserModule = FModuleManager::Get().LoadModuleChecked<FContentBrowserModule>(TEXT("ContentBrowser"));
 
 		FAssetPickerConfig AssetPickerConfig;
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 1
+		AssetPickerConfig.Filter.ClassPaths.Add(UUnLive2D::StaticClass()->GetClassPathName());
+#else
 		AssetPickerConfig.Filter.ClassNames.Add(UUnLive2D::StaticClass()->GetFName());
+#endif
 		AssetPickerConfig.OnAssetSelected = FOnAssetSelected::CreateSP(this, &SUnLive2DBlueprintCreateDialog::OnUnLive2DSelected);
 		AssetPickerConfig.bAllowNullSelection = true;
 		AssetPickerConfig.InitialAssetViewType = EAssetViewType::Column;

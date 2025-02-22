@@ -46,8 +46,13 @@ void SUnLive2DAnimBaseAssetBrowser::RebuildWidget(UUnLive2DAnimBase* UnLive2DAni
 	FContentBrowserModule& ContentBrowserModule = FModuleManager::Get().LoadModuleChecked<FContentBrowserModule>(TEXT("ContentBrowser"));
 
 	FAssetPickerConfig AssetPickerConfig;
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 1
+	AssetPickerConfig.Filter.ClassPaths.Add(UUnLive2DMotion::StaticClass()->GetClassPathName());
+	AssetPickerConfig.Filter.ClassPaths.Add(UUnLive2DExpression::StaticClass()->GetClassPathName());
+#else
 	AssetPickerConfig.Filter.ClassNames.Add(UUnLive2DMotion::StaticClass()->GetFName());
 	AssetPickerConfig.Filter.ClassNames.Add(UUnLive2DExpression::StaticClass()->GetFName());
+#endif
 	AssetPickerConfig.OnAssetSelected = FOnAssetSelected::CreateSP(this, &SUnLive2DAnimBaseAssetBrowser::OnAnimBaseSelected);
 	AssetPickerConfig.OnAssetDoubleClicked = FOnAssetDoubleClicked::CreateSP(this, &SUnLive2DAnimBaseAssetBrowser::OnAnimBaseDoubleClicked);
 	AssetPickerConfig.OnShouldFilterAsset = FOnShouldFilterAsset::CreateSP(this, &SUnLive2DAnimBaseAssetBrowser::FilterAnimBaseBasedOnParentClass);

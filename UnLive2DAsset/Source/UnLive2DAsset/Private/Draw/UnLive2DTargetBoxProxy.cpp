@@ -27,10 +27,10 @@ void FUnLive2DTargetBoxProxy::UpdateSection_RenderThread(FRHICommandListImmediat
 			bool bNoLowPreciseMask = false;
 			UnLive2DClippingManager->SetupClippingContext(bNoLowPreciseMask);
 			// 先绘制遮罩Buffer
-			UnLive2DClippingManager->RenderMask_Full(RHICmdList, GetScene().GetFeatureLevel(), MaskBuffer);
+			UnLive2DClippingManager->RenderMask_Full(RHICmdList, GetScene().GetFeatureLevel(), OwnerComponent->GetMaskTextureRHIRef());
 			//UnLive2DClippingManager->RenderMask_Full(RHICmdList, GetScene().GetFeatureLevel(), RenderTarget->GetRenderTargetResource()->TextureRHI);
 		}
-		DrawSeparateToRenderTarget_RenderThread(RHICmdList, RenderTarget->GetRenderTargetResource(),GetScene().GetFeatureLevel(), MaskBuffer);
+		DrawSeparateToRenderTarget_RenderThread(RHICmdList, RenderTarget->GetRenderTargetResource(),GetScene().GetFeatureLevel(), OwnerComponent->GetMaskTextureRHIRef());
 	}
 }
 
@@ -41,6 +41,7 @@ void FUnLive2DTargetBoxProxy::GetUsedMaterials(TArray<UMaterialInterface*>& OutM
 
 bool FUnLive2DTargetBoxProxy::OnUpData()
 {
+	if (OwnerComponent && OwnerComponent->IsRenderStateDirty()) return false;
 	return UpdataRTSections(bCombinedbBatch);
 }
 
@@ -230,18 +231,9 @@ FUnLive2DTargetBoxProxy::FUnLive2DTargetBoxProxy(UUnLive2DRendererComponent* InC
 
 	if (CreateClippingManager())
 	{
-		ETextureCreateFlags Flags = ETextureCreateFlags(TexCreate_None | TexCreate_RenderTargetable | TexCreate_ShaderResource);
 		const csmInt32 BufferHeight = UnLive2DClippingManager->GetClippingMaskBufferSize();
-#if ENGINE_MAJOR_VERSION >= 5
-		const FRHITextureCreateDesc Desc = FRHITextureCreateDesc::Create2D(TEXT("FUnLive2DTargetBoxProxy_UpdateSection_RenderThread"), BufferHeight, BufferHeight, PF_R8G8B8A8)
-			.SetFlags(Flags).SetClearValue(FClearValueBinding(FLinearColor::White));
 
-		MaskBuffer = RHICreateTexture(Desc);
-#else
-		FRHIResourceCreateInfo CreateInfo(TEXT("FUnLive2DTargetBoxProxy_UpdateSection_RenderThread"));
-		CreateInfo.ClearValueBinding = FClearValueBinding(FLinearColor::White);
-		MaskBuffer = RHICreateTexture2D(BufferHeight, BufferHeight, PF_R8G8B8A8, 1, 1, Flags, CreateInfo);
-#endif
+		InComponent->InitLive2DRenderData(EUnLive2DRenderType::Mesh, BufferHeight);
 	}
 
 	{
@@ -312,5 +304,4 @@ FUnLive2DTargetBoxProxy::~FUnLive2DTargetBoxProxy()
 		MaterialInstance->RemoveFromRoot();
 	}
 	MaterialInstance = nullptr;
-	MaskBuffer.SafeRelease();
 }

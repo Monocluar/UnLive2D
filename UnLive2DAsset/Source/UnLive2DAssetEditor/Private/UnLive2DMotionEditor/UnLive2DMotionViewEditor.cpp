@@ -100,17 +100,16 @@ void FUnLive2DAnimBaseViewEditor::InitUnLive2DAnimViewEditor(const EToolkitMode:
 		(
 			FTabManager::NewPrimaryArea()
 			->SetOrientation(Orient_Vertical)
+#if ENGINE_MAJOR_VERSION < 5
 			->Split
 			(
 				FTabManager::NewStack()
 				->SetSizeCoefficient(0.1f)
 				->SetHideTabWell(true)
-#if UE_VERSION_OLDER_THAN(5,0,0)
 				->AddTab(GetToolbarTabId(), ETabState::OpenedTab)
-#else
-				->AddTab(GetEditorName(), ETabState::OpenedTab)
-#endif
+				//->AddTab(GetEditorName(), ETabState::OpenedTab)
 			)
+#endif
 			->Split
 			(
 				FTabManager::NewSplitter()

@@ -1,5 +1,8 @@
 ﻿#pragma once
 #include "UnLive2DCubismCore.h"
+#include "CubismConfig.h"
+
+class UTextureRenderTarget2D;
 
 enum EUnLive2DShaderFlags : uint8
 {

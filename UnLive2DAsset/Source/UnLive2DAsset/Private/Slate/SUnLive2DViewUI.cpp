@@ -110,7 +110,7 @@ void SUnLive2DViewUI::InitLive2DRenderType()
 		CreateInfo.ClearValueBinding = FClearValueBinding(FLinearColor::White);
 		MaskBuffer = RHICreateTexture2D(BufferHeight, BufferHeight, PF_R8G8B8A8, 1, 1, Flags, CreateInfo);
 #endif
-}
+	}
 }
 
 void SUnLive2DViewUI::ClearRTCache()

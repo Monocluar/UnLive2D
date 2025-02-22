@@ -14,6 +14,7 @@ class UUnLive2DAnimBlueprintNode_Random : public UUnLive2DAnimBlueprintNode_Base
 
 public:
 
+	// 权重
 	UPROPERTY(EditAnywhere, editfixedsize, Category = Random)
 		TArray<float> Weights;
 

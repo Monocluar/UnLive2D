@@ -316,6 +316,16 @@ void FUnLive2DAnimationBlueprintEditor::BindCommands()
 	ToolkitCommands->MapAction(
 		Commands.PlayUnLive2DAnimBlueprint,
 		FExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::PlayUnLive2DAnimBlueprint));
+
+	ToolkitCommands->MapAction(
+		Commands.PlayNode,
+		FExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::PlayAnimNode),
+		FCanExecuteAction::CreateSP( this, &FUnLive2DAnimationBlueprintEditor::CanPlayAnimNode));
+
+
+	ToolkitCommands->MapAction(
+		Commands.StopUnLive2DAnim,
+		FExecuteAction::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::Stop));
 }
 
 void FUnLive2DAnimationBlueprintEditor::SyncInBrowser()
@@ -376,7 +386,11 @@ TSharedRef<SDockTab> FUnLive2DAnimationBlueprintEditor::SpawnTab_AssetBrowser(co
 	FContentBrowserModule& ContentBrowserModule = FModuleManager::Get().LoadModuleChecked<FContentBrowserModule>(TEXT("ContentBrowser"));
 
 	FAssetPickerConfig AssetPickerConfig;
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 1
+	AssetPickerConfig.Filter.ClassPaths.Add(UUnLive2DMotion::StaticClass()->GetClassPathName());
+#else
 	AssetPickerConfig.Filter.ClassNames.Add(UUnLive2DMotion::StaticClass()->GetFName());
+#endif
 	AssetPickerConfig.OnAssetDoubleClicked = FOnAssetDoubleClicked::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::AssetBrowser_OnMotionDoubleClicked);
 	AssetPickerConfig.OnShouldFilterAsset = FOnShouldFilterAsset::CreateSP(this, &FUnLive2DAnimationBlueprintEditor::AssetBrowser_FilterMotionBasedOnParentClass);
 	AssetPickerConfig.bAllowNullSelection = true;
@@ -405,7 +419,9 @@ TSharedRef<SDockTab> FUnLive2DAnimationBlueprintEditor::SpawnTab_GraphDocument(c
 TSharedRef<SDockTab> FUnLive2DAnimationBlueprintEditor::SpawnTab_Properties(const FSpawnTabArgs& Args)
 {
 	return SNew(SDockTab)
+#if ENGINE_MAJOR_VERSION < 5
 		.Icon(FUnLive2DStyle::GetBrush("LevelEditor.Tabs.Details"))
+#endif
 		.Label(LOCTEXT("SoundCueDetailsTitle", "Details"))
 		[
 			UnLive2DAnimProperties.ToSharedRef()
@@ -764,6 +780,13 @@ bool FUnLive2DAnimationBlueprintEditor::CanPlayAnimNode() const
 	return GetSelectedNodes().Num() == 1;
 }
 
+void FUnLive2DAnimationBlueprintEditor::Stop()
+{
+	if (!GetUnLive2DRenderComponent().IsValid()) return;
+
+	GetUnLive2DRenderComponent()->StopMotion();
+}
+
 void FUnLive2DAnimationBlueprintEditor::OnSelectedNodesChanged(const TSet<class UObject*>& NewSelection)
 {
 	TArray<UObject*> Selection;
@@ -886,18 +909,17 @@ void FUnLive2DAnimationBlueprintEditor::InitUnLive2DAnimationBlueprintEditor(con
 		{
 			FTabManager::NewPrimaryArea()
 			->SetOrientation(Orient_Vertical)
+#if ENGINE_MAJOR_VERSION < 5
 			->Split
 			(
 				// Top toolbar
 				FTabManager::NewStack()
 				->SetSizeCoefficient(0.1f)
 				->SetHideTabWell(true)
-#if UE_VERSION_OLDER_THAN(5,0,0)
 				->AddTab(GetToolbarTabId(), ETabState::OpenedTab)
-#else
-				->AddTab(GetEditorName(), ETabState::OpenedTab)
-#endif
+				//->AddTab(GetEditorName(), ETabState::OpenedTab)
 			)
+#endif
 			->Split
 			(
 				{

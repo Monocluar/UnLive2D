@@ -40,9 +40,8 @@ protected:
 
 		FBox LocalBox;
 		//FUnLive2DDynamicMeshSectionData MeshSectionData;
-		TArray<FDynamicMeshVertex> Vertices;
 
-		bool bMarkDirty;
+		mutable bool bMarkDirty;
 	public:
 		TArray<int32> DrawableCounts;
 		/** Material applied to this section */
@@ -57,7 +56,6 @@ protected:
 		// 深度
 		uint16 Depth;
 #endif
-
 	public:
 		FUnLive2DVertexBuffer(Csm::CubismModel* InUnLive2DRawModel, CubismClippingManager_UE* InClippingManager, const TArray<int32>& InDrawableCounts, ERHIFeatureLevel::Type InFeatureLevel, uint8 InScaleMesh = 100,UMaterialInterface* InMaterial = nullptr);
 
@@ -108,15 +106,10 @@ protected:
 
 	UMaterialInstance* GetMaterialInstanceDynamicToIndex(const int32& DrawableIndex);
 
-private:
-	void ClearDirtySections();
 
 protected:
-	TWeakObjectPtr<class UTextureRenderTarget2D> MaskBufferRenderTarget; //遮罩渲染缓冲图片
 
 	TArray<FUnLive2DVertexBuffer*> Sections;
-
-	TArray<FUnLive2DVertexBuffer*> DirtySections;
 
 	// 是否合批
 	bool bCombinedbBatch;

@@ -20,6 +20,8 @@
 #endif
 #include "Draw/UnLive2DSceneProxy.h"
 #include "Draw/UnLive2DTargetBoxProxy.h"
+#include "Engine/TextureRenderTarget2D.h"
+
 
 using namespace Csm;
 
@@ -27,7 +29,7 @@ UUnLive2DRendererComponent::UUnLive2DRendererComponent(const FObjectInitializer&
 	: Super(ObjectInitializer)
 	, SourceUnLive2D(nullptr)
 	, PlayRate(1.f)
-	, UnLive2DRenderType(EUnLive2DRenderType::RenderTarget)
+	, UnLive2DRenderType(EUnLive2DRenderType::Mesh)
 	, RenderTargetSize(1024)
 {
 	//BoundsScale = 1024.f;
@@ -129,6 +131,7 @@ void UUnLive2DRendererComponent::PostEditChangeProperty(FPropertyChangedEvent& P
 
 		if (PropertyName == GET_MEMBER_NAME_STRING_CHECKED(UUnLive2DRendererComponent, SourceUnLive2D))
 		{
+			InitUnLive2D();
 			MarkRenderStateDirty();
 		}
 		else if (PropertyName == GET_MEMBER_NAME_STRING_CHECKED(UUnLive2DRendererComponent, UnLive2DRenderType))
@@ -201,6 +204,12 @@ UBodySetup* UUnLive2DRendererComponent::GetBodySetup()
 }
 
 
+void UUnLive2DRendererComponent::BeginDestroy()
+{
+	Super::BeginDestroy();
+	ClearRTCache();
+}
+
 FCollisionShape UUnLive2DRendererComponent::GetCollisionShape(float Inflation) const
 {
 	FVector BoxHalfExtent = (FVector(0.01f, LocalBounds.BoxExtent.X, LocalBounds.BoxExtent.Y) * GetComponentTransform().GetScale3D()) + Inflation;
@@ -238,21 +247,14 @@ void UUnLive2DRendererComponent::InitUnLive2D()
 
 	if (World == nullptr || World->bIsTearingDown || SourceUnLive2D == nullptr) return;
 
+#if WITH_EDITOR
+	SourceUnLive2D->OnUpDataUnLive2DProperty.BindUObject(this, &UUnLive2DRendererComponent::UpDataUnLive2DProperty);
+#endif
 
-	if (!UnLive2DRawModel.IsValid())
-	{
-		UnLive2DRawModel = SourceUnLive2D->CreateLive2DRawModel();
-		UnLive2DRawModel->OnMotionPlayEnd.BindUObject(this, &UUnLive2DRendererComponent::OnMotionPlayeEnd);
-	}
-	else
-	{
-		if (UnLive2DRawModel->GetOwnerLive2D().IsValid() && UnLive2DRawModel->GetOwnerLive2D().Get() != SourceUnLive2D)
-		{
-			UnLive2DRawModel.Reset();
-			UnLive2DRawModel = SourceUnLive2D->CreateLive2DRawModel();
-			UnLive2DRawModel->OnMotionPlayEnd.BindUObject(this, &UUnLive2DRendererComponent::OnMotionPlayeEnd);
-		}
-	}
+	UnLive2DRawModel.Reset();
+	UnLive2DRawModel = SourceUnLive2D->CreateLive2DRawModel();
+	UnLive2DRawModel->OnMotionPlayEnd.BindUObject(this, &UUnLive2DRendererComponent::OnMotionPlayeEnd);
+
 	// Need to send to render thread
 	MarkRenderStateDirty();
 
@@ -270,13 +272,7 @@ bool UUnLive2DRendererComponent::SetUnLive2D(UUnLive2D* NewUnLive2D)
 
 	SourceUnLive2D = NewUnLive2D;
 
-#if WITH_EDITOR
-	SourceUnLive2D->OnUpDataUnLive2DProperty.BindUObject(this, &UUnLive2DRendererComponent::UpDataUnLive2DProperty);
-#endif
-
 	InitUnLive2D();
-
-	//SourceUnLive2D->SetOwnerObject(this);
 
 	return true;
 }
@@ -413,9 +409,80 @@ void UUnLive2DRendererComponent::UpDataUnLive2DProperty(FName PropertyName)
 		UpdateBounds();
 	}
 }
-
 #endif
 
+
+void UUnLive2DRendererComponent::ClearRTCache()
+{
+	if (MaskBufferRenderTarget.IsValid())
+	{
+		MaskBufferRenderTarget->RemoveFromRoot();
+		MaskBufferRenderTarget.Reset();
+	}
+	else
+	{
+		MaskBuffer.SafeRelease();
+	}
+}
+
+void UUnLive2DRendererComponent::InitLive2DRenderData(EUnLive2DRenderType InRenderType,int32 BufferHeight)
+{
+	if (UnLive2DRenderType == EUnLive2DRenderType::Mesh)
+	{
+		if (MaskBufferRenderTarget.IsValid())
+		{
+			if (MaskBufferRenderTarget->SizeX == BufferHeight) return;
+			MaskBufferRenderTarget->RemoveFromRoot();
+			MaskBufferRenderTarget.Reset();
+		}
+		MaskBufferRenderTarget = NewObject<UTextureRenderTarget2D>(GetTransientPackage());
+		MaskBufferRenderTarget->ClearColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		MaskBufferRenderTarget->InitCustomFormat(BufferHeight, BufferHeight, EPixelFormat::PF_B8G8R8A8, false);
+		MaskBufferRenderTarget->AddToRoot();
+	}
+	else
+	{
+		if (MaskBuffer.IsValid())
+		{
+			if (MaskBuffer->GetSizeXYZ().X == BufferHeight) return;
+			MaskBuffer.SafeRelease();
+		}
+
+		ETextureCreateFlags Flags = ETextureCreateFlags(TexCreate_None | TexCreate_RenderTargetable | TexCreate_ShaderResource);
+#if ENGINE_MAJOR_VERSION >= 5
+		const FRHITextureCreateDesc Desc = FRHITextureCreateDesc::Create2D(TEXT("FUnLive2DTargetBoxProxy_UpdateSection_RenderThread"), BufferHeight, BufferHeight, PF_R8G8B8A8)
+			.SetFlags(Flags).SetClearValue(FClearValueBinding(FLinearColor::White));
+
+		MaskBuffer = RHICreateTexture(Desc);
+#else
+		FRHIResourceCreateInfo CreateInfo(TEXT("FUnLive2DTargetBoxProxy_UpdateSection_RenderThread"));
+		CreateInfo.ClearValueBinding = FClearValueBinding(FLinearColor::White);
+		MaskBuffer = RHICreateTexture2D(BufferHeight, BufferHeight, PF_R8G8B8A8, 1, 1, Flags, CreateInfo);
+#endif
+	}
+}
+
+FTextureRHIRef UUnLive2DRendererComponent::GetMaskTextureRHIRef() const
+{
+	if (UnLive2DRenderType == EUnLive2DRenderType::Mesh)
+	{
+		if (!MaskBufferRenderTarget.IsValid()) return FTextureRHIRef();
+#if ENGINE_MAJOR_VERSION >=5 && ENGINE_MINOR_VERSION > 1
+		const FTextureRHIRef RenderTargetTexture = MaskBufferRenderTarget->GetRenderTargetResource()->GetRenderTargetTexture();
+#else
+		FRHITexture2D* RenderTargetTexture = MaskBufferRenderTarget->GetRenderTargetResource()->GetRenderTargetTexture();
+#endif
+		return RenderTargetTexture;
+	}
+	else
+		return MaskBuffer;
+}
+
+
+UTextureRenderTarget2D* UUnLive2DRendererComponent::GetTextureRenderTarget2D() const
+{
+	return MaskBufferRenderTarget.Get();
+}
 
 void UUnLive2DRendererComponent::OnMotionPlayeEnd_Implementation()
 {

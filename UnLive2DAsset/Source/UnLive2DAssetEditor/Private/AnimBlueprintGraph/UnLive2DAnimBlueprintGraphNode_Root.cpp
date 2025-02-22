@@ -39,7 +39,7 @@ void UUnLive2DAnimBlueprintGraphNode_Root::GetNodeContextMenuActions(class UTool
 
 void UUnLive2DAnimBlueprintGraphNode_Root::CreateInputPins()
 {
-	CreatePin(EGPD_Input, TEXT("SoundNode"), TEXT("Root"), NAME_None);
+	CreatePin(EGPD_Input, TEXT("AnimBlueprintNode"), TEXT("Root"), NAME_None);
 }
 
 #undef LOCTEXT_NAMESPACE

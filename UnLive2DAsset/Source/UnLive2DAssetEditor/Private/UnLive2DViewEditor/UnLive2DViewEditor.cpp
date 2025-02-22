@@ -117,18 +117,15 @@ void FUnLive2DViewEditor::InitUnLive2DViewEditor(const EToolkitMode::Type Mode, 
 		->AddArea
 		(
 			FTabManager::NewPrimaryArea()
+#if ENGINE_MAJOR_VERSION < 5
 			->SetOrientation(Orient_Vertical)
-#if UE_VERSION_OLDER_THAN(5,0,0)
 			->Split
 			(
 				FTabManager::NewStack()
 				->SetSizeCoefficient(0.1f)
 				->SetHideTabWell(true)
-#if UE_VERSION_OLDER_THAN(5,0,0)
 				->AddTab(GetToolbarTabId(), ETabState::OpenedTab)
-#else
-				->AddTab(GetEditorName(), ETabState::OpenedTab)
-#endif
+				//->AddTab(GetEditorName(), ETabState::OpenedTab)
 			)
 #endif
 			->Split

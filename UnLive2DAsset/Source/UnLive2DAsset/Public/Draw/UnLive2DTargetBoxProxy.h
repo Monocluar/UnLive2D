@@ -61,9 +61,6 @@ private:
 	// 是否合批
 	bool bCombinedbBatch;
 
-	// 遮罩图
-	FTextureRHIRef MaskBuffer;
-
 	UBodySetup* BodySetup;
 	FMaterialRelevance MaterialRelevance;
 	FIntPoint CurrentDrawSize;

@@ -19,7 +19,11 @@ static void FindAssets(const UUnLive2D* InUnLive2D, TArray<FAssetData>& OutAsset
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
 	FARFilter Filter;
 	Filter.bRecursiveClasses = true;
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 1
+	Filter.ClassPaths.Add(AssetType::StaticClass()->GetClassPathName());
+#else
 	Filter.ClassNames.Add(AssetType::StaticClass()->GetFName());
+#endif
 	Filter.TagsAndValues.Add(TEXT("UnLive2D"), FAssetData(InUnLive2D).GetExportTextName());
 
 	AssetRegistryModule.Get().GetAssets(Filter, OutAssetData);
@@ -197,7 +201,11 @@ void SUnLive2DMotionCrateDialog::MakeMotionPicker()
 	FContentBrowserModule& ContentBrowserModule = FModuleManager::Get().LoadModuleChecked<FContentBrowserModule>(TEXT("ContentBrowser"));
 
 	FAssetPickerConfig AssetPickerConfig;
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 1
+	AssetPickerConfig.Filter.ClassPaths.Add(UUnLive2D::StaticClass()->GetClassPathName());
+#else
 	AssetPickerConfig.Filter.ClassNames.Add(UUnLive2D::StaticClass()->GetFName());
+#endif
 	AssetPickerConfig.OnAssetSelected = FOnAssetSelected::CreateSP(this, &SUnLive2DMotionCrateDialog::OnUnLive2DSelected);
 	AssetPickerConfig.OnShouldFilterAsset = FOnShouldFilterAsset::CreateSP(this, &SUnLive2DMotionCrateDialog::FilterMotionBasedOnParentClass);
 	AssetPickerConfig.bAllowNullSelection = true;

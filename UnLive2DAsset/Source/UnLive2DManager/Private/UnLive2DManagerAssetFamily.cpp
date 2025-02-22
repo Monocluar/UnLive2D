@@ -5,6 +5,7 @@
 #include "AssetToolsModule.h"
 #include "Misc/EngineVersionComparison.h"
 #include "AssetRegistry/AssetRegistryModule.h"
+#include "UnLive2DCubismCore.h"
 
 #define LOCTEXT_NAMESPACE "UnLive2DManagerAssetFamily"
 
@@ -14,7 +15,11 @@ static void FindAssets(const UUnLive2D* InUnLive2D, TArray<FAssetData>& OutAsset
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
 	FARFilter Filter;
 	Filter.bRecursiveClasses = true;
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 1
+	Filter.ClassPaths.Add(AssetType::StaticClass()->GetClassPathName());
+#else
 	Filter.ClassNames.Add(AssetType::StaticClass()->GetFName());
+#endif
 	Filter.TagsAndValues.Add(UnLive2DTag, FAssetData(InUnLive2D).GetExportTextName());
 
 	AssetRegistryModule.Get().GetAssets(Filter, OutAssetData);
@@ -77,23 +82,21 @@ FSlateColor FUnLive2DManagerAssetFamily::GetAssetTypeDisplayTint(UClass* InAsset
 const FSlateBrush* FUnLive2DManagerAssetFamily::GetAssetTypeDisplayIcon(UClass* InAssetClass) const
 {
 
-#if !UE_VERSION_OLDER_THAN(5,0,0)
 	if (InAssetClass)
 	{
 		if (InAssetClass->IsChildOf<UUnLive2D>())
 		{
-			return FAppStyle::Get().GetBrush("Persona.AssetClass.Skeleton");
+			return FUnLive2DStyle::Get().GetBrush("Persona.AssetClass.Skeleton");
 		}
 		else if (InAssetClass->IsChildOf<UUnLive2DAnimBase>())
 		{
-			return FAppStyle::Get().GetBrush("Persona.AssetClass.Animation");
+			return FUnLive2DStyle::Get().GetBrush("Persona.AssetClass.Animation");
 		}
 		else if (InAssetClass->IsChildOf<UUnLive2DAnimBlueprint>())
 		{
-			return FAppStyle::Get().GetBrush("Persona.AssetClass.Blueprint");
+			return FUnLive2DStyle::Get().GetBrush("Persona.AssetClass.Blueprint");
 		}
 	}
-#endif
 
 	return nullptr;
 }
@@ -127,8 +130,8 @@ void FUnLive2DManagerAssetFamily::GetAssetTypes(TArray<UClass*>& OutAssetTypes) 
 {
 	OutAssetTypes.Reset();
 	OutAssetTypes.Add(UUnLive2D::StaticClass());
-	//OutAssetTypes.Add(UUnLive2DAnimBase::StaticClass());
-	//OutAssetTypes.Add(UUnLive2DAnimBlueprint::StaticClass());
+	OutAssetTypes.Add(UUnLive2DAnimBase::StaticClass());
+	OutAssetTypes.Add(UUnLive2DAnimBlueprint::StaticClass());
 }
 
 FAssetData FUnLive2DManagerAssetFamily::FindAssetOfType(UClass* InAssetClass) const

@@ -19,10 +19,9 @@ FUnLive2DViewViewportClient::FUnLive2DViewViewportClient(UUnLive2D* InUnLive2DBe
 	bShowSockets = true;
 	bIsMousePressed = false;
 
-	DrawHelper.bDrawGrid  = false;
-
 	OldMousePoint = FIntPoint::ZeroValue;
 
+	DrawHelper.bDrawGrid = true;
 	EngineShowFlags.DisableAdvancedFeatures();
 	EngineShowFlags.SetCompositeEditorPrimitives(true);
 

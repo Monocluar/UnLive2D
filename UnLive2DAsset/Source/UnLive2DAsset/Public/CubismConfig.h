@@ -3,6 +3,8 @@
 #include "CoreMinimal.h"
 #include "CubismConfig.generated.h"
 
+class UTextureRenderTarget2D;
+
 UENUM(BlueprintType)
 enum class EUnLive2DMotionGroup : uint8
 {
