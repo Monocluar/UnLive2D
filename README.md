@@ -8,7 +8,10 @@
 
 ### 用法：
 1. 下载此插件放入项目中的 Plugins 文件中
-2. 需要下载官方库到 `./UnLive2DAsset/Source/ThirdParty/Live2DCubismCore` 下
+2. 需要下载官方库[Cubism Native SDK](https://www.live2d.com/en/download/cubism-sdk/download-native/)到 `./UnLive2DAsset/Source/ThirdParty/Live2DCubismCore` 下
+
+### 官网可下载的资源：
+[Sample](https://www.live2d.com/learn/sample/)
 
 ### 目前支持功能：
 #### Runtime:
