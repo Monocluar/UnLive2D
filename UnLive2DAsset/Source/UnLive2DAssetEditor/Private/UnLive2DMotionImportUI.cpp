@@ -4,8 +4,8 @@
 UUnLive2DMotionImportUI::UUnLive2DMotionImportUI(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	MotionCount = 0;
-	MotionGroupType = EUnLive2DMotionGroup::None;
+	FadeInTime = 1.f;
+	FadeOutTime = 1.f;
 	this->SetFlags(RF_Transactional);
 }
 

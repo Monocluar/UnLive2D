@@ -30,7 +30,7 @@ void UUnLive2DViewRendererUI::PlayMotion(UUnLive2DMotion* InMotion)
 {
 	if (MySlateWidget.IsValid())
 	{
-		//MySlateWidget->PlayMotion(InMotion);
+		MySlateWidget->PlayMotion(InMotion);
 	}
 }
 
@@ -38,7 +38,7 @@ void UUnLive2DViewRendererUI::PlayExpression(UUnLive2DExpression* InExpression)
 {
 	if (MySlateWidget.IsValid())
 	{
-		//MySlateWidget->PlayExpression(InExpression);
+		MySlateWidget->PlayExpression(InExpression);
 	}
 }
 
@@ -46,7 +46,7 @@ void UUnLive2DViewRendererUI::StopMotion()
 {
 	if (MySlateWidget.IsValid())
 	{
-		//MySlateWidget->StopMotion();
+		MySlateWidget->StopMotion();
 	}
 }
 

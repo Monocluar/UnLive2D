@@ -33,7 +33,7 @@ public:
 public:
 
 #if WITH_EDITOR
-	bool LoadLive2DMotionData(const FString& ReadMotionPath, EUnLive2DMotionGroup InMotionGroupType = EUnLive2DMotionGroup::None, int32 InMotionCount = 0, float FadeInTime = 0.5f, float FadeOutTime = 0.5f);
+	bool LoadLive2DMotionData(const FString& ReadMotionPath, float FadeInTime = 0.5f, float FadeOutTime = 0.5f);
 
 	void SetLive2DMotionData(FUnLive2DMotionData& InMotionData);
 #endif

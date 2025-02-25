@@ -48,6 +48,15 @@ public:
 
 	void SetLive2DRenderType(EUnLive2DRenderType InUnLive2DRenderType);
 
+	// 播放动画
+	void  PlayMotion(UUnLive2DMotion* InMotion);
+
+	// 播放表情
+	void PlayExpression(UUnLive2DExpression* InExpression);
+
+	// 停止播放动画
+	void StopMotion();
+
 protected:
 
 	void InitUnLive2D();

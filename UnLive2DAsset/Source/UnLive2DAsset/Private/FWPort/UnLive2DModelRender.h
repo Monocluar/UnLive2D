@@ -12,6 +12,8 @@ using Rendering::CubismRenderer;
 /**
  * 剪裁的上下文
  */
+ class CubismClippingManager_UE;
+
 class CubismClippingContext
 {
     friend class CubismClippingManager_UE;

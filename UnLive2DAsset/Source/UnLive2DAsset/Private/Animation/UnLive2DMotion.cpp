@@ -16,14 +16,12 @@ UUnLive2DMotion::UUnLive2DMotion()
 #if WITH_EDITOR
 using namespace Live2D::Cubism::Framework;
 
-bool UUnLive2DMotion::LoadLive2DMotionData(const FString& ReadMotionPath, EUnLive2DMotionGroup InMotionGroupType, int32 InMotionCount, float FadeInTime, float FadeOutTime)
+bool UUnLive2DMotion::LoadLive2DMotionData(const FString& ReadMotionPath, float FadeInTime, float FadeOutTime)
 {
 
 	const bool ReadSuc = FFileHelper::LoadFileToArray(MotionData.MotionByteData, *ReadMotionPath);
 	MotionData.FadeInTime = FadeInTime;
 	MotionData.FadeOutTime = FadeOutTime;
-	MotionData.MotionCount = InMotionCount;
-	MotionData.MotionGroupType = InMotionGroupType;
 
 	CubismMotion* Motion = CubismMotion::Create(MotionData.MotionByteData.GetData(), MotionData.MotionByteData.Num(), NULL); // 解析动画Json数据
 	Duration = Motion->GetDuration();

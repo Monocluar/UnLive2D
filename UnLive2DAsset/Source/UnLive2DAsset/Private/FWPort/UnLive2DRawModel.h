@@ -109,7 +109,7 @@ private:
     TSharedPtr<Csm::ICubismModelSetting> Live2DModelSetting;
 
     // 可播放的动画列表
-    TMap<FName, Csm::ACubismMotion*> Live2DMotions;
+    TMap<int32, Csm::ACubismMotion*> Live2DMotions;
 
     // 可播放的表情系统
     TMap<uint32, Csm::ACubismMotion*> Live2DExpressions;

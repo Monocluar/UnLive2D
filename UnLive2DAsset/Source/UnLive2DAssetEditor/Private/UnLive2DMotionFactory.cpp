@@ -27,10 +27,7 @@ bool UUnLive2DMotionFactory::FactoryCanImport(const FString& Filename)
 {
 	const FString Extension = FPaths::GetExtension(Filename);
 
-	if (Extension == TEXT("json"))
-	{
-		return Filename.Contains(TEXT(".motion3.json"));
-	}
+	if (Filename.EndsWith(".motion3.json")) return true;
 
 	return false;
 }
@@ -53,7 +50,7 @@ UObject* UUnLive2DMotionFactory::FactoryCreateFile(UClass* InClass, UObject* InP
 
 	UUnLive2DMotion* Live2DMotion = NewObject<UUnLive2DMotion>(InParent, InClass, InName, Flags | RF_Transactional);
 
-	if (! Live2DMotion->LoadLive2DMotionData(Live2DDataPath, ImportUISetting->MotionGroupType, ImportUISetting->MotionCount ))
+	if (! Live2DMotion->LoadLive2DMotionData(Live2DDataPath))
 	{
 		Live2DMotion->RemoveFromRoot();
 		return nullptr;

@@ -14,12 +14,6 @@ class UUnLive2DMotionImportUI : public UObject
 	GENERATED_UCLASS_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ImportSetting)
-		EUnLive2DMotionGroup MotionGroupType;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ImportSetting)
-		int32 MotionCount;
-
 	// 动作开始时淡入淡出处理时间
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ImportSetting)
 		float FadeInTime;

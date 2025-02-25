@@ -36,7 +36,7 @@ public class UnLive2DAsset : ModuleRules
                 "Projects",
 				"RigVM",
                 "Json",
-                "CubismSdkForNative",
+                "Live2DCubismCore",
                 "PhysicsCore",
 				// ... add private dependencies that you statically link with here ...	
 			}
@@ -56,10 +56,5 @@ public class UnLive2DAsset : ModuleRules
             DynamicallyLoadedModuleNames.Add("UnLive2DAssetEditor");
         }
 	
-	    if(Target.Platform == UnrealTargetPlatform.Android)
-	    {
-            string PluginPath = Utils.MakePathRelativeTo(ModuleDirectory, Target.RelativeEnginePath);
-            AdditionalPropertiesForReceipt.Add("AndroidPlugin", Path.Combine(PluginPath, "UnLive2DAsset_APL.xml"));
-        }
     }
 }

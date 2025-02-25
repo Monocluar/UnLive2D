@@ -48,14 +48,9 @@ bool UUnLive2DFactory::FactoryCanImport(const FString& Filename)
 {
 	const FString Extension = FPaths::GetExtension(Filename);
 
-	if (Extension == TEXT("moc3"))
-	{
-		return true;
-	}
-	else if (Extension == TEXT("json"))
-	{
-		return Filename.Contains(TEXT(".model3.json"));
-	}
+	if (Filename.EndsWith("model3.json")) return true;
+
+	if (Extension == TEXT("moc3")) return true;
 
 	return false;
 }

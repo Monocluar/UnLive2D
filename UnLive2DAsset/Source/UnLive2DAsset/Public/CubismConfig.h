@@ -6,16 +6,6 @@
 class UTextureRenderTarget2D;
 
 UENUM(BlueprintType)
-enum class EUnLive2DMotionGroup : uint8
-{
-	None = 0,
-	Idle,
-	Normal,
-	TapBody
-};
-
-
-UENUM(BlueprintType)
 enum class EUnLive2DRenderType : uint8
 {
 	Mesh,
@@ -36,14 +26,6 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Anim Data")
 		float FadeOutTime;
 
-	// 动作组名称
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Anim Data")
-		EUnLive2DMotionGroup MotionGroupType;
-
-	// 该动作组ID
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Anim Data")
-		int32 MotionCount;
-
 	// 动作数据
 	UPROPERTY()
 		TArray<uint8> MotionByteData;
@@ -55,13 +37,6 @@ public:
 
 
 public:
-
-	FString GetMotionName() const
-	{
-		UEnum* GroupEnumPtr = StaticEnum<EUnLive2DMotionGroup>();
-		FString GroupStr = GroupEnumPtr->GetNameStringByIndex((int32)MotionGroupType);
-		return FString::Printf(TEXT("%s_%d"), *GroupStr, MotionCount);
-	}
 
 #if WITH_EDITOR
 

@@ -63,8 +63,8 @@ public:
 	template<typename TShaderRHIParamRef>
 	void SetParameters(FRHICommandListImmediate& RHICmdList, const TShaderRHIParamRef ShaderRHI, const FTexture* NormalTexture)
 	{
-		SetTextureParameter(RHICmdList, ShaderRHI, Texture, NormalTexture->TextureRHI);
-		SetSamplerParameter(RHICmdList, ShaderRHI, TextureSampler, TStaticSamplerState<SF_Trilinear, AM_Wrap, AM_Wrap, AM_Wrap>::GetRHI());
+		SetTextureParameter(RHICmdList, ShaderRHI, Texture, TextureSampler, NormalTexture);
+		//SetSamplerParameter(RHICmdList, ShaderRHI, TextureSampler, TStaticSamplerState<SF_Trilinear, AM_Wrap, AM_Wrap, AM_Wrap>::GetRHI());
 	}
 
 #endif
@@ -81,7 +81,10 @@ class FUnLive2DTargetShaderPS_Nor : public FUnLive2DTargetShaderPS_Base
 
 public:
 
-	static void ModifyCompilationEnvironment(const FGlobalShaderPermutationParameters& Parameters, FShaderCompilerEnvironment& OutEnvironment) {}
+	static void ModifyCompilationEnvironment(const FGlobalShaderPermutationParameters& Parameters, FShaderCompilerEnvironment& OutEnvironment) 
+	{
+		FGlobalShader::ModifyCompilationEnvironment(Parameters, OutEnvironment);
+	}
 
 	FUnLive2DTargetShaderPS_Nor() {}
 	FUnLive2DTargetShaderPS_Nor(const ShaderMetaType::CompiledShaderInitializerType& Initializer)
@@ -106,30 +109,34 @@ public:
 		ChannelFlag.Bind(Initializer.ParameterMap, TEXT("InChannelFlag"));
 		ClipMatrix.Bind(Initializer.ParameterMap, TEXT("InClipMatrix"));
 		MaskTexture.Bind(Initializer.ParameterMap, TEXT("InMaskTexture"));
+		MaskTextureSampler.Bind(Initializer.ParameterMap, TEXT("InMaskTextureSampler"));
 	}
 
 	static void ModifyCompilationEnvironment(const FGlobalShaderPermutationParameters& Parameters, FShaderCompilerEnvironment& OutEnvironment)
 	{
+		FUnLive2DTargetShaderPS_Nor::ModifyCompilationEnvironment(Parameters, OutEnvironment);
 		OutEnvironment.SetDefine(TEXT("UNLIVE2D_TARGET_INVERT_MASK"), bInvertMask);
 	}
 
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
 	void SetParameters(FRHIBatchedShaderParameters& BatchedParameters, const FTexture* NormalTexture, FTextureRHIRef MaskTextureRef, const FUnLiveMatrix& InMartixForMask, const FLinearColor& InClipColor)
 	{
+		FUnLive2DTargetShaderPS_Base::SetParameters(BatchedParameters, NormalTexture);
 		SetShaderValue(BatchedParameters, ChannelFlag, InClipColor);
 		SetShaderValue(BatchedParameters, ClipMatrix, InMartixForMask);
-		SetTextureParameter(BatchedParameters, Texture, TextureSampler, NormalTexture);
-		SetTextureParameter(BatchedParameters, MaskTexture, MaskTextureRef);
+		//SetTextureParameter(BatchedParameters, Texture, TextureSampler, NormalTexture);
+		//SetTextureParameter(BatchedParameters, MaskTexture, MaskTextureRef);
+		SetTextureParameter(RHICmdList, ShaderRHI, MaskTexture, MaskTextureSampler, TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI(), MaskTextureRef);
 	}
 #else
 	template<typename TShaderRHIParamRef>
 	void SetParameters(FRHICommandListImmediate& RHICmdList, const TShaderRHIParamRef ShaderRHI, const FTexture* NormalTexture, FTextureRHIRef MaskTextureRef, const FUnLiveMatrix& InMartixForMask, const FLinearColor& InClipColor)
 	{
+		FUnLive2DTargetShaderPS_Base::SetParameters(RHICmdList, ShaderRHI, NormalTexture);
 		SetShaderValue(RHICmdList, ShaderRHI, ChannelFlag, InClipColor);
 		SetShaderValue(RHICmdList, ShaderRHI, ClipMatrix, InMartixForMask);
-		SetTextureParameter(RHICmdList, ShaderRHI, Texture, NormalTexture->TextureRHI);
-		SetTextureParameter(RHICmdList, ShaderRHI, MaskTexture, MaskTextureRef);
-		SetSamplerParameter(RHICmdList, ShaderRHI, TextureSampler, TStaticSamplerState<SF_Trilinear, AM_Wrap, AM_Wrap, AM_Wrap>::GetRHI());
+		//SetTextureParameter(RHICmdList, ShaderRHI, Texture, NormalTexture->TextureRHI);
+		SetTextureParameter(RHICmdList, ShaderRHI, MaskTexture, MaskTextureSampler, TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI(), MaskTextureRef);
 }
 
 #endif
@@ -138,6 +145,7 @@ private:
 	LAYOUT_FIELD(FShaderParameter, ChannelFlag);
 	LAYOUT_FIELD(FShaderParameter, ClipMatrix);
 	LAYOUT_FIELD(FShaderResourceParameter, MaskTexture);
+	LAYOUT_FIELD(FShaderResourceParameter, MaskTextureSampler);
 };
 
 typedef FUnLive2DTargetShaderPS_MaskBase<true> FUnLive2DTargetShaderPS_Seq_InvertMask;

@@ -100,6 +100,15 @@ public: // RenderTarget
 		FSoftObjectPath UnLive2DRTMaterial;
 
 public:
+
+	//UPROPERTY(Instanced)
+#if ENGINE_MAJOR_VERSION >= 5
+		TObjectPtr<class UBodySetup>  ProcMeshBodySetup;
+#else
+		class UBodySetup* ProcMeshBodySetup;
+#endif
+
+public:
 	UFUNCTION(BlueprintCallable, Category = "Live2D")
 		bool SetUnLive2D(UUnLive2D* NewUnLive2D);
 
@@ -151,8 +160,6 @@ private:
 
 	// Live2D模型设置模块
 	TSharedPtr<FUnLive2DRawModel> UnLive2DRawModel;
-
-	class UBodySetup* ProcMeshBodySetup;
 
 	FBoxSphereBounds LocalBounds;
 

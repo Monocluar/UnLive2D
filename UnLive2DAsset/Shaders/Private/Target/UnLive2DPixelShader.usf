@@ -18,6 +18,7 @@ void Main_Seq_Normal(
 }
 
 Texture2D InMaskTexture;
+SamplerState InMaskTextureSampler;
 float4x4 InClipMatrix;
 float4 InChannelFlag;
 
@@ -30,11 +31,12 @@ void Main_Seq_Mask(
 {
     float4 color = InTexture.Sample(InTextureSampler, TextureCoordinate) * BaseColor;
     color.xyz *= color.w;
+    
     float4 ClipPosition = mul(float4(ULPosition,0,1), InClipMatrix);
     float2 MaskUv = float2(ClipPosition.x, 1+ClipPosition.y);
     MaskUv /= ClipPosition.w;
 
-    float4 clipMask = (1.0 - InMaskTexture.Sample(InTextureSampler, MaskUv)) * InChannelFlag;
+    float4 clipMask = (1.0 - InMaskTexture.Sample(InMaskTextureSampler, MaskUv)) * InChannelFlag;
     float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;
 
 #if UNLIVE2D_TARGET_INVERT_MASK

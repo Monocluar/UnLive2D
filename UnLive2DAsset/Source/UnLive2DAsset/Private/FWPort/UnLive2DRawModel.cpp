@@ -386,10 +386,6 @@ FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& I
 			MotionData.FadeOutTime = JsonData->GetMotionFadeOutTimeValue(Group, j);
 			MotionData.MotionByteData = ModelFile;
 
-			UEnum* GroupType = StaticEnum<EUnLive2DMotionGroup>();
-			MotionData.MotionGroupType = (EUnLive2DMotionGroup)GroupType->GetIndexByName(Group);
-
-			MotionData.MotionCount = j;
 			MotionData.PathName = PathFileName.LeftChop(8);
 			LoadMotionData.Add(MotionData);
 
@@ -427,7 +423,7 @@ FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& I
 
 void FUnLive2DRawModel::ReleaseMotions()
 {
-	for (TMap<FName, Csm::ACubismMotion*>::TConstIterator Iterator(Live2DMotions); Iterator; ++Iterator)
+	for (TMap<int32, Csm::ACubismMotion*>::TConstIterator Iterator(Live2DMotions); Iterator; ++Iterator)
 	{
 		Csm::ACubismMotion* MotionPtr = Iterator.Value();
 		if (MotionPtr == nullptr) continue;
@@ -551,8 +547,9 @@ Csm::CubismMotionQueueEntryHandle FUnLive2DRawModel::StartMotion(const Csm::csmC
 
 	csmString Name = Utils::CubismString::GetFormatedString("%s_%d", Group, No);
 
-	Csm::ACubismMotion* FindPtr = Live2DMotions.FindOrAdd(Name.GetRawString());
-
+	//Csm::ACubismMotion* FindPtr = Live2DMotions.FindOrAdd(Name.GetRawString());
+	Csm::ACubismMotion* FindPtr = nullptr;
+	check(0);
 
 	UE_LOG(LogUnLive2D, Log, TEXT("FUnLive2DRawModel::StartMotion: Start [%s_%d]"), UTF8_TO_TCHAR(Group), No);
 
@@ -564,12 +561,10 @@ float FUnLive2DRawModel::StartMotion(UUnLive2DMotion* InMotion)
 	if (InMotion == nullptr) return 0.f;
 
 	const FUnLive2DMotionData* MotionData = InMotion->GetMotionData();
+	
+	const int32 UniqueID = InMotion->GetUniqueID();
 
-	int32 Priority = (int32)MotionData->MotionGroupType;
-
-	const FString Name = MotionData->GetMotionName();
-
-	Csm::ACubismMotion* FindPtr = Live2DMotions.FindOrAdd(*Name);
+	Csm::ACubismMotion* FindPtr = Live2DMotions.FindOrAdd(UniqueID);
 
 	if (CurrentPlayMotion.IsValid())
 	{
@@ -597,7 +592,7 @@ float FUnLive2DRawModel::StartMotion(UUnLive2DMotion* InMotion)
 		Motion->SetEffectIds(EyeBlinkIds, LipSyncIds);
 	}
 
-	_motionManager->StartMotionPriority(FindPtr, false, Priority);
+	_motionManager->StartMotionPriority(FindPtr, false, 0);
 	return 0.f;
 }
 

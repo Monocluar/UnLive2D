@@ -160,22 +160,6 @@ FReply SUnLive2DMotionCrateDialog::OkClicked()
 		return FReply::Handled();
 	}
 
-	if (ImportUI != nullptr)
-	{
-		if (ImportUI->MotionGroupType == EUnLive2DMotionGroup::None)
-		{
-			FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("NeedValidMotionGroupType", "动作组类型错误"));
-			return FReply::Handled();
-		}
-
-		if (HasUnLive2DMotion(ImportUI->MotionCount, ImportUI->MotionGroupType))
-		{
-			FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("HasNeedValidMotione", "已经重复了动作组"));
-			return FReply::Handled();
-		}
-
-	}
-
 	CloseDialog(true);
 
 	return FReply::Handled();
@@ -252,24 +236,6 @@ void SUnLive2DMotionCrateDialog::OnUnLive2DSelected(const FAssetData& AssetData)
 
 bool SUnLive2DMotionCrateDialog::FilterMotionBasedOnParentClass(const FAssetData& AssetData)
 {
-	return false;
-}
-
-bool SUnLive2DMotionCrateDialog::HasUnLive2DMotion(int32 MotionCount, EUnLive2DMotionGroup MotionGroupType)
-{
-	for (FAssetData& Item : MotionAssetArr)
-	{
-		UUnLive2DMotion* Motion = Cast<UUnLive2DMotion>(Item.GetAsset());
-		if (Motion)
-		{
-			const FUnLive2DMotionData* MotionData = Motion->GetMotionData();
-			if (MotionData->MotionCount == MotionCount && MotionData->MotionGroupType == MotionGroupType )
-			{
-				return true;
-			}
-		}
-	}
-
 	return false;
 }
 

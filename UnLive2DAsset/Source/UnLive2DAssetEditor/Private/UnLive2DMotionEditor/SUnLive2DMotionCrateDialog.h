@@ -52,9 +52,6 @@ private:
 
 	bool FilterMotionBasedOnParentClass(const FAssetData& AssetData);
 
-	// 是否含有该资源
-	bool HasUnLive2DMotion(int32 MotionCount, EUnLive2DMotionGroup MotionGroupType);
-
 private:
 	// 工厂类指针
 	TWeakObjectPtr<UFactory> UnLive2DMotionFactory;

@@ -22,7 +22,6 @@
 #include "Draw/UnLive2DTargetBoxProxy.h"
 #include "Engine/TextureRenderTarget2D.h"
 
-
 using namespace Csm;
 
 UUnLive2DRendererComponent::UUnLive2DRendererComponent(const FObjectInitializer& ObjectInitializer)
@@ -181,24 +180,14 @@ UBodySetup* UUnLive2DRendererComponent::GetBodySetup()
 {
 	if (ProcMeshBodySetup == nullptr && UnLive2DRawModel.IsValid())
 	{
-		UBodySetup* NewBodySetup = NewObject<UBodySetup>(this);
-		NewBodySetup->CollisionTraceFlag = CTF_UseSimpleAsComplex;
-		NewBodySetup->AggGeom.BoxElems.Add(FKBoxElem());
-		FKBoxElem* BoxElem = NewBodySetup->AggGeom.BoxElems.GetData();
-		const float Width = LocalBounds.BoxExtent.X;
-		const float Height = LocalBounds.BoxExtent.Y;
-		const FVector Origin = FVector(.5f,
-			-(Width)+(Width),
-			-(Height)+(Height));
+		UBodySetup* NewBodySetup = NewObject<UBodySetup>(this, NAME_None, (IsTemplate() ? RF_Public | RF_ArchetypeObject : RF_NoFlags));
+		NewBodySetup->BodySetupGuid = FGuid::NewGuid();
 
-		BoxElem->X = 0.01f;
-		BoxElem->Y = Width;
-		BoxElem->Z = Height;
-
-		BoxElem->SetTransform(FTransform::Identity);
-		BoxElem->Center = Origin;
+		NewBodySetup->bGenerateMirroredCollision = false;
+		NewBodySetup->bDoubleSidedGeometry = true;
+		NewBodySetup->CollisionTraceFlag = CTF_UseComplexAsSimple ;
 		ProcMeshBodySetup = NewBodySetup;
-
+		ProcMeshBodySetup->AddToRoot();
 	}
 	return ProcMeshBodySetup;
 }
@@ -208,6 +197,10 @@ void UUnLive2DRendererComponent::BeginDestroy()
 {
 	Super::BeginDestroy();
 	ClearRTCache();
+	if (ProcMeshBodySetup)
+	{
+		ProcMeshBodySetup->RemoveFromRoot();
+	}
 }
 
 FCollisionShape UUnLive2DRendererComponent::GetCollisionShape(float Inflation) const

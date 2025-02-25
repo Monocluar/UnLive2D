@@ -50,6 +50,30 @@ void SUnLive2DViewUI::SetLive2DRenderType(EUnLive2DRenderType InUnLive2DRenderTy
 	InitLive2DRenderType();
 }
 
+void SUnLive2DViewUI::PlayMotion(UUnLive2DMotion* InMotion)
+{
+	if (UnLive2DRawModel.IsValid())
+	{
+		UnLive2DRawModel->StartMotion(InMotion);
+	}
+}
+
+void SUnLive2DViewUI::PlayExpression(UUnLive2DExpression* InExpression)
+{
+	if (UnLive2DRawModel.IsValid())
+	{
+		UnLive2DRawModel->StartExpressions(InExpression);
+	}
+}
+
+void SUnLive2DViewUI::StopMotion()
+{
+	if (UnLive2DRawModel.IsValid())
+	{
+		UnLive2DRawModel->StopMotion();
+	}
+}
+
 void SUnLive2DViewUI::InitUnLive2D()
 {
 	if (!FSlateApplication::IsInitialized()) return;
