@@ -1,37 +1,38 @@
-[![zh-Hans](https://img.shields.io/badge/lang-zh-red.svg)](README.md)
+[![en](https://img.shields.io/badge/lang-en-green.svg)](README.md)
+[![zh-Hans](https://img.shields.io/badge/lang-zh-red.svg)](README.zh.md)
 ---
 # UnLive2D - Unreal Engine Plugin
 
-### 作用：
-可以使得 Live2D 模型在UE4/5 中可以使用。
+### Role：
+It can make the Live2D model usable in UE4/5.
 ![InputAsset](./UnLive2DAsset/Docs/InputAsset.gif)
 
-### 用法：
-1. 下载此插件放入项目中的 Plugins 文件中
-2. 需要下载官方库[Cubism Native SDK](https://www.live2d.com/en/download/cubism-sdk/download-native/)到 `./UnLive2DAsset/Source/ThirdParty/Live2DCubismCore` 下
+### Usage：
+1. Download this plugin and place it in the `Plugins` file of the project
+2. Need to download the official library [Cubism Native SDK](https://www.live2d.com/en/download/cubism-sdk/download-native/)To `./UnLive2DAsset/Source/ThirdParty/Live2DCubismCore`
 
-### 官网可下载的资源：
+### Downloadable Sample：
 [Sample](https://www.live2d.com/learn/sample/)
 
-### 目前支持功能：
+### Currently Supported Functions：
 #### Runtime:
-1. 支持 Actor 模型展示
-2. 支持 UMG 展示
-3. 支持 Live2D 动画/表情/物理
+1. Support Actor model display
+2. Support UMG display
+3. Support Live2D Animation/Emoticons/Physics
 
 #### Editor:
-1. 支持模型编辑器预览
-2. 支持Live2D动画/表情预览
-3. 支持表情创建
+1. Support preview of model editor
+2. Support Live2D animation/emoji preview
+3. Support emoji creation
 
-#### 后续开发:
-1. 动画蓝图
-2. 动画编辑
-3. 物理编辑
-4. 口型编辑
+#### Subsequent Development:
+1. Animation Blueprints 
+2. Animation Editing
+3. Physical Editing
+4. Mouth shape Editor
 
 
-### 支持虚幻版本：
+### Unreal Engine Version：
 
 | Unreal Engine | Version |
 | --- | --- |
@@ -43,12 +44,12 @@
 | Unreal Editor 4.27 | 4.27.2 |
 
 
-### 支持平台：
+### Support Platform：
 
-| 平台    | 是否测试 |
+| Platform    | Is Testing |
 | ---     |   ---   |
-|  Win64  |  已测试  |
-| Android |  已测试  |
-|  Linux  |  未测试  |
-|   Mac   |  未测试  |
-|   IOS   |  未测试  |
+|  Win64  |  True  |
+| Android |  True  |
+|  Linux  |  False  |
+|   Mac   |  False  |
+|   IOS   |  False  |
