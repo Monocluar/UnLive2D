@@ -9,6 +9,15 @@
 #include "FWPort/UnLive2DModelRender.h"
 #include "Rendering/DrawElements.h"
 #include "Engine/TextureRenderTarget2D.h"
+#if ENGINE_MAJOR_VERSION >=5 && ENGINE_MINOR_VERSION > 1
+#include "RenderingThread.h"
+#include "UObject/UObjectGlobals.h"
+#include "Engine/TextureRenderTarget.h"
+#include "UnrealClient.h"
+#include "UObject/UObjectGlobals.h"
+#include "UObject/Package.h"
+#include "TextureResource.h"
+#endif
 
 static int32 UnLive2DBrushNameId = 0;
 
@@ -161,9 +170,6 @@ void SUnLive2DViewUI::ClearRTCache()
 		if (Item.Value->UnLive2DRenderType == EUnLive2DRenderType::RenderTarget ) continue;
 		UMaterialInstanceDynamic* InstanceDynamic = Cast<UMaterialInstanceDynamic>(Item.Value->GetResourceObject());
 		InstanceDynamic->RemoveFromRoot();
-#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 4
-		InstanceDynamic->OnRemovedAsOverride(OwnerComponent.Get());
-#endif
 	}
 	UnLive2DToBlendMaterialList.Empty();
 
@@ -384,7 +390,7 @@ void SUnLive2DViewUI::FCustomVertsData::UpDataVertsData(const FGeometry& Allotte
 	Csm::CubismModel* UnLive2DModel = InUnLive2DRawModel.Pin()->GetModel();
 	FULVector2f BoundsSize = FULVector2f(UnLive2DModel->GetCanvasWidth(), UnLive2DModel->GetCanvasHeight());
 
-	const FULVector2f WidgetSize = AllottedGeometry.GetLocalSize();
+	const FULVector2f WidgetSize = FULVector2f(AllottedGeometry.GetLocalSize().X,AllottedGeometry.GetLocalSize().Y) ;
 
 	const FULVector2f WidgetScale = WidgetSize / BoundsSize;
 	const float SetupScale = WidgetScale.GetMin();

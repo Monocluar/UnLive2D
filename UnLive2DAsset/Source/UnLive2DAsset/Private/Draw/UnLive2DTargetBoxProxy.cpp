@@ -8,13 +8,23 @@
 #include "RHICommandList.h"
 #include "GlobalShader.h"
 #include "UnLive2DSetting.h"
-#if ENGINE_MAJOR_VERSION >= 5
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 1
 #include "MaterialDomain.h"
+#include "SceneManagement.h"
 #include "Materials/MaterialRenderProxy.h"
+#include "UObject/UObjectGlobals.h"
+#include "UObject/Package.h"
 #endif
 #include "Kismet/KismetSystemLibrary.h"
 #include "ShaderParameterUtils.h"
 #include "PhysicsEngine/BodySetup.h"
+#include "Engine/Engine.h"
+#include "Materials/Material.h"
+#include "MaterialShared.h"
+#include "Framework/Application/SlateApplication.h"
+#include "Application/SlateApplicationBase.h"
+#include "Rendering/SlateRenderer.h"
+#include "SceneInterface.h"
 
 void FUnLive2DTargetBoxProxy::UpdateSection_RenderThread(FRHICommandListImmediate& RHICmdList)
 {

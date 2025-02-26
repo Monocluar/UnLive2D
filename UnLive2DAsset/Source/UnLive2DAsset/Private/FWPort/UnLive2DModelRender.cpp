@@ -4,6 +4,10 @@
 #include "DynamicMeshBuilder.h"
 #include "ShaderParameterUtils.h"
 #include "ClearQuad.h"
+#if ENGINE_MAJOR_VERSION >= 5
+#include "RHIStaticStates.h"
+#include "PipelineStateCache.h"
+#endif
 
 namespace {
     const csmInt32 ColorChannelCount = 4;   ///< 实验时1频道的情况是1，RGB的情况是3，Alpha也包含的情况是4
@@ -680,8 +684,11 @@ void CubismClippingManager_UE::RenderMask_Full(FRHICommandListImmediate& RHICmdL
 						BufferInfoPtr->NumVertext = MaskVertexs.Num();
 						BufferInfoPtr->NumPrimitives = Indexes.Num() / 3;
 						FRHIResourceCreateInfo CreateInfo(TEXT("UnLive2DCacheMaskVertexBufferRHI"));
-						//BufferInfoPtr->VertexBufferRHI = RHICmdList.CreateVertexBuffer(VertexSize, BUF_Dynamic, CreateInfo);
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >=4
+						BufferInfoPtr->VertexBufferRHI = RHICmdList.CreateVertexBuffer(VertexSize, BUF_Dynamic, CreateInfo);
+#else
 						BufferInfoPtr->VertexBufferRHI = RHICreateVertexBuffer(VertexSize, BUF_Dynamic, CreateInfo);
+#endif
 					}
 #if ENGINE_MAJOR_VERSION < 5
 					void* VertexBufferData = RHICmdList.LockVertexBuffer(BufferInfoPtr->VertexBufferRHI, 0, VertexSize, RLM_WriteOnly);
@@ -702,8 +709,11 @@ void CubismClippingManager_UE::RenderMask_Full(FRHICommandListImmediate& RHICmdL
 					const uint32 IndexSize = Indexes.Num() * sizeof(uint16);
                     FUIBufferRHIRef& BufferRHIRef = CacheIndexBufferRHI.AddDefaulted_GetRef();
 					FRHIResourceCreateInfo CreateInfo(TEXT("UnLive2DCacheMaskIndexBuffer"));
-					//BufferRHIRef = RHICmdList.CreateIndexBuffer(sizeof(uint16), IndexSize, BUF_Static, CreateInfo);
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >=4
+					BufferRHIRef = RHICmdList.CreateIndexBuffer(sizeof(uint16), IndexSize, BUF_Static, CreateInfo);
+#else
 					BufferRHIRef = RHICreateIndexBuffer(sizeof(uint16), IndexSize, BUF_Static, CreateInfo);
+#endif
 #if ENGINE_MAJOR_VERSION < 5
 					void* IndexBufferData = RHICmdList.LockIndexBuffer(BufferRHIRef, 0, IndexSize, RLM_WriteOnly);
 #else

@@ -4,7 +4,7 @@
 #include "UnLive2DAssetModule.h"
 #include "FWPort/UnLive2DRawModel.h"
 #include "FWPort/UnLive2DModelRender.h"
-#if ENGINE_MAJOR_VERSION >= 5
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 1
 #include "MaterialDomain.h"
 //#include "PrimitiveUniformShaderParametersBuilder.h"
 #endif
@@ -13,6 +13,8 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "BodySetupEnums.h"
+#include "SceneInterface.h"
+#include "Materials/Material.h"
 
 DECLARE_CYCLE_STAT(TEXT("UnLive2DSceneProxy GDME"), STAT_UnLive2DSceneProxy_GetDynamicMeshElements, STATGROUP_UnLive2D);
 DECLARE_CYCLE_STAT(TEXT("UnLive2DVertexBuffer GDME"), STAT_UnLive2DVertexBuffer_UpdateSection_RenderThread, STATGROUP_UnLive2D);
@@ -239,11 +241,6 @@ bool FUnLive2DSceneProxy::GetMeshElement(FMeshElementCollector& Collector, int32
 	{
 		FDynamicPrimitiveUniformBuffer& DynamicPrimitiveUniformBuffer = Collector.AllocateOneFrameResource<FDynamicPrimitiveUniformBuffer>();
 
-#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
-		FPrimitiveUniformShaderParametersBuilder Builder;
-		BuildUniformShaderParameters(Builder);
-		DynamicPrimitiveUniformBuffer.Set(Collector.GetRHICommandList(), Builder);
-#else
 		bool bHasPrecomputedVolumetricLightmap;
 		FMatrix PreviousLocalToWorld;
 		int32 SingleCaptureIndex;
@@ -252,9 +249,10 @@ bool FUnLive2DSceneProxy::GetMeshElement(FMeshElementCollector& Collector, int32
 		bOutputVelocity |= AlwaysHasVelocity();
 #if ENGINE_MAJOR_VERSION < 5
 		DynamicPrimitiveUniformBuffer.Set(GetLocalToWorld(), PreviousLocalToWorld, GetBounds(), GetLocalBounds(), true, bHasPrecomputedVolumetricLightmap, DrawsVelocity(), bOutputVelocity);
+#elif ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 4
+		DynamicPrimitiveUniformBuffer.Set(Collector.GetRHICommandList(), GetLocalToWorld(), GetLocalToWorld(), GetBounds(), GetLocalBounds(), false, false, AlwaysHasVelocity());
 #else
 		DynamicPrimitiveUniformBuffer.Set(GetLocalToWorld(), PreviousLocalToWorld, GetBounds(), GetLocalBounds(), GetLocalBounds(), ReceivesDecals(), bHasPrecomputedVolumetricLightmap, bOutputVelocity, GetCustomPrimitiveData());
-#endif
 
 #endif
 
@@ -473,7 +471,7 @@ void FUnLive2DSceneProxy::FUnLive2DVertexBuffer::InitRHI(FRHICommandListBase& RH
 {
 	//ReleaseResource();
 
-#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 4
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 4
 	IndexBuffer.InitResource(RHICmdList);
 #else
 	IndexBuffer.InitResource();

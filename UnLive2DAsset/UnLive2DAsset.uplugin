@@ -53,11 +53,5 @@
 			"Type": "UncookedOnly",
 			"LoadingPhase": "PostConfigInit"
 		}
-	],
-	"Plugins": [
-		{
-			"Name": "ProceduralMeshComponent",
-			"Enabled": true
-		}
 	]
 }

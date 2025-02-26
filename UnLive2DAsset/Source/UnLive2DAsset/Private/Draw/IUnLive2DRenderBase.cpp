@@ -5,8 +5,11 @@
 #include "RHICommandList.h"
 #include "GlobalShader.h"
 #include "UnLive2DSetting.h"
-#if ENGINE_MAJOR_VERSION >= 5
+#if ENGINE_MAJOR_VERSION >=5 && ENGINE_MINOR_VERSION > 1
 #include "MaterialDomain.h"
+#include "TextureResource.h"
+#include "RHIStaticStates.h"
+#include "PipelineStateCache.h"
 #endif
 #include "Kismet/KismetSystemLibrary.h"
 #include "ShaderParameterUtils.h"
@@ -126,7 +129,7 @@ public:
 		SetShaderValue(BatchedParameters, ClipMatrix, InMartixForMask);
 		//SetTextureParameter(BatchedParameters, Texture, TextureSampler, NormalTexture);
 		//SetTextureParameter(BatchedParameters, MaskTexture, MaskTextureRef);
-		SetTextureParameter(RHICmdList, ShaderRHI, MaskTexture, MaskTextureSampler, TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI(), MaskTextureRef);
+		SetTextureParameter(BatchedParameters, MaskTexture, MaskTextureSampler, TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI(), MaskTextureRef);
 	}
 #else
 	template<typename TShaderRHIParamRef>
@@ -463,7 +466,7 @@ void IUnLive2DRTRender::DrawSeparateToRenderTarget_RenderThread(FRHICommandListI
 				RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
 				GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, CF_Always>::GetRHI();
 				GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
-#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 4
 				GraphicsPSOInit.RasterizerState = TStaticRasterizerState<FM_Solid, CM_None, ERasterizerDepthClipMode::DepthClip, true>::GetRHI();
 #else
 				GraphicsPSOInit.RasterizerState = TStaticRasterizerState<FM_Solid, CM_None, true, true>::GetRHI();

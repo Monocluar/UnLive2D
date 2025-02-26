@@ -1,9 +1,12 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "Runtime/Launch/Resources/Version.h"
+#include "RenderResource.h"
 
 
 #if ENGINE_MAJOR_VERSION < 5
+
 typedef FMatrix FUnLiveMatrix;
 typedef FVector4 FUnLiveVector4;
 typedef FVector2D FULVector2f;
@@ -30,7 +33,7 @@ typedef FAppStyle FUnLive2DStyle;
 class FUnLive2DAppStyle
 {
 public:
-	static const FName& GetStyleSetName()
+	static const FName GetStyleSetName()
 	{
 #if ENGINE_MAJOR_VERSION < 5
 		return FEditorStyle::GetStyleSetName();

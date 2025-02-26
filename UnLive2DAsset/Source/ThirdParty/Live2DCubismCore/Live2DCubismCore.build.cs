@@ -11,9 +11,9 @@ public class Live2DCubismCore : ModuleRules
         string Live2DDynDllName = "";
         string Live2DDynamicDllPath = "";
 
-        if (Target.Platform == UnrealTargetPlatform.Win32)
+        /*if (Target.Platform == UnrealTargetPlatform.Win32)
             PublicDefinitions.Add("CSM_CORE_WIN32_DLL=1");
-        else
+        else*/
             PublicDefinitions.Add("CSM_CORE_WIN32_DLL=0");
 
         PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "include"));
@@ -26,7 +26,7 @@ public class Live2DCubismCore : ModuleRules
             PublicSystemLibraryPaths.Add(CubismLibPath);
             PublicAdditionalLibraries.Add(Path.Combine(CubismLibPath, "142/Live2DCubismCore_MD.lib"));
         }
-        else if (Target.Platform == UnrealTargetPlatform.Win32) //UE5不支持Win32 如果你是UE4版本，则可以开放出来
+        /*else if (Target.Platform == UnrealTargetPlatform.Win32) //UE5不支持Win32 如果你是UE4版本，则可以开放出来
         {
             Live2DDynDllName = "Live2DCubismCore.dll";
             Live2DDynamicDllPath = Path.Combine(ModuleDirectory, "dll/windows/x86", Live2DDynDllName);
@@ -34,7 +34,7 @@ public class Live2DCubismCore : ModuleRules
             string CubismLibPath = Path.Combine(ModuleDirectory, "lib/windows/x86");
             PublicSystemLibraryPaths.Add(CubismLibPath);
             PublicAdditionalLibraries.Add(Path.Combine(CubismLibPath, "142/Live2DCubismCore_MD.lib"));
-        }
+        }*/
         else if (Target.Platform == UnrealTargetPlatform.Linux)
         {
             Live2DDynDllName = "libLive2DCubismCore.so";

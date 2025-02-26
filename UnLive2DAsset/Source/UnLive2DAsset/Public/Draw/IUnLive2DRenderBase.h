@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "UnLive2DCubismCore.h"
 #include "CubismConfig.h"
+#include "Engine/Texture2D.h"
 
 class UTextureRenderTarget2D;
 
@@ -104,7 +105,7 @@ protected:
 
 	bool UpdataRTSections( bool bCombinedbBatch = true);
 
-	void DrawSeparateToRenderTarget_RenderThread(FRHICommandListImmediate& RHICmdList, FTextureRenderTargetResource* OutTextureRenderTargetResource, ERHIFeatureLevel::Type FeatureLevel, FTextureRHIRef InMaskBuffer);
+	void DrawSeparateToRenderTarget_RenderThread(FRHICommandListImmediate& RHICmdList, class FTextureRenderTargetResource* OutTextureRenderTargetResource, ERHIFeatureLevel::Type FeatureLevel, FTextureRHIRef InMaskBuffer);
 
 	void ClearSectionData();
 

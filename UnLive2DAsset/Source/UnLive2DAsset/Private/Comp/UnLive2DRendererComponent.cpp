@@ -21,6 +21,14 @@
 #include "Draw/UnLive2DSceneProxy.h"
 #include "Draw/UnLive2DTargetBoxProxy.h"
 #include "Engine/TextureRenderTarget2D.h"
+#include "Engine/World.h"
+#if ENGINE_MAJOR_VERSION >=5 && ENGINE_MINOR_VERSION > 1
+#include "Engine/TextureRenderTarget.h"
+#include "UnrealClient.h"
+#include "UObject/UObjectGlobals.h"
+#include "UObject/Package.h"
+#include "TextureResource.h"
+#endif
 
 using namespace Csm;
 

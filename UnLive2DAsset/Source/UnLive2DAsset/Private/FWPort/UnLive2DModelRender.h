@@ -5,6 +5,8 @@
 #include "Rendering/CubismRenderer.hpp"
 #include "Type/csmRectF.hpp"
 #include "Type/csmVector.hpp"
+#include "RenderResource.h"
+#include "RHIResources.h"
 
 using namespace Csm;
 using Rendering::CubismRenderer;

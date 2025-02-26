@@ -4,6 +4,7 @@
 #include "PrimitiveSceneProxy.h"
 #include "DynamicMeshBuilder.h"
 #include "UnLive2DProxyBase.h"
+#include "StaticMeshResources.h"
 
 class UUnLive2DRendererComponent;
 class FUnLive2DRawModel;
