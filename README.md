@@ -36,6 +36,7 @@ It can make the Live2D model usable in UE4/5.
 
 | Unreal Engine | Version |
 | --- | --- |
+| Unreal Editor 5.5  | 5.5.3  |
 | Unreal Editor 5.4  | 5.4.4  |
 | Unreal Editor 5.3  | 5.3.2  |
 | Unreal Editor 5.2  | 5.2.1  |
