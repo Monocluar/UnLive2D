@@ -10,6 +10,7 @@
 ### 用法：
 1. 下载此插件放入项目中的`Plugins`文件中
 2. 需要下载官方库[Cubism Native SDK](https://www.live2d.com/en/download/cubism-sdk/download-native/)到 `./Source/ThirdParty/Live2DCubismCore` 下
+> 也可以下载发布版本直接使用[here](https://github.com/Monocluar/UnLive2D/releases).
 
 ### 官网可下载的资源：
 [Sample](https://www.live2d.com/learn/sample/)
