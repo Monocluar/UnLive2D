@@ -5,11 +5,11 @@
 
 ### 作用：
 可以使得 Live2D 模型在UE4/5 中可以使用。
-![InputAsset](./UnLive2DAsset/Docs/InputAsset.gif)
+![InputAsset](./Docs/InputAsset.gif)
 
 ### 用法：
 1. 下载此插件放入项目中的`Plugins`文件中
-2. 需要下载官方库[Cubism Native SDK](https://www.live2d.com/en/download/cubism-sdk/download-native/)到 `./UnLive2DAsset/Source/ThirdParty/Live2DCubismCore` 下
+2. 需要下载官方库[Cubism Native SDK](https://www.live2d.com/en/download/cubism-sdk/download-native/)到 `./Source/ThirdParty/Live2DCubismCore` 下
 
 ### 官网可下载的资源：
 [Sample](https://www.live2d.com/learn/sample/)

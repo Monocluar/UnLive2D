@@ -5,11 +5,11 @@
 
 ### Role：
 It can make the Live2D model usable in UE4/5.
-![InputAsset](./UnLive2DAsset/Docs/InputAsset.gif)
+![InputAsset](./Docs/InputAsset.gif)
 
 ### Usage：
 1. Download this plugin and place it in the `Plugins` file of the project
-2. Need to download the official library [Cubism Native SDK](https://www.live2d.com/en/download/cubism-sdk/download-native/)To `./UnLive2DAsset/Source/ThirdParty/Live2DCubismCore`
+2. Need to download the official library [Cubism Native SDK](https://www.live2d.com/en/download/cubism-sdk/download-native/)To `./Source/ThirdParty/Live2DCubismCore`
 
 ### Downloadable Sample：
 [Sample](https://www.live2d.com/learn/sample/)
