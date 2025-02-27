@@ -130,20 +130,6 @@ void SUnLive2DViewUI::InitLive2DRenderType()
 		MaskBufferRenderTarget->InitCustomFormat(BufferHeight, BufferHeight, EPixelFormat::PF_B8G8R8A8, false);
 		MaskBufferRenderTarget->AddToRoot();
 	}
-	else
-	{
-		ETextureCreateFlags Flags = ETextureCreateFlags(TexCreate_None | TexCreate_RenderTargetable | TexCreate_ShaderResource);
-#if ENGINE_MAJOR_VERSION >= 5
-		const FRHITextureCreateDesc Desc = FRHITextureCreateDesc::Create2D(TEXT("FUnLive2DTargetBoxProxy_UpdateSection_RenderThread"), BufferHeight, BufferHeight, PF_R8G8B8A8)
-			.SetFlags(Flags).SetClearValue(FClearValueBinding(FLinearColor::White));
-
-		MaskBuffer = RHICreateTexture(Desc);
-#else
-		FRHIResourceCreateInfo CreateInfo(TEXT("FUnLive2DTargetBoxProxy_UpdateSection_RenderThread"));
-		CreateInfo.ClearValueBinding = FClearValueBinding(FLinearColor::White);
-		MaskBuffer = RHICreateTexture2D(BufferHeight, BufferHeight, PF_R8G8B8A8, 1, 1, Flags, CreateInfo);
-#endif
-	}
 }
 
 void SUnLive2DViewUI::ClearRTCache()
@@ -313,8 +299,24 @@ int32 SUnLive2DViewUI::OnPaint(const FPaintArgs& Args, const FGeometry& Allotted
 	TSharedPtr<CubismClippingManager_UE> ClippingManager = ThisPtr->UnLive2DClippingManager;
 	ENQUEUE_RENDER_COMMAND(SUnLive2DViewUI_OnPaint)([ThisPtr,ClippingManager](FRHICommandListImmediate& RHICmdList)
 	{
+		
 		if (ClippingManager.IsValid())
 		{
+			if (ThisPtr->UnLive2DRenderType == EUnLive2DRenderType::RenderTarget && !ThisPtr->MaskBuffer.IsValid())
+			{
+				const csmInt32 BufferHeight = ClippingManager->GetClippingMaskBufferSize();
+				ETextureCreateFlags Flags = ETextureCreateFlags(TexCreate_None | TexCreate_RenderTargetable | TexCreate_ShaderResource);
+#if ENGINE_MAJOR_VERSION >= 5
+				const FRHITextureCreateDesc Desc = FRHITextureCreateDesc::Create2D(TEXT("FUnLive2DTargetBoxProxy_UpdateSection_RenderThread"), BufferHeight, BufferHeight, PF_R8G8B8A8)
+					.SetFlags(Flags).SetClearValue(FClearValueBinding(FLinearColor::White));
+
+				ThisPtr->MaskBuffer = RHICreateTexture(Desc);
+#else
+				FRHIResourceCreateInfo CreateInfo(TEXT("FUnLive2DTargetBoxProxy_UpdateSection_RenderThread"));
+				CreateInfo.ClearValueBinding = FClearValueBinding(FLinearColor::White);
+				ThisPtr->MaskBuffer = RHICreateTexture2D(BufferHeight, BufferHeight, PF_R8G8B8A8, 1, 1, Flags, CreateInfo);
+#endif
+			}
 			bool bNoLowPreciseMask = false;
 			ClippingManager->SetupClippingContext(bNoLowPreciseMask);
 			ClippingManager->RenderMask_Full(RHICmdList, GMaxRHIFeatureLevel, ThisPtr->GetMaskTextureRHIRef());

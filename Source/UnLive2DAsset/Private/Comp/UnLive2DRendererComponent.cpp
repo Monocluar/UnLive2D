@@ -86,7 +86,11 @@ void UUnLive2DRendererComponent::TickComponent(float DeltaTime, ELevelTick TickT
 		if (UnLive2DSceneProxy->OnUpData())
 		{
 			LocalBounds = UnLive2DSceneProxy->GetLocalBox();
-			MarkRenderDynamicDataDirty();
+			MarkRenderDynamicDataDirty(); 
+
+			UpdateBounds();
+			// Need to send to render thread
+			MarkRenderTransformDirty();
 		}
 	}
 
@@ -420,10 +424,6 @@ void UUnLive2DRendererComponent::ClearRTCache()
 		MaskBufferRenderTarget->RemoveFromRoot();
 		MaskBufferRenderTarget.Reset();
 	}
-	else
-	{
-		MaskBuffer.SafeRelease();
-	}
 }
 
 void UUnLive2DRendererComponent::InitLive2DRenderData(EUnLive2DRenderType InRenderType,int32 BufferHeight)
@@ -441,26 +441,6 @@ void UUnLive2DRendererComponent::InitLive2DRenderData(EUnLive2DRenderType InRend
 		MaskBufferRenderTarget->InitCustomFormat(BufferHeight, BufferHeight, EPixelFormat::PF_B8G8R8A8, false);
 		MaskBufferRenderTarget->AddToRoot();
 	}
-	else
-	{
-		if (MaskBuffer.IsValid())
-		{
-			if (MaskBuffer->GetSizeXYZ().X == BufferHeight) return;
-			MaskBuffer.SafeRelease();
-		}
-
-		ETextureCreateFlags Flags = ETextureCreateFlags(TexCreate_None | TexCreate_RenderTargetable | TexCreate_ShaderResource);
-#if ENGINE_MAJOR_VERSION >= 5
-		const FRHITextureCreateDesc Desc = FRHITextureCreateDesc::Create2D(TEXT("FUnLive2DTargetBoxProxy_UpdateSection_RenderThread"), BufferHeight, BufferHeight, PF_R8G8B8A8)
-			.SetFlags(Flags).SetClearValue(FClearValueBinding(FLinearColor::White));
-
-		MaskBuffer = RHICreateTexture(Desc);
-#else
-		FRHIResourceCreateInfo CreateInfo(TEXT("FUnLive2DTargetBoxProxy_UpdateSection_RenderThread"));
-		CreateInfo.ClearValueBinding = FClearValueBinding(FLinearColor::White);
-		MaskBuffer = RHICreateTexture2D(BufferHeight, BufferHeight, PF_R8G8B8A8, 1, 1, Flags, CreateInfo);
-#endif
-	}
 }
 
 FTextureRHIRef UUnLive2DRendererComponent::GetMaskTextureRHIRef() const
@@ -476,7 +456,10 @@ FTextureRHIRef UUnLive2DRendererComponent::GetMaskTextureRHIRef() const
 		return RenderTargetTexture;
 	}
 	else
-		return MaskBuffer;
+	{
+		check(0);
+		return FTextureRHIRef();
+	}
 }
 
 

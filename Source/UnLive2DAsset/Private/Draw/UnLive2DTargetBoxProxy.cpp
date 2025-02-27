@@ -34,13 +34,30 @@ void FUnLive2DTargetBoxProxy::UpdateSection_RenderThread(FRHICommandListImmediat
 	{
 		if (UnLive2DClippingManager.IsValid())
 		{
+			if (!MaskBuffer.IsValid())
+			{
+				const csmInt32 BufferHeight = UnLive2DClippingManager->GetClippingMaskBufferSize();
+				ETextureCreateFlags Flags = ETextureCreateFlags(TexCreate_None | TexCreate_RenderTargetable | TexCreate_ShaderResource);
+#if ENGINE_MAJOR_VERSION >= 5
+				const FRHITextureCreateDesc Desc = FRHITextureCreateDesc::Create2D(TEXT("FUnLive2DTargetBoxProxy_UpdateSection_RenderThread"), BufferHeight, BufferHeight, PF_R8G8B8A8)
+					.SetFlags(Flags).SetClearValue(FClearValueBinding(FLinearColor::White));
+
+				MaskBuffer = RHICreateTexture(Desc);
+#else
+				FRHIResourceCreateInfo CreateInfo(TEXT("FUnLive2DTargetBoxProxy_UpdateSection_RenderThread"));
+				CreateInfo.ClearValueBinding = FClearValueBinding(FLinearColor::White);
+				MaskBuffer = RHICreateTexture2D(BufferHeight, BufferHeight, PF_R8G8B8A8, 1, 1, Flags, CreateInfo);
+#endif
+			}
+
+
 			bool bNoLowPreciseMask = false;
 			UnLive2DClippingManager->SetupClippingContext(bNoLowPreciseMask);
 			// 先绘制遮罩Buffer
-			UnLive2DClippingManager->RenderMask_Full(RHICmdList, GetScene().GetFeatureLevel(), OwnerComponent->GetMaskTextureRHIRef());
+			UnLive2DClippingManager->RenderMask_Full(RHICmdList, GetScene().GetFeatureLevel(), MaskBuffer);
 			//UnLive2DClippingManager->RenderMask_Full(RHICmdList, GetScene().GetFeatureLevel(), RenderTarget->GetRenderTargetResource()->TextureRHI);
 		}
-		DrawSeparateToRenderTarget_RenderThread(RHICmdList, RenderTarget->GetRenderTargetResource(),GetScene().GetFeatureLevel(), OwnerComponent->GetMaskTextureRHIRef());
+		DrawSeparateToRenderTarget_RenderThread(RHICmdList, RenderTarget->GetRenderTargetResource(),GetScene().GetFeatureLevel(), MaskBuffer);
 	}
 }
 
@@ -314,4 +331,5 @@ FUnLive2DTargetBoxProxy::~FUnLive2DTargetBoxProxy()
 		MaterialInstance->RemoveFromRoot();
 	}
 	MaterialInstance = nullptr;
+	MaskBuffer.SafeRelease();
 }

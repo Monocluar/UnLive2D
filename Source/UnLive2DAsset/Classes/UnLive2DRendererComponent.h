@@ -167,6 +167,5 @@ private:
 private:
 	TWeakObjectPtr<UTextureRenderTarget2D> MaskBufferRenderTarget; //遮罩渲染缓冲图片
 
-	FTextureRHIRef MaskBuffer; // 遮罩图
 
 };

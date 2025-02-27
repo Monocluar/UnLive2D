@@ -64,5 +64,7 @@ private:
 	UBodySetup* BodySetup;
 	FMaterialRelevance MaterialRelevance;
 	FIntPoint CurrentDrawSize;
+
+	FTextureRHIRef MaskBuffer; // 遮罩图
 };
 
