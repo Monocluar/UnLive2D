@@ -48,6 +48,7 @@ public:
 
 	void SetLive2DRenderType(EUnLive2DRenderType InUnLive2DRenderType);
 
+public:
 	// 播放动画
 	void  PlayMotion(UUnLive2DMotion* InMotion);
 
@@ -56,6 +57,17 @@ public:
 
 	// 停止播放动画
 	void StopMotion();
+
+public:
+	FVector2D GetPhysicsGravity() const;
+
+	FVector2D GetPhysicsWind() const;
+
+	// 设置重力方向
+	void SetPhysicsGravity(const FVector2D& InGravity);
+
+	// 设置风力方向
+	void SetPhysicsWind(const FVector2D& InWind);
 
 protected:
 

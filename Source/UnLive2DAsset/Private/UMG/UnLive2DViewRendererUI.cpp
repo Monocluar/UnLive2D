@@ -50,6 +50,32 @@ void UUnLive2DViewRendererUI::StopMotion()
 	}
 }
 
+FVector2D UUnLive2DViewRendererUI::GetPhysicsGravity() const
+{
+	if (MySlateWidget.IsValid())
+		return MySlateWidget->GetPhysicsGravity();
+	return FVector2D::ZeroVector;
+}
+
+FVector2D UUnLive2DViewRendererUI::GetPhysicsWind() const
+{
+	if (MySlateWidget.IsValid())
+		return MySlateWidget->GetPhysicsWind();
+	return FVector2D::ZeroVector;
+}
+
+void UUnLive2DViewRendererUI::SetPhysicsGravity(const FVector2D& InGravity)
+{
+	if (MySlateWidget.IsValid())
+		return MySlateWidget->SetPhysicsGravity(InGravity);
+}
+
+void UUnLive2DViewRendererUI::SetPhysicsWind(const FVector2D& InWind)
+{
+	if (MySlateWidget.IsValid())
+		return MySlateWidget->SetPhysicsGravity(InWind);
+}
+
 #if WITH_EDITOR
 
 const FText UUnLive2DViewRendererUI::GetPaletteCategory()

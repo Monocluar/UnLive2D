@@ -16,6 +16,13 @@
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
 
+enum class EUnLive2DViewEditorType : uint8
+{
+	UnLive2D,
+	Physics
+};
+
+template<EUnLive2DViewEditorType Type>
 class SUnLive2DPropertiesTabBody : public SSingleObjectDetailsPanel
 {
 public:
@@ -24,20 +31,30 @@ public:
 
 private:
 
-	TWeakPtr<class FUnLive2DViewEditor> UnLive2DEditorPtr;
+	TSharedPtr<FUnLive2DViewEditor> UnLive2DViewEditor;
 
 public:
 
 	void Construct(const FArguments& InArgs, TSharedPtr<FUnLive2DViewEditor> InUnLive2DEditor)
 	{
-		UnLive2DEditorPtr = InUnLive2DEditor;
+		UnLive2DViewEditor = InUnLive2DEditor;
 
 		SSingleObjectDetailsPanel::Construct(SSingleObjectDetailsPanel::FArguments().HostCommandList(InUnLive2DEditor->GetToolkitCommands()).HostTabManager(InUnLive2DEditor->GetTabManager()), /*bAutomaticallyObserveViaGetObjectToObserve=*/ true, /*bAllowSearch=*/ true);
 	}
 
 	virtual UObject* GetObjectToObserve() const override
 	{
-		return UnLive2DEditorPtr.Pin()->GetUnLive2DBeingEdited();
+		if (Type == EUnLive2DViewEditorType::UnLive2D)
+			return UnLive2DViewEditor->UnLive2DBeingEdited;
+		else if (Type == EUnLive2DViewEditorType::Physics)
+		{
+			if (UnLive2DViewEditor->UnLive2DBeingEdited)
+			{
+				return UnLive2DViewEditor->UnLive2DBeingEdited->Live2DPhysics;
+			}
+			
+		}
+		return nullptr;
 	}
 
 	virtual TSharedRef<SWidget> PopulateSlot(TSharedRef<SWidget> PropertyEditorWidget) override
@@ -57,11 +74,13 @@ struct FUnLive2DViewEditorTabs
 	static const FName DetailsID;
 	static const FName ViewportID;
 	static const FName ParameterGroupID;
+	static const FName PhysicsDetailsID;
 };
 
 const FName FUnLive2DViewEditorTabs::DetailsID(TEXT("Details"));
 const FName FUnLive2DViewEditorTabs::ViewportID(TEXT("Viewport"));
 const FName FUnLive2DViewEditorTabs::ParameterGroupID(TEXT("ParameterGroup"));
+const FName FUnLive2DViewEditorTabs::PhysicsDetailsID(TEXT("PhysicsDetails"));
 
 FUnLive2DViewEditor::FUnLive2DViewEditor()
 	:UnLive2DBeingEdited(nullptr)
@@ -113,7 +132,7 @@ void FUnLive2DViewEditor::InitUnLive2DViewEditor(const EToolkitMode::Type Mode, 
 
 
 	// Default layout Standalone_FlipbookEditor_Layout_v1
-	const TSharedRef<FTabManager::FLayout> StandaloneDefaultLayout = FTabManager::NewLayout("Standalone_UnLive2DViewEditor_Layout_v1.2")
+	const TSharedRef<FTabManager::FLayout> StandaloneDefaultLayout = FTabManager::NewLayout("Standalone_UnLive2DViewEditor_Layout_v1.21")
 		->AddArea
 		(
 			FTabManager::NewPrimaryArea()
@@ -136,17 +155,30 @@ void FUnLive2DViewEditor::InitUnLive2DViewEditor(const EToolkitMode::Type Mode, 
 				->Split
 				(
 					FTabManager::NewStack()
-					->SetSizeCoefficient(0.8f)
+					->SetSizeCoefficient(0.7f)
 					->SetHideTabWell(true)
 					->AddTab(FUnLive2DViewEditorTabs::ViewportID, ETabState::OpenedTab)
 				)
 				->Split
 				(
-					FTabManager::NewStack()
-					->SetSizeCoefficient(0.2f)
-					->AddTab(FUnLive2DViewEditorTabs::DetailsID, ETabState::OpenedTab)
-					->AddTab(FUnLive2DViewEditorTabs::ParameterGroupID, ETabState::OpenedTab)
-					->SetForegroundTab(FUnLive2DViewEditorTabs::DetailsID)
+
+					FTabManager::NewSplitter()
+					->SetOrientation(Orient_Vertical)
+					->SetSizeCoefficient(0.3f)
+					->Split
+					(
+						FTabManager::NewStack()
+						->SetSizeCoefficient(0.7f)
+						->AddTab(FUnLive2DViewEditorTabs::DetailsID, ETabState::OpenedTab)
+						->AddTab(FUnLive2DViewEditorTabs::ParameterGroupID, ETabState::OpenedTab)
+						->SetForegroundTab(FUnLive2DViewEditorTabs::DetailsID)
+					)
+					->Split
+					(
+						FTabManager::NewStack()
+						->SetSizeCoefficient(0.3f)
+						->AddTab(FUnLive2DViewEditorTabs::PhysicsDetailsID, ETabState::OpenedTab)
+					)
 				)
 			)
 		);
@@ -179,6 +211,11 @@ void FUnLive2DViewEditor::RegisterTabSpawners(const TSharedRef<FTabManager>& InT
 		.SetDisplayName(LOCTEXT("ParameterGroupTabLabel", "ParameterGroup"))
 		.SetGroup(WorkspaceMenuCategoryRef)
 		.SetIcon(FSlateIcon(FUnLive2DAppStyle::GetStyleSetName(), "Persona.Tabs.AnimCurvePreviewer"));
+
+	InTabManager->RegisterTabSpawner(FUnLive2DViewEditorTabs::PhysicsDetailsID, FOnSpawnTab::CreateSP(this, &FUnLive2DViewEditor::SpawnTab_PhysicsDetails))
+		.SetDisplayName(LOCTEXT("PhysicsDetailsTabLabel", "Physics Details"))
+		.SetGroup(WorkspaceMenuCategoryRef)
+		.SetIcon(FSlateIcon(FUnLive2DAppStyle::GetStyleSetName(), "LevelEditor.Tabs.Details"));
 }
 
 void FUnLive2DViewEditor::UnregisterTabSpawners(const TSharedRef<FTabManager>& InTabManager)
@@ -188,6 +225,7 @@ void FUnLive2DViewEditor::UnregisterTabSpawners(const TSharedRef<FTabManager>& I
 	InTabManager->UnregisterTabSpawner(FUnLive2DViewEditorTabs::ViewportID);
 	InTabManager->UnregisterTabSpawner(FUnLive2DViewEditorTabs::DetailsID);
 	InTabManager->UnregisterTabSpawner(FUnLive2DViewEditorTabs::ParameterGroupID);
+	InTabManager->UnregisterTabSpawner(FUnLive2DViewEditorTabs::PhysicsDetailsID);
 }
 
 void FUnLive2DViewEditor::PostUndo(bool bSuccess)
@@ -276,7 +314,7 @@ TSharedRef<SDockTab> FUnLive2DViewEditor::SpawnTab_Details(const FSpawnTabArgs& 
 		//.Icon(FAppStyle::GetBrush("LevelEditor.Tabs.Details"))
 		.Label(LOCTEXT("DetailsTab_Title", "Details"))
 		[
-			SNew(SUnLive2DPropertiesTabBody, SharedThis(this))
+			SNew(SUnLive2DPropertiesTabBody<EUnLive2DViewEditorType::UnLive2D>, SharedThis(this))
 		];
 }
 
@@ -286,6 +324,16 @@ TSharedRef<SDockTab> FUnLive2DViewEditor::SpawnTab_ParameterGroup(const FSpawnTa
 		.Label(LOCTEXT("ParameterGroupTab_Title", "_ParameterGroup"))
 		[
 			SNew(SUnLive2DParameterGroup, SharedThis(this))
+		];
+}
+
+TSharedRef<SDockTab> FUnLive2DViewEditor::SpawnTab_PhysicsDetails(const FSpawnTabArgs& Args)
+{
+	return SNew(SDockTab)
+		//.Icon(FAppStyle::GetBrush("LevelEditor.Tabs.Details"))
+		.Label(LOCTEXT("PhysicsDetailsTab_Title", "Physics Details"))
+		[
+			SNew(SUnLive2DPropertiesTabBody<EUnLive2DViewEditorType::Physics>, SharedThis(this))
 		];
 }
 

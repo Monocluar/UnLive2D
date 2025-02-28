@@ -117,17 +117,34 @@ public:
 
 	// 播放动画
 	//UFUNCTION(BlueprintCallable, Category = "Anim")
-	virtual void  PlayMotion(UUnLive2DMotion* InMotion);
+	void  PlayMotion(UUnLive2DMotion* InMotion);
 
 	// 播放表情
 	UFUNCTION(BlueprintCallable, Category = "Anim")
-		virtual void PlayExpression(UUnLive2DExpression* InExpression);
+	void PlayExpression(UUnLive2DExpression* InExpression);
 
 	// 停止播放动画
 	UFUNCTION(BlueprintCallable, Category = "Anim")
-		virtual void StopMotion();
+	void StopMotion();
 
+public:
+	// 重力方向
+	UFUNCTION(BlueprintCallable, Category = "Physics")
+	FVector2D GetPhysicsGravity() const;
 
+	// 风力方向
+	UFUNCTION(BlueprintCallable, Category = "Physics")
+	FVector2D GetPhysicsWind() const;
+
+	// 设置重力方向
+	UFUNCTION(BlueprintCallable, Category = "Physics")
+	void SetPhysicsGravity(const FVector2D& InGravity);
+
+	// 设置风力方向
+	UFUNCTION(BlueprintCallable, Category = "Physics")
+	void SetPhysicsWind(const FVector2D& InWind);
+
+public:
 	FORCEINLINE TWeakPtr<FUnLive2DRawModel> GetUnLive2DRawModel() const { return UnLive2DRawModel; }
 
 #if WITH_EDITOR

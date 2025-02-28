@@ -14,6 +14,8 @@
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Animation/UnLive2DMotion.h"
 #include "Animation/UnLive2DExpression.h"
+#include "Misc/FileHelper.h"
+#include "Physics/UnLive2DPhysics.h"
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
 
@@ -120,7 +122,8 @@ UObject* UUnLive2DFactory::FactoryCreateFile(UClass* InClass, UObject* InParent,
 			TArray<FString> TexturePaths;
 			TArray<FUnLive2DMotionData> LoadMotionDataArr;
 			TMap<FString, FUnLiveByteData> LoadExpressionArr;
-			UnLive2DPtr->LoadLive2DFileDataFormPath(Live2DDataPath, TexturePaths, LoadMotionDataArr, LoadExpressionArr);
+			UUnLive2D::FOtherExportData OtherExportData;
+			UnLive2DPtr->LoadLive2DFileDataFormPath(Live2DDataPath, TexturePaths, LoadMotionDataArr, LoadExpressionArr, OtherExportData);
 
 			if (ImportUI->bIsImportTexture) // 是否导入图片
 			{
@@ -138,6 +141,23 @@ UObject* UUnLive2DFactory::FactoryCreateFile(UClass* InClass, UObject* InParent,
 						UnLive2DPtr->TextureAssets.Add(TextureAsset);
 					}
 				}
+			}
+
+			if (ImportUI->bIsImportPhysics) // 是否导入物理解算
+			{
+				TArray<uint8> ModelFile;
+				const bool ReadSuc = FFileHelper::LoadFileToArray(ModelFile, *OtherExportData.PhysicsPath);
+				if (ReadSuc)
+				{
+					FString BaseFile = FPaths::GetBaseFilename(OtherExportData.PhysicsPath);
+
+					BaseFile = BaseFile.Replace(TEXT("."),TEXT("_"));
+
+					UUnLive2DPhysics* Physics = CreateAsset<UUnLive2DPhysics>(InParent->GetOutermost()->GetPathName(), InName.ToString(), BaseFile);
+					Physics->SetLive2DPhysicsData(ModelFile);
+					UnLive2DPtr->Live2DPhysics = Physics;
+				}
+				
 			}
 
 			if (ImportUI->bIsImportMotion) // 是否导入动作

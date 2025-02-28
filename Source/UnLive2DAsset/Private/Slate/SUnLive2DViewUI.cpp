@@ -83,6 +83,36 @@ void SUnLive2DViewUI::StopMotion()
 	}
 }
 
+FVector2D SUnLive2DViewUI::GetPhysicsGravity() const
+{
+	if (UnLive2DRawModel.IsValid())
+		return UnLive2DRawModel->GetPhysicsGravity();
+	return FVector2D::ZeroVector;
+}
+
+FVector2D SUnLive2DViewUI::GetPhysicsWind() const
+{
+	if (UnLive2DRawModel.IsValid())
+		return UnLive2DRawModel->GetPhysicsWind();
+	return FVector2D::ZeroVector;
+}
+
+void SUnLive2DViewUI::SetPhysicsGravity(const FVector2D& InGravity)
+{
+	if (UnLive2DRawModel.IsValid())
+	{
+		UnLive2DRawModel->SetPhysicsGravity(InGravity);
+	}
+}
+
+void SUnLive2DViewUI::SetPhysicsWind(const FVector2D& InWind)
+{
+	if (UnLive2DRawModel.IsValid())
+	{
+		UnLive2DRawModel->SetPhysicsWind(InWind);
+	}
+}
+
 void SUnLive2DViewUI::InitUnLive2D()
 {
 	if (!FSlateApplication::IsInitialized()) return;

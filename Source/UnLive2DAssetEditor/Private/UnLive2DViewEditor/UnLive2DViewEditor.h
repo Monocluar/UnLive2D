@@ -65,10 +65,9 @@ protected:
 	TSharedRef<SDockTab> SpawnTab_Viewport(const FSpawnTabArgs& Args);
 	TSharedRef<SDockTab> SpawnTab_Details(const FSpawnTabArgs& Args);
 	TSharedRef<SDockTab> SpawnTab_ParameterGroup(const FSpawnTabArgs& Args);
+	TSharedRef<SDockTab> SpawnTab_PhysicsDetails(const FSpawnTabArgs& Args);
 
 protected:
-	// 打开的资源指针
-	UUnLive2D* UnLive2DBeingEdited;
 
 	/** 工具栏扩展器 */
 	TSharedPtr<FExtender> ToolbarExtender;
@@ -87,6 +86,9 @@ protected:
 public:
 	/** 在全局撤消/重做时触发多播委托*/
 	FSimpleMulticastDelegate OnPostUndo;
+
+	// 打开的资源指针
+	UUnLive2D* UnLive2DBeingEdited;
 
 protected:
 	// 序列总长度

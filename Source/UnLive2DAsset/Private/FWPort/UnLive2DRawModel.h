@@ -26,14 +26,30 @@ public:
     // 加载资源
     bool LoadAsset(const struct FUnLive2DLoadData& InData);
 
+
     // 更新
     void OnUpDate(float InDeltaTime);
+
+public:
+	// 创建物理解算
+	void CreatePhysics(const TArray<uint8>& InLive2DPhysicsData);
+    // 删除物理结算
+    void RemovePhysics();
 
 public:
 	FORCEINLINE TWeakPtr<Csm::ICubismModelSetting> GetModelSetting() const { return Live2DModelSetting; };
 
 #if WITH_EDITOR
-	static FUnLive2DLoadData LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& LoadTexturePaths, TArray<struct FUnLive2DMotionData>& LoadMotionData, TMap<FString, FUnLiveByteData>& LoadExpressionData);
+    struct FLoadLive2DFileData
+    {
+        TArray<FString> LoadTexturePaths; // 图片集
+        TArray<struct FUnLive2DMotionData> LoadMotionData; // 动画集
+        TMap<FString, FUnLiveByteData> LoadExpressionData; // 表情集
+        FString PhysicsPath; // 物理路径
+
+    };
+
+	static FUnLive2DLoadData LoadLive2DFileDataFormPath(const FString& InPath, FLoadLive2DFileData& OutFileData);
 #endif
 
     // 获取Parameter组
@@ -50,12 +66,6 @@ public:
 	// 脸部朝向设置
 	void SetDragPos(const FVector2D& InDragMotion);
 
-    // 设置重力方向
-    void SetPhysicsGravity(const FVector2D& InGravity);
-
-    // 设置风力方向
-	void SetPhysicsWind(const FVector2D& InWind);
-
     // 播放Live2D动作
 	float StartMotion(UUnLive2DMotion* InMotion);
 
@@ -67,6 +77,18 @@ public:
 
 	// 停止播放动画
 	void StopMotion();
+
+public:
+
+	FVector2D GetPhysicsGravity() const;
+
+	FVector2D GetPhysicsWind() const;
+
+	// 设置重力方向
+	void SetPhysicsGravity(const FVector2D& InGravity);
+
+	// 设置风力方向
+	void SetPhysicsWind(const FVector2D& InWind);
 
 private:
 
@@ -121,8 +143,6 @@ private:
     Csm::csmVector<Csm::CubismIdHandle> LipSyncIds;
 
 private:
-
-    TSharedPtr<CubismPhysics::Options> PhysicsData;
 
     TWeakObjectPtr<const UUnLive2D> OwnerLive2D;
 

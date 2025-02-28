@@ -17,6 +17,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=ImportSetting)
 		bool bIsImportTexture;
 
+	// 是否导入物理解算
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=ImportSetting)
+		bool bIsImportPhysics;
+
 	// 是否导入动作
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=ImportSetting)
 		bool bIsImportMotion;

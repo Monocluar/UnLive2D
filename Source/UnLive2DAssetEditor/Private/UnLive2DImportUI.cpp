@@ -6,7 +6,7 @@ UUnLive2DImportUI::UUnLive2DImportUI(const FObjectInitializer& ObjectInitializer
 	bIsImportTexture = true;
 	bIsImportMotion = true;
 	bIsImportExpression = true;
-
+	bIsImportPhysics = true;
 	this->SetFlags(RF_Transactional);
 }
 

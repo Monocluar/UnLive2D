@@ -306,6 +306,36 @@ void UUnLive2DRendererComponent::StopMotion()
 	}
 }
 
+FVector2D UUnLive2DRendererComponent::GetPhysicsGravity() const
+{
+	if (UnLive2DRawModel.IsValid())
+		return UnLive2DRawModel->GetPhysicsGravity();
+	return FVector2D::ZeroVector;
+}
+
+FVector2D UUnLive2DRendererComponent::GetPhysicsWind() const
+{
+	if (UnLive2DRawModel.IsValid())
+		return UnLive2DRawModel->GetPhysicsWind();
+	return FVector2D::ZeroVector;
+}
+
+void UUnLive2DRendererComponent::SetPhysicsGravity(const FVector2D& InGravity)
+{
+	if (UnLive2DRawModel.IsValid())
+	{
+		UnLive2DRawModel->SetPhysicsGravity(InGravity);
+	}
+}
+
+void UUnLive2DRendererComponent::SetPhysicsWind(const FVector2D& InWind)
+{
+	if (UnLive2DRawModel.IsValid())
+	{
+		UnLive2DRawModel->SetPhysicsWind(InWind);
+	}
+}
+
 #if WITH_EDITOR
 bool UUnLive2DRendererComponent::GetModelParamterGroup(TArray<FUnLive2DParameterData>& ParameterArr)
 {

@@ -3,7 +3,7 @@
 #include "Utils.h"
 #include "CanvasItem.h"
 #include "HitProxies.h"
-
+#include "Physics/UnLive2DPhysics.h"
 #include "UnLive2DAssetEditor.h"
 #include "DrawDebugHelpers.h"
 #include "UnLive2DRendererComponent.h"
@@ -24,7 +24,6 @@ FUnLive2DViewViewportClient::FUnLive2DViewViewportClient(UUnLive2D* InUnLive2DBe
 	DrawHelper.bDrawGrid = true;
 	EngineShowFlags.DisableAdvancedFeatures();
 	EngineShowFlags.SetCompositeEditorPrimitives(true);
-
 }
 
 
@@ -57,6 +56,11 @@ void FUnLive2DViewViewportClient::Tick(float DeltaSeconds)
 	if (!GIntraFrameDebuggingGameThread)
 	{
 		OwnedPreviewScene.GetWorld()->Tick(LEVELTICK_All, DeltaSeconds);
+	}
+
+	if (UnLive2DBeingEditedLastFrame.IsValid() && UnLive2DBeingEditedLastFrame->Live2DPhysics)
+	{
+		UnLive2DBeingEditedLastFrame->Live2DPhysics->PreviewLive2DRawModel = AnimatedRenderComponent->GetUnLive2DRawModel();
 	}
 
 	if (bIsMousePressed)

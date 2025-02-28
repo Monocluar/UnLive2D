@@ -59,7 +59,6 @@ FUnLive2DRawModel::FUnLive2DRawModel(const class UUnLive2D* Owner)
 	ID_ParamEyeBallY = CubismFramework::GetIdManager()->GetId(DefaultParameterId::ParamEyeBallY);
 
 	Live2DModelSetting = nullptr;
-	PhysicsData = nullptr;
 
 	bPlayBreath = true;
 }
@@ -70,7 +69,6 @@ FUnLive2DRawModel::~FUnLive2DRawModel()
     ReleaseExpressions();
 
     Live2DModelSetting.Reset();
-	PhysicsData.Reset();
 }
 
 bool FUnLive2DRawModel::LoadAsset(const FUnLive2DLoadData& InData)
@@ -95,17 +93,6 @@ bool FUnLive2DRawModel::LoadAsset(const FUnLive2DLoadData& InData)
 	{
 		UE_LOG(LogUnLive2D, Error, TEXT("FUnLive2DRawModel::LoadAsset:没有找到Live2DCubismData数据"));
 		return false;
-	}
-
-	// 物理模块
-	if (InData.Live2DPhysicsData.Num() > 0)
-	{
-		LoadPhysics(InData.Live2DPhysicsData.GetData(), InData.Live2DPhysicsData.Num());
-
-		if (_physics)
-		{
-			PhysicsData = MakeShared<CubismPhysics::Options>();
-		}
 	}
 
 	// 姿态模块
@@ -172,6 +159,21 @@ bool FUnLive2DRawModel::LoadAsset(const FUnLive2DLoadData& InData)
 	_motionManager->StopAllMotions();
 
 	return true;
+}
+
+void FUnLive2DRawModel::CreatePhysics(const TArray<uint8>& InLive2DPhysicsData)
+{
+	// 物理模块
+	if (InLive2DPhysicsData.Num() > 0)
+	{
+		LoadPhysics(InLive2DPhysicsData.GetData(), InLive2DPhysicsData.Num());
+	}
+}
+
+void FUnLive2DRawModel::RemovePhysics()
+{
+	CubismPhysics::Delete(_physics);
+	_physics = nullptr;
 }
 
 void FUnLive2DRawModel::OnUpDate(float InDeltaTime)
@@ -259,12 +261,12 @@ void FUnLive2DRawModel::OnUpDate(float InDeltaTime)
 }
 
 #if WITH_EDITOR
-FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& LoadTexturePaths, TArray<FUnLive2DMotionData>& LoadMotionData, TMap<FString, FUnLiveByteData>& LoadExpressionData)
+FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& InPath, FLoadLive2DFileData& OutFileData)
 {
 	FUnLive2DLoadData LoadData;
 
-	LoadTexturePaths.Empty();
-	LoadMotionData.Empty();
+	OutFileData.LoadTexturePaths.Empty();
+	OutFileData.LoadMotionData.Empty();
 
 	TArray<uint8> FileData;
 	if (!FFileHelper::LoadFileToArray(FileData, *InPath)) return LoadData;
@@ -297,14 +299,7 @@ FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& I
 	{
 		csmString path = JsonData->GetPhysicsFileName();
 
-		FString PhysicsPath = FileHomeDir / UTF8_TO_TCHAR(path.GetRawString());
-
-		TArray<uint8> ModelFile;
-		const bool ReadSuc = FFileHelper::LoadFileToArray(ModelFile, *PhysicsPath);
-		if (ReadSuc)
-		{
-			LoadData.Live2DPhysicsData = ModelFile;
-		}
+		OutFileData.PhysicsPath = FileHomeDir / UTF8_TO_TCHAR(path.GetRawString());
 	}
 
 	// 姿态模块
@@ -355,7 +350,7 @@ FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& I
 			LoadData.Live2DTexture2DData.Add(FUnLiveByteData(ModelFile));
 		}*/
 
-		LoadTexturePaths.Add(TempReadPath);
+		OutFileData.LoadTexturePaths.Add(TempReadPath);
 	}
 
 	// 动作组数据读取
@@ -387,7 +382,7 @@ FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& I
 			MotionData.MotionByteData = ModelFile;
 
 			MotionData.PathName = PathFileName.LeftChop(8);
-			LoadMotionData.Add(MotionData);
+			OutFileData.LoadMotionData.Add(MotionData);
 
 			//LoadData.Live2DMotionData.Add(Name.GetRawString(),FUnLiveByteData(ModelFile));
 		}
@@ -409,7 +404,7 @@ FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& I
 			const bool ReadSuc = FFileHelper::LoadFileToArray(ModelFile, *ExpressionPath);
 			if (ReadSuc)
 			{
-				LoadExpressionData.Add(FPaths::GetBaseFilename(ExpressionPath).LeftChop(5), FUnLiveByteData(ModelFile));
+				OutFileData.LoadExpressionData.Add(FPaths::GetBaseFilename(ExpressionPath).LeftChop(5), FUnLiveByteData(ModelFile));
 			}
 		}
 	}
@@ -515,20 +510,18 @@ void FUnLive2DRawModel::SetDragPos(const FVector2D& InDragMotion)
 
 void FUnLive2DRawModel::SetPhysicsGravity(const FVector2D& InGravity)
 {
-	if (PhysicsData.IsValid()) return;
-
-	PhysicsData->Gravity = CubismVector2(InGravity.X, InGravity.Y);
-
-	_physics->SetOptions(*PhysicsData);
+	if (_physics == nullptr) return;
+	CubismPhysics::Options Options = _physics->GetOptions();
+	Options.Gravity = CubismVector2(InGravity.X, InGravity.Y);
+	_physics->SetOptions(Options);
 }
 
 void FUnLive2DRawModel::SetPhysicsWind(const FVector2D& InWind)
 {
-	if (PhysicsData.IsValid()) return;
-
-	PhysicsData->Wind = CubismVector2(InWind.X, InWind.Y);
-
-	_physics->SetOptions(*PhysicsData);
+	if (_physics == nullptr) return;
+	CubismPhysics::Options Options = _physics->GetOptions();
+	Options.Wind = CubismVector2(InWind.X, InWind.Y);
+	_physics->SetOptions(Options);
 }
 
 Csm::CubismMotionQueueEntryHandle FUnLive2DRawModel::StartMotion(const Csm::csmChar* Group, Csm::csmInt32 No, Csm::csmInt32 Priority)
@@ -668,4 +661,18 @@ void FUnLive2DRawModel::StopMotion()
 		CurrentPlayMotion->OnPlayAnimInterrupted();
 		CurrentPlayMotion.Reset();
 	}
+}
+
+FVector2D FUnLive2DRawModel::GetPhysicsGravity() const
+{
+	if (_physics == nullptr) return FVector2D::ZeroVector;
+	CubismPhysics::Options Options = _physics->GetOptions();
+	return FVector2D(Options.Gravity.X, Options.Gravity.Y);
+}
+
+FVector2D FUnLive2DRawModel::GetPhysicsWind() const
+{
+	if (_physics == nullptr) return FVector2D::ZeroVector;
+	CubismPhysics::Options Options = _physics->GetOptions();
+	return FVector2D(Options.Wind.X, Options.Wind.Y);
 }

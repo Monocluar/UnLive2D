@@ -25,12 +25,12 @@ It can make the Live2D model usable in UE4/5.
 1. Support preview of model editor
 2. Support Live2D animation/emoji preview
 3. Support emoji creation
+4. Physical Editing
 
 #### Subsequent Development:
 1. Animation Blueprints 
 2. Animation Editing
-3. Physical Editing
-4. Mouth shape Editor
+3. Mouth shape Editor
 
 
 ### Unreal Engine Version：

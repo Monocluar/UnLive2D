@@ -5,6 +5,7 @@
 
 #include "UnLive2DAssetModule.h"
 #include "Interfaces/IPluginManager.h"
+#include "Physics/UnLive2DPhysics.h"
 
 #define LOCTEXT_NAMESPACE "UnLive2D"
 
@@ -34,7 +35,18 @@ void UUnLive2D::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEve
 	{
 		if (OnUpDataUnLive2DProperty.IsBound()) OnUpDataUnLive2DProperty.Execute(TEXT("Live2DScale"));
 	}
-	 
+	else if (MemberPropertyName == GET_MEMBER_NAME_STRING_CHECKED(UUnLive2D, Live2DPhysics))
+	{
+		for (TWeakPtr<FUnLive2DRawModel>& InRawModel : CacheRawModelArr)
+		{
+			if (!InRawModel.IsValid()) continue;
+			InRawModel.Pin()->RemovePhysics();
+			if (Live2DPhysics)
+			{
+				InRawModel.Pin()->CreatePhysics(Live2DPhysics->Live2DPhysicsData);
+			}
+		}
+	}
 }
 #endif
 
@@ -49,14 +61,25 @@ TSharedPtr<FUnLive2DRawModel> UUnLive2D::CreateLive2DRawModel() const
 		UnLive2DRawModel.Reset();
 	}
 
+	if (Live2DPhysics)
+	{
+		UnLive2DRawModel->CreatePhysics(Live2DPhysics->Live2DPhysicsData);
+	}
+#if WITH_EDITOR
+	CacheRawModelArr.Add(UnLive2DRawModel);
+#endif
 	return UnLive2DRawModel;
 }
 
 #if WITH_EDITOR
-void UUnLive2D::LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& TexturePaths, TArray<FUnLive2DMotionData>& LoadMotionData, TMap<FString, FUnLiveByteData>& LoadExpressionData)
+void UUnLive2D::LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& TexturePaths, TArray<FUnLive2DMotionData>& LoadMotionData, TMap<FString, FUnLiveByteData>& LoadExpressionData, FOtherExportData& OutExportData)
 {
-	Live2DFileData = FUnLive2DRawModel::LoadLive2DFileDataFormPath(InPath, TexturePaths, LoadMotionData, LoadExpressionData);
-
+	FUnLive2DRawModel::FLoadLive2DFileData OutFileData;
+	Live2DFileData = FUnLive2DRawModel::LoadLive2DFileDataFormPath(InPath, OutFileData);
+	TexturePaths = OutFileData.LoadTexturePaths;
+	LoadMotionData = OutFileData.LoadMotionData;
+	LoadExpressionData = OutFileData.LoadExpressionData;
+	OutExportData.PhysicsPath = OutFileData.PhysicsPath;
 }
 
 #endif

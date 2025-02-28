@@ -78,10 +78,6 @@ public:
 	UPROPERTY()
 		TArray<uint8> Live2DCubismData;
 
-	// <Live2D物理数据
-	UPROPERTY()
-		TArray<uint8> Live2DPhysicsData;
-
 	// <Live2DPose数据
 	UPROPERTY()
 		TArray<uint8> Live2DPoseData;

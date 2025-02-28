@@ -35,6 +35,10 @@ public:
 	// 贴图资源
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, AssetRegistrySearchable, Category = Live2D)
 		TArray<UTexture2D*> TextureAssets;
+
+	// 物理解算
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, AssetRegistrySearchable, Category = Physics)
+		class UUnLive2DPhysics* Live2DPhysics;
 public:
 
 	/*// 是否使用单遮罩图（ 为false 遮罩图不更新）
@@ -58,8 +62,13 @@ public:
 	TSharedPtr<FUnLive2DRawModel> CreateLive2DRawModel() const;
 
 #if WITH_EDITOR
+	struct FOtherExportData
+	{
+		FString PhysicsPath; // 物理路径
+	};
+
 	// 加载Live2D文件数据
-	void LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& TexturePaths, TArray<FUnLive2DMotionData>& LoadMotionData, TMap<FString, FUnLiveByteData>& LoadExpressionData);
+	void LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString>& TexturePaths, TArray<FUnLive2DMotionData>& LoadMotionData, TMap<FString, FUnLiveByteData>& LoadExpressionData, FOtherExportData& OutExportData);
 
 #endif
 	const FUnLive2DLoadData* GetUnLive2DLoadData();
@@ -70,12 +79,17 @@ public:
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
-#endif
 
+#endif
 
 protected:
 
 	UPROPERTY()
 		FUnLive2DLoadData Live2DFileData;
 
+private:
+
+#if WITH_EDITOR
+	mutable TArray<TWeakPtr<FUnLive2DRawModel>> CacheRawModelArr;
+#endif
 };
