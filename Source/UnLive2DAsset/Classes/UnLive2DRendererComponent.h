@@ -33,6 +33,8 @@ protected:
 
 	virtual void OnRegister() override;
 
+	virtual void OnUnregister() override;
+
 	//~ Begin UObject Interface
 	virtual void PostLoad() override;
 	//~ End UObject Interface.
@@ -49,7 +51,6 @@ protected:
 	virtual FPrimitiveSceneProxy* CreateSceneProxy() override;
 	virtual FCollisionShape GetCollisionShape(float Inflation) const override;
 	//~ End UPrimitiveComponent Interface.
-
 
 	virtual void GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials, bool bGetDebugMaterials = false) const override;
 	virtual void BeginDestroy() override;
@@ -166,6 +167,11 @@ public:
 
 	FTextureRHIRef GetMaskTextureRHIRef() const;
 	UTextureRenderTarget2D* GetTextureRenderTarget2D() const;
+
+protected:
+	void ClearData();
+
+	void OnLevelRemovedFromWorld(class ULevel* InLevel, class UWorld* InWorld);
 
 protected:
 

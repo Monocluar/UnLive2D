@@ -30,6 +30,7 @@
 #include "TextureResource.h"
 #endif
 #include "Editor/EditorUnLive2DDisplayInfo.h"
+#include "Engine/World.h"
 
 using namespace Csm;
 
@@ -58,6 +59,28 @@ UUnLive2DRendererComponent::UUnLive2DRendererComponent(const FObjectInitializer&
 	UnLive2DRTMaterial = Setting->DefaultUnLive2DRenderTargetMaterial;
 }
 
+void UUnLive2DRendererComponent::OnUnregister()
+{
+	Super::OnUnregister();
+
+#if !UE_SERVER
+
+	//FWorldDelegates::LevelRemovedFromWorld.RemoveAll(this);
+
+	if (IsRunningDedicatedServer()) return;
+
+#if WITH_EDITOR
+
+	const bool bIsGameWorld = GetWorld()->IsGameWorld();
+
+	if (!bIsGameWorld)
+	{
+		ClearData();
+	}
+#endif
+
+#endif
+}
 
 void UUnLive2DRendererComponent::BeginPlay()
 {
@@ -87,7 +110,7 @@ void UUnLive2DRendererComponent::TickComponent(float DeltaTime, ELevelTick TickT
 		if (UnLive2DSceneProxy->OnUpData())
 		{
 			LocalBounds = UnLive2DSceneProxy->GetLocalBox();
-			MarkRenderDynamicDataDirty(); 
+			MarkRenderDynamicDataDirty();
 
 			UpdateBounds();
 			// Need to send to render thread
@@ -209,11 +232,7 @@ UBodySetup* UUnLive2DRendererComponent::GetBodySetup()
 void UUnLive2DRendererComponent::BeginDestroy()
 {
 	Super::BeginDestroy();
-	ClearRTCache();
-	if (ProcMeshBodySetup)
-	{
-		ProcMeshBodySetup->RemoveFromRoot();
-	}
+	ClearData();
 }
 
 FCollisionShape UUnLive2DRendererComponent::GetCollisionShape(float Inflation) const
@@ -519,6 +538,24 @@ FTextureRHIRef UUnLive2DRendererComponent::GetMaskTextureRHIRef() const
 UTextureRenderTarget2D* UUnLive2DRendererComponent::GetTextureRenderTarget2D() const
 {
 	return MaskBufferRenderTarget.Get();
+}
+
+void UUnLive2DRendererComponent::ClearData()
+{
+	ClearRTCache();
+	if (ProcMeshBodySetup)
+	{
+		ProcMeshBodySetup->RemoveFromRoot();
+	}
+	OnLevelRemovedFromWorld(nullptr, nullptr);
+}
+
+void UUnLive2DRendererComponent::OnLevelRemovedFromWorld(class ULevel* InLevel, class UWorld* InWorld)
+{
+	if (UnLive2DProxyBase* UnLive2DSceneProxy = static_cast<UnLive2DProxyBase*>(SceneProxy))
+	{
+		UnLive2DSceneProxy->OnComponetDestroy();
+	}
 }
 
 void UUnLive2DRendererComponent::OnMotionPlayeEnd_Implementation()

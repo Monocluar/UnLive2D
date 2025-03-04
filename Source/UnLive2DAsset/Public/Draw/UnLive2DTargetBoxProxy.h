@@ -28,6 +28,7 @@ protected:
 	virtual bool OnUpData() override;
 	virtual void OnUpDataRenderer() override;
 	virtual void GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials, bool bGetDebugMaterials = false) const override;
+	virtual void OnComponetDestroy() override;
 
 	SIZE_T GetTypeHash() const override;
 	virtual uint32 GetMemoryFootprint() const override;

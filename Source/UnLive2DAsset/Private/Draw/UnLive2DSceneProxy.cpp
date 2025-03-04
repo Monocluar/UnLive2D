@@ -210,6 +210,20 @@ void FUnLive2DSceneProxy::GetUsedMaterials(TArray<UMaterialInterface*>& OutMater
 	}
 }
 
+void FUnLive2DSceneProxy::OnComponetDestroy()
+{
+	for (auto& Item : UnLive2DToBlendMaterialList)
+	{
+		if (Item.Value == nullptr) continue;
+
+		Item.Value->RemoveFromRoot();
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 4
+		Item.Value->OnRemovedAsOverride(OwnerComponent.Get());
+#endif
+	}
+	UnLive2DToBlendMaterialList.Empty();
+}
+
 #if WITH_EDITOR
 void FUnLive2DSceneProxy::UpDataUnLive2DProperty(FName PropertyName)
 {
@@ -321,7 +335,7 @@ UMaterialInstance* FUnLive2DSceneProxy::GetMaterialInstanceDynamicToIndex(const 
 #endif
 		if (RendererComponent->GetUnLive2D() == nullptr || !RendererComponent->GetUnLive2D()->TextureAssets.IsValidIndex(TextureIndex))
 			return nullptr;
-		Material = UMaterialInstanceDynamic::Create(MaterialInterface, RendererComponent);
+		Material = UMaterialInstanceDynamic::Create(MaterialInterface, nullptr);
 		Material->SetTextureParameterValue(TEXT("UnLive2D"), RendererComponent->GetUnLive2D()->TextureAssets[TextureIndex]);
 		if (auto MaskBufferRenderTarget = OwnerComponent->GetTextureRenderTarget2D())
 		{

@@ -93,6 +93,7 @@ protected:
 	virtual uint32 GetMemoryFootprint() const override;
 	//virtual void CreateRenderThreadResources(FRHICommandListBase& RHICmdList) override;
 	virtual void GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials, bool bGetDebugMaterials = false) const override;
+	virtual void OnComponetDestroy() override;
 
 #if WITH_EDITOR
 	virtual void UpDataUnLive2DProperty(FName PropertyName) override;

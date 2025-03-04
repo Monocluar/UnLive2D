@@ -66,6 +66,15 @@ void FUnLive2DTargetBoxProxy::GetUsedMaterials(TArray<UMaterialInterface*>& OutM
 	OutMaterials.Add(MaterialInstance);
 }
 
+void FUnLive2DTargetBoxProxy::OnComponetDestroy()
+{
+	if (IsValid(MaterialInstance))
+	{
+		MaterialInstance->RemoveFromRoot();
+	}
+	MaterialInstance = nullptr;
+}
+
 bool FUnLive2DTargetBoxProxy::OnUpData()
 {
 	if (OwnerComponent && OwnerComponent->IsRenderStateDirty()) return false;
@@ -289,7 +298,7 @@ FUnLive2DTargetBoxProxy::FUnLive2DTargetBoxProxy(UUnLive2DRendererComponent* InC
 	UMaterialInterface* MaterialInterface = Cast<UMaterialInterface>(InComponent->UnLive2DRTMaterial.TryLoad());
 	if (MaterialInterface == nullptr) return;
 	
-	UMaterialInstanceDynamic* MaterialDynamic = UMaterialInstanceDynamic::Create(MaterialInterface, InComponent);
+	UMaterialInstanceDynamic* MaterialDynamic = UMaterialInstanceDynamic::Create(MaterialInterface, nullptr);
 	if (MaterialDynamic)
 	{
 		MaterialRelevance = MaterialDynamic->GetRelevance_Concurrent(GetScene().GetFeatureLevel());
