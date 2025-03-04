@@ -39,6 +39,13 @@ public:
 	// 物理解算
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, AssetRegistrySearchable, Category = Physics)
 		class UUnLive2DPhysics* Live2DPhysics;
+
+#if WITH_EDITORONLY_DATA
+		// 展示信息
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, AssetRegistrySearchable, Category = Display)
+		class UEditorUnLive2DDisplayInfo* Live2DDisplayInfo;
+#endif
+
 public:
 
 	/*// 是否使用单遮罩图（ 为false 遮罩图不更新）
@@ -65,6 +72,7 @@ public:
 	struct FOtherExportData
 	{
 		FString PhysicsPath; // 物理路径
+		FString DisplayInfoPath; // 展示信息
 	};
 
 	// 加载Live2D文件数据
@@ -84,6 +92,7 @@ public:
 
 protected:
 
+	// 基础数据
 	UPROPERTY()
 		FUnLive2DLoadData Live2DFileData;
 

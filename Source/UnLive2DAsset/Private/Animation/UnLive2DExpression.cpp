@@ -10,8 +10,8 @@
 #include "Serialization/JsonReader.h"
 #include "Dom/JsonValue.h"
 #include "FWPort/UnLive2DRawModel.h"
-#endif
 #include "Serialization/JsonSerializer.h"
+#endif
 
 #if WITH_EDITOR
 using namespace Live2D::Cubism::Framework;

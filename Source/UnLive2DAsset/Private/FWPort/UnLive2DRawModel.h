@@ -46,7 +46,7 @@ public:
         TArray<struct FUnLive2DMotionData> LoadMotionData; // 动画集
         TMap<FString, FUnLiveByteData> LoadExpressionData; // 表情集
         FString PhysicsPath; // 物理路径
-
+        FString DisplayInfoPath; // 展示信息
     };
 
 	static FUnLive2DLoadData LoadLive2DFileDataFormPath(const FString& InPath, FLoadLive2DFileData& OutFileData);

@@ -2,7 +2,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-
+/*
 #include "UnLive2DPhysicsInternal.generated.h"
 
 // 物理运算的目标类型
@@ -32,11 +32,11 @@ struct FUnLive2DPhysicsParameter
 	GENERATED_USTRUCT_BODY()
 
 	// 参数标识
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FName Id;
 
 	// 目标类型
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	EUnLive2DPhysicsTargetType TargetType;
 };
 
@@ -47,19 +47,19 @@ struct UNLIVE2DASSET_API FUnLive2DPhysicsInput
 	GENERATED_USTRUCT_BODY()
 
 	// 输入源参数
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FUnLive2DPhysicsParameter Source;
 
 	// 重量
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	float Weight = 0.f;
 
 	// 值是否已反转
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool bReflect = false;
 
 	// 输入类型
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	EUnLive2DPhysicsSource Type = EUnLive2DPhysicsSource::X;
 };
 
@@ -70,27 +70,27 @@ struct UNLIVE2DASSET_API FUnLive2DPhysicsOutput
 	GENERATED_USTRUCT_BODY()
 
 	// 钟摆索引
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	int32 VertexIndex = 0; 
 
 	// 缩放角度
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	float AngleScale = 0.f;
 
 	// 重力
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	float Weight = 0.f;
 
 	// 值是否已反转
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool bReflect = false;
 
 	// 输出类型
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	EUnLive2DPhysicsSource Type = EUnLive2DPhysicsSource::X;
 
 	// 目标参数
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FUnLive2DPhysicsParameter Destination;
 };
 
@@ -101,23 +101,23 @@ struct UNLIVE2DASSET_API FUnLive2DPhysicsParticle
 	GENERATED_USTRUCT_BODY()
 	
 	// 易于移动
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	float Mobility;
 
 	// 延迟
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	float Delay;
 
 	// 加速度
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	float Acceleration;
 
 	// 距离
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	float Radius;
 
 	// 当前位置
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FVector2D Position;
 };
 
@@ -128,23 +128,23 @@ struct UNLIVE2DASSET_API FUnLive2DPhysicsSetting
 	GENERATED_USTRUCT_BODY()
 
 	// 标识ID
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FName ID;
 
 	// 标识名称
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FName Name;
 
 	// 物理运算输入列表
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<FUnLive2DPhysicsInput> Inputs;
 
 	// 物理运算输出列表
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<FUnLive2DPhysicsOutput> Outputs;
 
 	// 物理运算的物理点列表
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<FUnLive2DPhysicsParticle> Particles;
 };
 
@@ -154,11 +154,11 @@ struct UNLIVE2DASSET_API FUnLive2DPhysicsData
 	GENERATED_USTRUCT_BODY()
 
 	// 帧率
-	UPROPERTY(VisibleAnywhere, Category = "Asset")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Asset")
 	float Fps;
 
 	// 版本
-	UPROPERTY(VisibleAnywhere, Category = "Asset")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Asset")
 	int32 Version;
 
 	// 重力方向
@@ -185,3 +185,4 @@ struct UNLIVE2DASSET_API FUnLive2DPhysicsData
 	UPROPERTY(EditAnywhere, Category = "Physics")
 	TArray<FUnLive2DPhysicsSetting> PhysicsSettings;
 };
+*/

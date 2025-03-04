@@ -29,6 +29,7 @@
 #include "UObject/Package.h"
 #include "TextureResource.h"
 #endif
+#include "Editor/EditorUnLive2DDisplayInfo.h"
 
 using namespace Csm;
 
@@ -357,13 +358,24 @@ bool UUnLive2DRendererComponent::GetModelParamterGroup(TArray<FUnLive2DParameter
 	{
 		const char* ParameterIDName = ParameterIds[i];
 
+		FName DisPlayName;
+		if (SourceUnLive2D && SourceUnLive2D->Live2DDisplayInfo)
+		{
+			FName* FindName = SourceUnLive2D->Live2DDisplayInfo->ParameterIDToName.Find(ParameterIDName);
+			if (FindName)
+			{
+				DisPlayName = *FindName;
+			}
+		}
+
 		ParameterArr.Add(FUnLive2DParameterData(
 			i,
 			ParameterIDName,
 			UnLive2DModel->GetParameterValue(i), // 当前值
 			UnLive2DModel->GetParameterDefaultValue(i), // 默认值
 			UnLive2DModel->GetParameterMinimumValue(i), // 最小值
-			UnLive2DModel->GetParameterMaximumValue(i))); // 最大值
+			UnLive2DModel->GetParameterMaximumValue(i), // 最大值
+			DisPlayName));
 	}
 
 	return true;
@@ -404,13 +416,24 @@ bool UUnLive2DRendererComponent::GetModelParamterIDData(FName ParameterStr, FUnL
 	{
 		return false;
 	}
+
+	FName DisPlayName;
+	if (SourceUnLive2D && SourceUnLive2D->Live2DDisplayInfo)
+	{
+		FName* FindName = SourceUnLive2D->Live2DDisplayInfo->ParameterIDToName.Find(ParameterStr);
+		if (FindName)
+		{
+			DisPlayName = *FindName;
+		}
+	}
 	Parameter = (FUnLive2DParameterData(
 		ID,
 		ParameterStr,
 		UnLive2DModel->GetParameterValue(ID), // 当前值
 		UnLive2DModel->GetParameterDefaultValue(ID), // 默认值
 		UnLive2DModel->GetParameterMinimumValue(ID), // 最小值
-		UnLive2DModel->GetParameterMaximumValue(ID))); // 最大值
+		UnLive2DModel->GetParameterMaximumValue(ID),// 最大值
+		DisPlayName)); 
 
 	return true;
 }

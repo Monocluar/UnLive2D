@@ -13,10 +13,13 @@ struct UNLIVE2DASSET_API FUnLive2DParameterData
 {
 public:
 	// Live2D参数ID
-	int32 ParameterID;
+	int32 Index;
 
-	// Live2D参数名
-	FName ParameterName;
+	// Live2D参数ID
+	FName ParameterID;
+
+	// 展示名称
+	FName DisplayName;
 
 	// 参数值
 	float ParameterValue;
@@ -33,8 +36,9 @@ public:
 
 public:
 	FUnLive2DParameterData()
-		: ParameterID(INT_ERROR)
-		, ParameterName()
+		: Index(INDEX_NONE)
+		, ParameterID()
+		, DisplayName()
 		, ParameterValue(0.f)
 		, ParameterDefaultValue(0.f)
 		, ParameterMinValue(0.f)
@@ -47,10 +51,12 @@ public:
 		float InParameterValue,
 		float InParameterDefaultValue,
 		float InParameterMinValue,
-		float InParameterMaxValue
+		float InParameterMaxValue,
+		FName InDisplayName
 	)
-		: ParameterID(InParameterID)
-		, ParameterName(InParameterName)
+		: Index(InParameterID)
+		, ParameterID(InParameterName)
+		, DisplayName(InDisplayName)
 		, ParameterValue(InParameterValue)
 		, ParameterDefaultValue(InParameterDefaultValue)
 		, ParameterMinValue(InParameterMinValue)

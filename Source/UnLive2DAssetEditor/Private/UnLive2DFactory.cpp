@@ -16,6 +16,7 @@
 #include "Animation/UnLive2DExpression.h"
 #include "Misc/FileHelper.h"
 #include "Physics/UnLive2DPhysics.h"
+#include "Editor/EditorUnLive2DDisplayInfo.h"
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
 
@@ -143,7 +144,7 @@ UObject* UUnLive2DFactory::FactoryCreateFile(UClass* InClass, UObject* InParent,
 				}
 			}
 
-			if (ImportUI->bIsImportPhysics) // 是否导入物理解算
+			if (ImportUI->bIsImportPhysics && !OtherExportData.PhysicsPath.IsEmpty()) // 是否导入物理解算
 			{
 				TArray<uint8> ModelFile;
 				const bool ReadSuc = FFileHelper::LoadFileToArray(ModelFile, *OtherExportData.PhysicsPath);
@@ -157,7 +158,21 @@ UObject* UUnLive2DFactory::FactoryCreateFile(UClass* InClass, UObject* InParent,
 					Physics->SetLive2DPhysicsData(ModelFile);
 					UnLive2DPtr->Live2DPhysics = Physics;
 				}
-				
+			}
+
+			if (ImportUI->bIsImportDisplayInfo && !OtherExportData.DisplayInfoPath.IsEmpty()) // 是否导入展示信息
+			{
+				FString FileContent;
+				const bool ReadSuc = FFileHelper::LoadFileToString(FileContent, *OtherExportData.DisplayInfoPath);
+				if (ReadSuc)
+				{
+					FString BaseFile = FPaths::GetBaseFilename(OtherExportData.DisplayInfoPath);
+
+					BaseFile = BaseFile.Replace(TEXT("."), TEXT("_"));
+					UEditorUnLive2DDisplayInfo* DisplayInfo = CreateAsset<UEditorUnLive2DDisplayInfo>(InParent->GetOutermost()->GetPathName(), InName.ToString(), BaseFile);
+					DisplayInfo->LoadLive2DDisplayInfo(FileContent);
+					UnLive2DPtr->Live2DDisplayInfo = DisplayInfo;
+				}
 			}
 
 			if (ImportUI->bIsImportMotion) // 是否导入动作

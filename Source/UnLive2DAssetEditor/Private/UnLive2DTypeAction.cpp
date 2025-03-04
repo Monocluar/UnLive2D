@@ -43,14 +43,14 @@ void FUnLive2DTypeAction::GetActions(const TArray<UObject*>& InObjects, struct F
 {
 	TArray<TWeakObjectPtr<UUnLive2D>> UnLive2DArr = GetTypedWeakObjectPtrs<UUnLive2D>(InObjects);
 
-	Section.AddSubMenu(
+	/*Section.AddSubMenu(
 		"CreateUnLive2DSubmenu",
 		NSLOCTEXT("AssetTypeActions", "CreateSkeletonSubmenu", "Create"),
 		NSLOCTEXT("AssetTypeActions", "CreateSkeletonSubmenu_ToolTip", "Create assets for this skeleton"),
 		FNewMenuDelegate::CreateSP(this, &FUnLive2DTypeAction::FillCreateMenu, UnLive2DArr),
 		false,
 		FSlateIcon(FUnLive2DAppStyle::GetStyleSetName(), "Persona.AssetActions.CreateAnimAsset")
-	);
+	);*/
 }
 
 void FUnLive2DTypeAction::OpenAssetEditor(const TArray<UObject*>& InObjects, TSharedPtr<class IToolkitHost> EditWithinLevelEditor /*= TSharedPtr<IToolkitHost>()*/)

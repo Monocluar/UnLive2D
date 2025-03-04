@@ -442,6 +442,10 @@ void SUnLive2DViewUI::FCustomVertsData::UpDataVertsData(const FGeometry& Allotte
 		}
 
 		csmFloat32 Opacity = UnLive2DModel->GetDrawableOpacity(DrawableIndex); // 获取不透明度
+		if (!UnLive2DModel->GetDrawableDynamicFlagIsVisible(DrawableIndex))
+		{
+			Opacity = 0.f;
+		}
 
 		const csmInt32 NumVertext = UnLive2DModel->GetDrawableVertexCount(DrawableIndex); // 获得Drawable顶点的个数
 		const csmFloat32* VertexArray = UnLive2DModel->GetDrawableVertices(DrawableIndex); // 顶点组

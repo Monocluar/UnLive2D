@@ -80,6 +80,7 @@ void UUnLive2D::LoadLive2DFileDataFormPath(const FString& InPath, TArray<FString
 	LoadMotionData = OutFileData.LoadMotionData;
 	LoadExpressionData = OutFileData.LoadExpressionData;
 	OutExportData.PhysicsPath = OutFileData.PhysicsPath;
+	OutExportData.DisplayInfoPath = OutFileData.DisplayInfoPath;
 }
 
 #endif

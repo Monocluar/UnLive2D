@@ -12,12 +12,12 @@
 FName UnLive2DParameterNameLabel("Parameter Name");
 FName UnLive2DParameterValueLabel("Parameter Value");
 
-TSharedRef<FUnLive2DParameterInfo> FUnLive2DParameterInfo::Create(TWeakObjectPtr<UUnLive2DRendererComponent>& InEditableUnLive2D, const FSmartName& InSmartName, FUnLive2DParameterData& ParameterData)
+TSharedRef<FUnLive2DParameterInfo> FUnLive2DParameterInfo::Create(TWeakObjectPtr<UUnLive2DRendererComponent>& InEditableUnLive2D, const FUnLive2DDisplayParameterInfo& InSmartName, FUnLive2DParameterData& ParameterData)
 {
 	return MakeShareable(new FUnLive2DParameterInfo(InEditableUnLive2D, InSmartName, ParameterData));
 }
 
-TSharedRef<FUnLive2DParameterInfo> FUnLive2DParameterInfo::Create(TWeakObjectPtr<UUnLive2DRendererComponent>& InEditableUnLive2D, const FSmartName& InSmartName, FUnLive2DParameterData& ParameterData, EUnLive2DExpressionBlendType::Type InUnLive2DExpressionBlendType, TWeakObjectPtr<UUnLive2DAnimBase> InUnLive2DAnimBase)
+TSharedRef<FUnLive2DParameterInfo> FUnLive2DParameterInfo::Create(TWeakObjectPtr<UUnLive2DRendererComponent>& InEditableUnLive2D, const FUnLive2DDisplayParameterInfo& InSmartName, FUnLive2DParameterData& ParameterData, EUnLive2DExpressionBlendType::Type InUnLive2DExpressionBlendType, TWeakObjectPtr<UUnLive2DAnimBase> InUnLive2DAnimBase)
 {
 	return MakeShareable(new FUnLive2DParameterInfo(InEditableUnLive2D, InSmartName, ParameterData, InUnLive2DExpressionBlendType, InUnLive2DAnimBase));
 }
@@ -47,6 +47,7 @@ TSharedRef<SWidget> SUnLive2DParameterListRow::GenerateWidgetForColumn(const FNa
 				.ColorAndOpacity(this, &SUnLive2DParameterListRow::GetItemTextColor)
 				.IsSelected(this, &SUnLive2DParameterListRow::IsSelected)
 				.Text(this, &SUnLive2DParameterListRow::GetItemName)
+				.ToolTipText(this, &SUnLive2DParameterListRow::GetToolTipName)
 				.HighlightText(this, &SUnLive2DParameterListRow::GetFilterText)
 			];
 	}
@@ -109,7 +110,7 @@ FSlateColor SUnLive2DParameterListRow::GetItemTextColor() const
 
 FText SUnLive2DParameterListRow::GetItemName() const
 {
-	return FText::FromName(Item->ParameterData.ParameterName);
+	return FText::FromName(Item->ParameterData.DisplayName.IsNone() ? Item->ParameterData.ParameterID : Item->ParameterData.DisplayName);
 }
 
 FText SUnLive2DParameterListRow::GetFilterText() const
@@ -118,6 +119,11 @@ FText SUnLive2DParameterListRow::GetFilterText() const
 
 	return UnLive2DParameterGroupPtr->GetFilterText();
 
+}
+
+FText SUnLive2DParameterListRow::GetToolTipName() const
+{
+	return FText::FromName(Item->ParameterData.ParameterID);
 }
 
 void SUnLive2DParameterListRow::OnUnLive2DParameterChanged(float NewParameter)
@@ -132,14 +138,14 @@ void SUnLive2DParameterListRow::OnUnLive2DParameterChanged(float NewParameter)
 
 		if (UUnLive2DExpression* Expression = Cast<UUnLive2DExpression>(Item->UnLive2DAnimBaseWeak.Get()))
 		{
-			Expression->SetAnimParamterValue(Item->EditableUnLive2DComp, Item->ParameterData.ParameterID, NewParameter, UnLive2DExpressionBlendType);
+			Expression->SetAnimParamterValue(Item->EditableUnLive2DComp, Item->ParameterData.Index, NewParameter, UnLive2DExpressionBlendType);
 
 		}
 
 	}
 	else if (UnLive2DParameterAssetType == EUnLive2DParameterAssetType::UnLive2D)
 	{
-		Item->EditableUnLive2DComp->SetModelParamterValue(Item->ParameterData.ParameterID, NewParameter);
+		Item->EditableUnLive2DComp->SetModelParamterValue(Item->ParameterData.Index, NewParameter);
 	}
 }
 
@@ -158,13 +164,13 @@ void SUnLive2DParameterListRow::OnUnLive2DParameterValueCommitted(float NewParam
 
 			if (UUnLive2DExpression* Expression = Cast<UUnLive2DExpression>(Item->UnLive2DAnimBaseWeak.Get()))
 			{
-				Expression->SetAnimParamterValue(Item->EditableUnLive2DComp, Item->ParameterData.ParameterID, NewParameter, UnLive2DExpressionBlendType);
+				Expression->SetAnimParamterValue(Item->EditableUnLive2DComp, Item->ParameterData.Index, NewParameter, UnLive2DExpressionBlendType);
 
 			}
 		}
 		else if (UnLive2DParameterAssetType == EUnLive2DParameterAssetType::UnLive2D)
 		{
-			Item->EditableUnLive2DComp->SetModelParamterValue(Item->ParameterData.ParameterID, NewParameter);
+			Item->EditableUnLive2DComp->SetModelParamterValue(Item->ParameterData.Index, NewParameter);
 		}
 	}
 }
@@ -194,7 +200,7 @@ void SUnLive2DParameterListRow::HandleOverrideTypeChange(EUnLive2DExpressionBlen
 
 	if (UUnLive2DExpression* Expression = Cast<UUnLive2DExpression>(Item->UnLive2DAnimBaseWeak.Get()))
 	{
-		Expression->SetAnimParamterBlendType(Item->EditableUnLive2DComp, Item->ParameterData.ParameterID, Item->ParameterData.ParameterDefaultValue, UnLive2DExpressionBlendType);
+		Expression->SetAnimParamterBlendType(Item->EditableUnLive2DComp, Item->ParameterData.Index, Item->ParameterData.ParameterDefaultValue, UnLive2DExpressionBlendType);
 
 	}
 }

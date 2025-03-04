@@ -302,6 +302,14 @@ FUnLive2DLoadData FUnLive2DRawModel::LoadLive2DFileDataFormPath(const FString& I
 		OutFileData.PhysicsPath = FileHomeDir / UTF8_TO_TCHAR(path.GetRawString());
 	}
 
+	// 展示信息
+	if (strcmp(JsonData->GetDisplayInfoFileName(), "") != 0)
+	{
+		csmString path = JsonData->GetDisplayInfoFileName();
+
+		OutFileData.DisplayInfoPath = FileHomeDir / UTF8_TO_TCHAR(path.GetRawString());
+	}
+
 	// 姿态模块
 	if (strcmp(JsonData->GetPoseFileName(), "") != 0)
 	{

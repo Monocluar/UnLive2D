@@ -2,7 +2,7 @@
 #include "Animation/UnLive2DExpression.h"
 #include "UnLive2DMotionEditor/UnLive2DMotionViewEditor.h"
 
-#define LOCTEXT_NAMESPACE "FUnLive2DMotionTypeAction"
+#define LOCTEXT_NAMESPACE "UnLive2DAssetEditor"
 
 FUnLive2DExpressionAction::FUnLive2DExpressionAction(uint32 InAssetCategory)
 	: FAssetTypeActions_Base()

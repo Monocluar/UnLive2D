@@ -22,6 +22,7 @@
 #include "ISettingsModule.h"
 #include "UnLive2DSetting.h"
 #include "ThumbnailRenderer/UnLive2DThumbnailRenderer.h"
+#include "DisplayInfo/UnLive2DDisplayInfoFactoryAction.h"
 
 #define LOCTEXT_NAMESPACE "FUnLive2DAssetEditorModule"
 
@@ -52,8 +53,8 @@ void FUnLive2DAssetEditorModule::OnPostEngineInit()
 
 	GameAssetCategory = AssetTools.RegisterAdvancedAssetCategory(FName(TEXT("UnLive2D")), LOCTEXT("UnLive2DCategory", "UnLive2D"));
 
-	TSharedPtr<FUnLive2DAnimBlueprintGraphNodeFactory> UnLive2DAnimBlueprintGraphNodeFactory = MakeShared<FUnLive2DAnimBlueprintGraphNodeFactory>();
-	FEdGraphUtilities::RegisterVisualNodeFactory(UnLive2DAnimBlueprintGraphNodeFactory);
+	/*TSharedPtr<FUnLive2DAnimBlueprintGraphNodeFactory> UnLive2DAnimBlueprintGraphNodeFactory = MakeShared<FUnLive2DAnimBlueprintGraphNodeFactory>();
+	FEdGraphUtilities::RegisterVisualNodeFactory(UnLive2DAnimBlueprintGraphNodeFactory);*/
 
 	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 	// 为特定类注册自定义资源布局委托
@@ -63,8 +64,9 @@ void FUnLive2DAssetEditorModule::OnPostEngineInit()
 	AssetTools.RegisterAssetTypeActions(MakeShareable(new FUnLive2DTypeAction(GameAssetCategory)));
 	AssetTools.RegisterAssetTypeActions(MakeShareable(new FUnLive2DMotionTypeAction(GameAssetCategory)));
 	AssetTools.RegisterAssetTypeActions(MakeShareable(new FUnLive2DExpressionAction(GameAssetCategory)));
-	AssetTools.RegisterAssetTypeActions(MakeShareable(new FUnLive2DAnimBlurprintTypeAction(GameAssetCategory)));
-
+	AssetTools.RegisterAssetTypeActions(MakeShareable(new FUnLive2DDisplayInfoFactoryAction(GameAssetCategory)));
+	//AssetTools.RegisterAssetTypeActions(MakeShareable(new FUnLive2DAnimBlurprintTypeAction(GameAssetCategory)));
+	//
 	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
 	{
 		SettingsModule->RegisterSettings("Project", "Plugins", "UnLive2DAsset", LOCTEXT("RuntimeSettingsName", "UnLive2D Settings"),

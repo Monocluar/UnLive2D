@@ -13,10 +13,19 @@ class IUnLive2DParameterFilterText;
 extern FName UnLive2DParameterNameLabel;
 extern FName UnLive2DParameterValueLabel;
 
+struct FUnLive2DDisplayParameterInfo
+{
+	int32 UID;
+	// name 
+	FName ParameterID;
+
+	FName DisplayParameterName;
+};
+
 class FUnLive2DParameterInfo
 {
 public:
-	FSmartName SmartName;
+	FUnLive2DDisplayParameterInfo SmartName;
 	FUnLive2DParameterData ParameterData;
 	TWeakObjectPtr<UUnLive2DRendererComponent> EditableUnLive2DComp;
 	TSharedPtr<SInlineEditableTextBlock> EditableText; // 列表中的可编辑文本框，用于从关联菜单中聚焦
@@ -26,12 +35,12 @@ public:
 
 	bool bParameterModify;
 
-	static TSharedRef<FUnLive2DParameterInfo> Create(TWeakObjectPtr<UUnLive2DRendererComponent>& InEditableUnLive2D, const FSmartName& InSmartName, FUnLive2DParameterData& ParameterData);
+	static TSharedRef<FUnLive2DParameterInfo> Create(TWeakObjectPtr<UUnLive2DRendererComponent>& InEditableUnLive2D, const FUnLive2DDisplayParameterInfo& InSmartName, FUnLive2DParameterData& ParameterData);
 
-	static TSharedRef<FUnLive2DParameterInfo> Create(TWeakObjectPtr<UUnLive2DRendererComponent>& InEditableUnLive2D, const FSmartName& InSmartName, FUnLive2DParameterData& ParameterData, EUnLive2DExpressionBlendType::Type InUnLive2DExpressionBlendType, TWeakObjectPtr<UUnLive2DAnimBase> InUnLive2DAnimBase);
+	static TSharedRef<FUnLive2DParameterInfo> Create(TWeakObjectPtr<UUnLive2DRendererComponent>& InEditableUnLive2D, const FUnLive2DDisplayParameterInfo& InSmartName, FUnLive2DParameterData& ParameterData, EUnLive2DExpressionBlendType::Type InUnLive2DExpressionBlendType, TWeakObjectPtr<UUnLive2DAnimBase> InUnLive2DAnimBase);
 
 protected:
-	FUnLive2DParameterInfo(TWeakObjectPtr<UUnLive2DRendererComponent>& EditableUnLive2DComp, const FSmartName& InSmartName, FUnLive2DParameterData& ParameterData)
+	FUnLive2DParameterInfo(TWeakObjectPtr<UUnLive2DRendererComponent>& EditableUnLive2DComp, const FUnLive2DDisplayParameterInfo& InSmartName, FUnLive2DParameterData& ParameterData)
 		: SmartName(InSmartName)
 		, ParameterData(MoveTemp(ParameterData))
 		, EditableUnLive2DComp(EditableUnLive2DComp)
@@ -40,7 +49,7 @@ protected:
 		, bParameterModify(false)
 	{}
 
-	FUnLive2DParameterInfo(TWeakObjectPtr<UUnLive2DRendererComponent>& EditableUnLive2DComp, const FSmartName& InSmartName, FUnLive2DParameterData& ParameterData, EUnLive2DExpressionBlendType::Type InUnLive2DExpressionBlendType, TWeakObjectPtr<UUnLive2DAnimBase>& InUnLive2DAnimBase)
+	FUnLive2DParameterInfo(TWeakObjectPtr<UUnLive2DRendererComponent>& EditableUnLive2DComp, const FUnLive2DDisplayParameterInfo& InSmartName, FUnLive2DParameterData& ParameterData, EUnLive2DExpressionBlendType::Type InUnLive2DExpressionBlendType, TWeakObjectPtr<UUnLive2DAnimBase>& InUnLive2DAnimBase)
 		: SmartName(InSmartName)
 		, ParameterData(MoveTemp(ParameterData))
 		, EditableUnLive2DComp(EditableUnLive2DComp)
@@ -75,6 +84,8 @@ protected:
 	FText GetItemName() const;
 	/** Get text we are filtering for */
 	FText GetFilterText() const;
+
+	FText GetToolTipName() const;
 
 
 	void OnUnLive2DParameterChanged(float NewParameter);

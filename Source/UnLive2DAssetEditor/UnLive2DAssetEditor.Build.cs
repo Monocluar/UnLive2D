@@ -47,7 +47,8 @@ public class UnLive2DAssetEditor : ModuleRules
 				"GraphEditor",
 				"UnLive2DManager",
 				"Settings",
-				"UMG"
+				"UMG",
+                "Json",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

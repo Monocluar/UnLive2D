@@ -15,7 +15,7 @@
 void SUnLive2DAddParameterWidget::OnNameCommitted(const FText& InNewName, ETextCommit::Type CommitType, TSharedPtr<FUnLive2DParameterInfo> InItem)
 {
 	FName NewName(*InNewName.ToString());
-	if (NewName == InItem->SmartName.DisplayName) return;
+	if (NewName == InItem->SmartName.ParameterID) return;
 
 	if (NewName != NAME_None) return;
 
@@ -257,9 +257,9 @@ FText SUnLive2DAddParameterWidget::GetAddParameterListDropDownText() const
 {
 	if (SelectParameterInfo.IsValid())
 	{
-		return FText::FromName(SelectParameterInfo->SmartName.DisplayName);
+		return FText::FromName(SelectParameterInfo->SmartName.DisplayParameterName);
 	}
-	return FText();
+	return FText::GetEmpty();
 }
 
 void SUnLive2DAddParameterWidget::OnSelectionChanged(TSharedPtr<FUnLive2DParameterInfo> InItem, ESelectInfo::Type SelectInfo)
@@ -309,18 +309,19 @@ void SUnLive2DAddParameterWidget::CreateUnLive2DParameterList(const FString& Sea
 		for (FUnLive2DParameterData& Item : ParameterArr)
 		{
 
-			bool bHas = FilterUnLive2DParameter.ContainsByPredicate([SmartName = Item.ParameterName](const TSharedPtr<FUnLive2DParameterInfo>& A)
+			bool bHas = FilterUnLive2DParameter.ContainsByPredicate([SmartName = Item.ParameterID](const TSharedPtr<FUnLive2DParameterInfo>& A)
 			{
-				return SmartName == A->ParameterData.ParameterName;
+				return SmartName == A->ParameterData.ParameterID;
 			});
 
 			if (bHas) continue;
 
 			if (!UnLive2DParameterByUID[UIDIndex].IsValid())
 			{
-				FSmartName SmartName;
-				SmartName.UID = Item.ParameterID;
-				SmartName.DisplayName = Item.ParameterName;
+				FUnLive2DDisplayParameterInfo SmartName;
+				SmartName.UID = Item.Index;
+				SmartName.ParameterID = Item.ParameterID;
+				SmartName.DisplayParameterName = Item.DisplayName;
 
 				TSharedRef<FUnLive2DParameterInfo> NewInfo = FUnLive2DParameterInfo::Create(UnLive2DComp, SmartName, Item, EUnLive2DExpressionBlendType::ExpressionBlendType_Add, nullptr);
 
@@ -335,12 +336,16 @@ void SUnLive2DAddParameterWidget::CreateUnLive2DParameterList(const FString& Sea
 	//TMap<FName, float> ActiveParameter;
 	for (TSharedPtr<FUnLive2DParameterInfo>& Item : UnLive2DParameterByUID)
 	{
-		FSmartName SmartName = Item->SmartName;
+		FUnLive2DDisplayParameterInfo SmartName = Item->SmartName;
 
 		bool bAddToList = true;
 		if (!FilterText.IsEmpty())
 		{
-			if (!SmartName.DisplayName.ToString().Contains(*FilterText.ToString()))
+			if (!SmartName.ParameterID.ToString().Contains(*FilterText.ToString()))
+			{
+				bAddToList = false;
+			}
+			if (!SmartName.DisplayParameterName.ToString().Contains(*FilterText.ToString()))
 			{
 				bAddToList = false;
 			}

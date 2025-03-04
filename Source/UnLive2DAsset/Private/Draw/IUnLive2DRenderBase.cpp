@@ -170,7 +170,7 @@ bool IUnLive2DRenderBase::UpDataDrawableIndexList(TArray<uint16>& OutSortedDrawa
 		bool bUpdataSections = false;
 		for (const uint16& DrawableIndex : DrawableIndexList)
 		{
-			if (UnLive2DModel->GetDrawableDynamicFlagRenderOrderDidChange(DrawableIndex) || UnLive2DModel->GetDrawableDynamicFlagVisibilityDidChange(DrawableIndex) /*|| UnLive2DModel->GetDrawableDynamicFlagOpacityDidChange(DrawableIndex)*/)
+			if (UnLive2DModel->GetDrawableDynamicFlagRenderOrderDidChange(DrawableIndex) /*|| UnLive2DModel->GetDrawableDynamicFlagVisibilityDidChange(DrawableIndex) || UnLive2DModel->GetDrawableDynamicFlagOpacityDidChange(DrawableIndex)*/)
 			{
 				bUpdataSections = true;
 				break;
@@ -252,12 +252,13 @@ bool IUnLive2DRenderBase::GetDrawableDynamicIsVisible(const uint16& InDrawableIn
 	check(UnLive2DRawModel.IsValid());
 	Csm::CubismModel* UnLive2DModel = UnLive2DRawModel->GetModel();
 	// <Drawable如果不是显示状态，则通过处理
-	if (!UnLive2DModel->GetDrawableDynamicFlagIsVisible(InDrawableIndex)) return false;
+	//if (!UnLive2DModel->GetDrawableDynamicFlagIsVisible(InDrawableIndex)) return false;
 
 	if (0 == UnLive2DModel->GetDrawableVertexIndexCount(InDrawableIndex)) return false;
 
-	csmFloat32 Opacity = UnLive2DModel->GetDrawableOpacity(InDrawableIndex); // 获取不透明度
-	return Opacity > 0.f;
+	/*csmFloat32 Opacity = UnLive2DModel->GetDrawableOpacity(InDrawableIndex); // 获取不透明度
+	return Opacity > 0.f;*/
+	return true;
 }
 
 bool IUnLive2DRenderBase::IsCombinedbBatchDidChange(const TArray<int32>& InDrawableCounts) const
@@ -303,6 +304,10 @@ bool IUnLive2DRTRender::UpdateVertexBySectionData(FUnLive2DRTSectionData& InSect
 			InSectionData.CacheVerticesIndexCount += NumVertext;
 		}
 		csmFloat32 Opacity = UnLive2DModel->GetDrawableOpacity(DrawableIndex); // 获取不透明度
+		if (!UnLive2DModel->GetDrawableDynamicFlagIsVisible(DrawableIndex))
+		{
+			Opacity = 0.f; 
+		}
 
 		const csmFloat32* VertexArray = UnLive2DModel->GetDrawableVertices(DrawableIndex); // 顶点组
 		const  Live2D::Cubism::Core::csmVector2* UVArray = UnLive2DModel->GetDrawableVertexUvs(DrawableIndex); // 获取UV组

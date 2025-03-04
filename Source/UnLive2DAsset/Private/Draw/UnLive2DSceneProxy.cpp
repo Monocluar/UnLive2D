@@ -580,6 +580,10 @@ void FUnLive2DSceneProxy::FUnLive2DVertexBuffer::GetUnLive2DVertexData(TArray<FD
 	{
 		Counts += DrawableIndex;
 		csmFloat32 Opacity = UnLive2DRawModel->GetDrawableOpacity(DrawableIndex); // 获取不透明度
+		if (!UnLive2DRawModel->GetDrawableDynamicFlagIsVisible(DrawableIndex))
+		{
+			Opacity = 0.f;
+		}
 		if (!bCreateIndices)
 		{
 			const csmInt32 VertexIndexCount = UnLive2DRawModel->GetDrawableVertexIndexCount(DrawableIndex); // 获得Drawable的顶点索引个数

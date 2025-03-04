@@ -29,6 +29,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ImportSetting)
 		bool bIsImportExpression;
 
+	// 是否导入展示信息
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ImportSetting)
+		bool bIsImportDisplayInfo;
+
 public:
 	UFUNCTION(BlueprintCallable, Category = Miscellaneous)
 		void ResetToDefault();
