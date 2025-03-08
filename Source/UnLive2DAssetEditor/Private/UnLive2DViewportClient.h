@@ -20,7 +20,7 @@ class FUnLive2DViewportClient : public FEditorViewportClient
 public:
 	/** Constructor */
 	explicit FUnLive2DViewportClient(UUnLive2D* InUnLive2DBeingEdited, const TWeakPtr<class SEditorViewport>& InEditorViewportWidget = nullptr);
-	~FUnLive2DViewportClient();
+	virtual ~FUnLive2DViewportClient();
 
 public:
 	// FViewportClient interface

@@ -43,7 +43,11 @@ FUnLive2DViewportClient::FUnLive2DViewportClient(UUnLive2D* InUnLive2DBeingEdite
 
 FUnLive2DViewportClient::~FUnLive2DViewportClient()
 {
-	AnimatedRenderComponent->DestroyComponent();
+	if (AnimatedRenderComponent.IsValid())
+	{
+		AnimatedRenderComponent->DestroyComponent();
+		AnimatedRenderComponent.Reset();
+	}
 }
 
 void FUnLive2DViewportClient::Tick(float DeltaSeconds)

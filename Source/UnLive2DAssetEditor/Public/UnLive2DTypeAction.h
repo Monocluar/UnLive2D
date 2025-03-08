@@ -24,7 +24,12 @@ private:
 
 	void FillCreateMenu(FMenuBuilder& MenuBuilder, TArray<TWeakObjectPtr<UUnLive2D>> UnLive2DArr);
 
-	void CreateNewAnimBlueprint( TArray<TWeakObjectPtr<UUnLive2D>> UnLive2DArr);
+	void CreateNewAnimBlueprint(TArray<TWeakObjectPtr<UUnLive2D>> UnLive2DArr);
+	void CreateNewExpression(TArray<TWeakObjectPtr<UUnLive2D>> UnLive2DArr);
+
+private:
+	template<class FactoryClass>
+	void CreateNewAsset(TArray<TWeakObjectPtr<UUnLive2D>> UnLive2DArr,const FString& DefaultSuffix) const;
 
 private:
 	uint32 AssetType;

@@ -14,7 +14,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = UnLive2DMotionFactory)
 		class UUnLive2D* TargetUnLive2D;
 
-public:
+protected:
 
 	// 判定支持的类
 	virtual bool DoesSupportClass(UClass* Class) override;
@@ -24,4 +24,11 @@ public:
 
 	// 通过从文件名导入新对象来创建新对象。
 	virtual UObject* FactoryCreateFile(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, const FString& Filename, const TCHAR* Parms, FFeedbackContext* Warn, bool& bOutOperationCanceled) override;
+
+protected:
+
+	// UFactory Interface
+	virtual bool ConfigureProperties() override;
+	virtual UObject* FactoryCreateNew(UClass* Class, UObject* InParent, FName Name, EObjectFlags Flags, UObject* Context, FFeedbackContext* Warn, FName CallingContext) override;
+	virtual UObject* FactoryCreateNew(UClass* Class, UObject* InParent, FName Name, EObjectFlags Flags, UObject* Context, FFeedbackContext* Warn) override;
 };

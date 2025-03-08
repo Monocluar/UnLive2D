@@ -602,6 +602,7 @@ float FUnLive2DRawModel::StartExpressions(UUnLive2DExpression* InExpressions)
 	if (InExpressions == nullptr) return 0.f;
 
 	const FUnLiveByteData* Data = InExpressions->GetExpressionData();
+	check (Data->ByteData.Num() > 0);
 
 	Csm::ACubismMotion* FindPtr = Live2DExpressions.FindOrAdd(InExpressions->GetUniqueID());
 
